@@ -2,6 +2,7 @@ import { FaTractor } from 'react-icons/fa';
 import { HiDocumentReport } from 'react-icons/hi';
 import { createClient } from '@/lib/supabase/server';
 import EquipmentDashboard from '@/components/equipment/EquipmentDashboard';
+import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
@@ -49,10 +50,10 @@ export default async function Home() {
                 <p className="text-xs text-gray-500">Utstyr & Maskinpark</p>
               </div>
             </div>
-            <button className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2.5 rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 font-medium">
+            <Link href="/reports" className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2.5 rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 font-medium">
               <HiDocumentReport className="text-xl" />
               <span className="hidden sm:inline">Generer Rapport</span>
-            </button>
+            </Link>
           </div>
         </div>
       </nav>
