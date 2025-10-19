@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pip install bmad)",
+      "Bash(git clone https://github.com/bmad-code-org/BMAD-METHOD.git)",
+      "Bash(node --version)",
+      "Bash(npm --version)",
+      "Bash(npm install)",
+      "Bash(npm run build)",
+      "Read(//c/Users/runeg/OneDrive/Documents/Skole utdanning/Logistikk studie/IBE160 KI Programmering/**)",
+      "Bash(npx create-next-app@latest gamletun-app --typescript --tailwind --app --no-src-dir --import-alias \"@/*\")",
+      "Bash(npx create-next-app@latest gamletun-app --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --use-npm)",
+      "Bash(npm init -y)",
+      "Bash(npm install next@latest react@latest react-dom@latest typescript @types/react @types/node)",
+      "Bash(npm install tailwindcss postcss autoprefixer react-icons lucide-react)",
+      "Bash(npm install @supabase/supabase-js)",
+      "Bash(npm run dev)",
+      "Bash(npm install @tailwindcss/postcss)",
+      "Bash(taskkill /F /PID 3012)",
+      "Bash(npm uninstall tailwindcss @tailwindcss/postcss)",
+      "Bash(npm install -D tailwindcss@^3 postcss autoprefixer)",
+      "Bash(npx tailwindcss init -p)",
+      "Bash(taskkill /IM node.exe /F)",
+      "Bash(npm install react-icons)",
+      "Bash(npm install @supabase/ssr)",
+      "Bash(timeout 5 bash -c \"sleep 5\")",
+      "Bash(timeout 3 bash -c \"sleep 3\")",
+      "Bash(powershell -Command \"Stop-Process -Name node -Force\")",
+      "Bash(powershell -Command \"Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force\")",
+      "Bash(powershell -Command \"cd ''c:\\Users\\runeg\\OneDrive\\Documents\\Skole utdanning\\Logistikk studie\\IBE160 KI Programmering\\Gamletun Vedlikehold\\gamletun-app''; if (Test-Path .next) { Remove-Item -Recurse -Force .next }\")"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
