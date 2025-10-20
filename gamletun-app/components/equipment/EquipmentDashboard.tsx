@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaTruckMoving, FaTools, FaPlus, FaTractor } from 'react-icons/fa';
+import { FaTruckMoving, FaTools, FaPlus, FaTractor, FaEdit } from 'react-icons/fa';
 import { MdConstruction, MdOutlineSpeed } from 'react-icons/md';
 import { HiDocumentReport, HiClock } from 'react-icons/hi';
 import { BsCalendar3 } from 'react-icons/bs';
 import AddEquipmentModal from './AddEquipmentModal';
 import LogMaintenanceModal from '../maintenance/LogMaintenanceModal';
+import EditEquipmentModal from './EditEquipmentModal';
 
 interface Category {
   id: string;
@@ -38,6 +39,7 @@ interface Props {
 export default function EquipmentDashboard({ categories, equipment, recentMaintenance }: Props) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [maintenanceEquipment, setMaintenanceEquipment] = useState<Equipment | null>(null);
+  const [editEquipment, setEditEquipment] = useState<Equipment | null>(null);
   const router = useRouter();
 
   const handleSuccess = () => {
@@ -163,13 +165,27 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
                     <HiClock className="text-lg" />
                     <span>Kategori: {item.category?.name || 'Ukjent'}</span>
                   </div>
-                  <button
-                    onClick={() => setMaintenanceEquipment(item)}
-                    className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-xl hover:shadow-lg transition-all duration-200 font-medium group-hover:scale-[1.02]"
-                  >
-                    <FaTools />
-                    <span>Logg Vedlikehold</span>
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setEditEquipment(item);
+                      }}
+                      className="flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-3 rounded-xl transition-all duration-200 font-medium"
+                    >
+                      <FaEdit />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMaintenanceEquipment(item);
+                      }}
+                      className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-xl hover:shadow-lg transition-all duration-200 font-medium group-hover:scale-[1.02]"
+                    >
+                      <FaTools />
+                      <span>Logg Vedlikehold</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             );
@@ -203,6 +219,15 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
         <LogMaintenanceModal
           equipment={maintenanceEquipment}
           onClose={() => setMaintenanceEquipment(null)}
+          onSuccess={handleSuccess}
+        />
+      )}
+
+      {editEquipment && (
+        <EditEquipmentModal
+          equipment={editEquipment}
+          categories={categories}
+          onClose={() => setEditEquipment(null)}
           onSuccess={handleSuccess}
         />
       )}

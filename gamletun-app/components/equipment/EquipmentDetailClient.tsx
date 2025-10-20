@@ -7,6 +7,7 @@ import { FaArrowLeft, FaTools, FaEdit, FaTrash, FaFileExport } from 'react-icons
 import { HiClock } from 'react-icons/hi';
 import MaintenanceHistory from '../maintenance/MaintenanceHistory';
 import LogMaintenanceModal from '../maintenance/LogMaintenanceModal';
+import EditEquipmentModal from './EditEquipmentModal';
 
 interface Category {
   id: string;
@@ -46,6 +47,7 @@ export default function EquipmentDetailClient({
   categories,
 }: EquipmentDetailClientProps) {
   const [showLogModal, setShowLogModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const router = useRouter();
 
   const handleSuccess = () => {
@@ -138,6 +140,13 @@ export default function EquipmentDetailClient({
 
             <div className="flex gap-3">
               <button
+                onClick={() => setShowEditModal(true)}
+                className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl transition-all duration-200 font-medium"
+              >
+                <FaEdit />
+                <span>Rediger</span>
+              </button>
+              <button
                 onClick={() => setShowLogModal(true)}
                 className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-200 font-medium"
               >
@@ -216,6 +225,15 @@ export default function EquipmentDetailClient({
         <LogMaintenanceModal
           equipment={equipment}
           onClose={() => setShowLogModal(false)}
+          onSuccess={handleSuccess}
+        />
+      )}
+
+      {showEditModal && (
+        <EditEquipmentModal
+          equipment={equipment}
+          categories={categories}
+          onClose={() => setShowEditModal(false)}
           onSuccess={handleSuccess}
         />
       )}

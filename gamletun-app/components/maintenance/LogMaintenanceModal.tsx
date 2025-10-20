@@ -31,6 +31,14 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
     try {
       const supabase = createClient();
 
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setError('Du må være innlogget for å logge vedlikehold');
+        setLoading(false);
+        return;
+      }
+
       // First, create or get maintenance type
       let maintenanceTypeId = null;
 
@@ -61,7 +69,7 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
         }
       }
 
-      // Create maintenance log (without performed_by for now since we don't have auth)
+      // Create maintenance log with current user as performed_by
       const { error: logError } = await supabase
         .from('maintenance_logs')
         .insert({
@@ -69,7 +77,7 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
           maintenance_type_id: maintenanceTypeId,
           description: description || null,
           performed_date: performedDate,
-          // performed_by will be null until we add authentication
+          performed_by: user.id,
         });
 
       if (logError) throw logError;
