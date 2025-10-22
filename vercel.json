@@ -1,15 +1,6 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "gamletun-app/package.json",
-      "use": "@vercel/next"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "gamletun-app/$1"
-    }
-  ]
+  "buildCommand": "cd gamletun-app && npm run build",
+  "devCommand": "cd gamletun-app && npm run dev",
+  "installCommand": "cd gamletun-app && npm install",
+  "outputDirectory": "gamletun-app/.next"
 }
