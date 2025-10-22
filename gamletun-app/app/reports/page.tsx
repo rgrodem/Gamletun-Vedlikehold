@@ -7,10 +7,17 @@ export default async function ReportsPage() {
   const supabase = await createClient();
 
   // Fetch all equipment
-  const { data: equipment } = await supabase
+  const { data: equipmentData } = await supabase
     .from('equipment')
-    .select('id, name, category:categories(name)')
+    .select('id, name, categories(name)')
     .order('name');
+
+  // Transform equipment data to match the expected structure
+  const equipment = equipmentData?.map(item => ({
+    id: item.id,
+    name: item.name,
+    category: item.categories ? { name: (item.categories as any).name } : null
+  }));
 
   // Fetch all maintenance types
   const { data: maintenanceTypes } = await supabase

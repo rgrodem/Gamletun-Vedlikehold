@@ -68,3 +68,6 @@ node_modules/
 
 # Environment variables
 .env*.local
+
+# External repositories
+BMAD-METHOD/

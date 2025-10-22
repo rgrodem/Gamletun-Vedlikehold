@@ -5,9 +5,9 @@ import EquipmentDetailClient from '@/components/equipment/EquipmentDetailClient'
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-  params: {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
 export default async function EquipmentDetailPage({ params }: PageProps) {

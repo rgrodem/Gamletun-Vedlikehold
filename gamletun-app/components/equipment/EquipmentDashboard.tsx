@@ -21,9 +21,12 @@ interface Equipment {
   id: string;
   name: string;
   model: string | null;
+  serial_number: string | null;
+  purchase_date: string | null;
   status: string;
   category_id: string | null;
   category: Category | null;
+  notes: string | null;
 }
 
 interface MaintenanceLog {
