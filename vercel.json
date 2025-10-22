@@ -1,6 +1,0 @@
-{
-  "buildCommand": "cd gamletun-app && npm run build",
-  "devCommand": "cd gamletun-app && npm run dev",
-  "installCommand": "cd gamletun-app && npm install",
-  "outputDirectory": "gamletun-app/.next"
-}

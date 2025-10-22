@@ -34,7 +34,11 @@
       "Bash(git commit -m \"$(cat <<''EOF''\nLegg til vedlikeholdslogging, redigering og rapport-funksjonalitet\n\n- Implementert komplett vedlikeholdslogging med LogMaintenanceModal\n- Lagt til EditMaintenanceModal for redigering og sletting av vedlikehold\n- Opprettet utstyr detaljside med historikk og CSV-eksport\n- Bygget rapport-side med datofiltrering, månedvalg og PDF-eksport\n- Fjernet kategori-visning fra dashboard for enklere layout\n- Endret statistikk til å vise vedlikehold siste 30 dager\n- Fikset Next.js 15 params await-issue\n- Gjort performed_by nullable for utviklingsmiljø\n- Deaktivert RLS policies midlertidig\n- Installert jspdf og jspdf-autotable for PDF-generering\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
       "Bash(git push)",
       "Bash(git remote add origin https://github.com/rgrodem/Gamletun-Vedlikehold.git)",
-      "Bash(git push -u origin main)"
+      "Bash(git push -u origin main)",
+      "Bash(powershell -Command \"Remove-Item -Recurse -Force BMAD-METHOD\")",
+      "Bash(git add:*)",
+      "Bash(git rm:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
