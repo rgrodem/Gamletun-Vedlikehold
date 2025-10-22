@@ -103,12 +103,12 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
       <div className="mb-6">
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-4 rounded-2xl hover:shadow-2xl hover:scale-[1.02] transition-all duration-200 font-semibold shadow-lg"
+          className="flex items-center justify-center gap-2 sm:gap-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-2xl hover:shadow-2xl active:scale-95 transition-all duration-200 font-semibold shadow-lg w-full sm:w-auto touch-manipulation min-h-[44px]"
         >
           <div className="bg-white/20 p-2 rounded-lg">
-            <FaPlus className="text-xl" />
+            <FaPlus className="text-lg sm:text-xl" />
           </div>
-          <span>Nytt Utstyr</span>
+          <span className="text-base sm:text-lg">Nytt Utstyr</span>
         </button>
       </div>
 
@@ -174,19 +174,20 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
                         e.stopPropagation();
                         setEditEquipment(item);
                       }}
-                      className="flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-3 rounded-xl transition-all duration-200 font-medium"
+                      className="flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 px-3 sm:px-4 py-3 rounded-xl transition-all duration-200 font-medium touch-manipulation min-h-[44px]"
+                      aria-label="Rediger utstyr"
                     >
-                      <FaEdit />
+                      <FaEdit className="text-lg" />
                     </button>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setMaintenanceEquipment(item);
                       }}
-                      className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-xl hover:shadow-lg transition-all duration-200 font-medium group-hover:scale-[1.02]"
+                      className="flex-1 flex items-center justify-center gap-1 sm:gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 sm:px-4 py-3 rounded-xl hover:shadow-lg active:scale-95 transition-all duration-200 font-medium touch-manipulation min-h-[44px]"
                     >
-                      <FaTools />
-                      <span>Logg Vedlikehold</span>
+                      <FaTools className="text-base sm:text-lg" />
+                      <span className="text-sm sm:text-base">Logg Vedlikehold</span>
                     </button>
                   </div>
                 </div>

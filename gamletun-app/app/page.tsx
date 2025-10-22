@@ -44,22 +44,23 @@ export default async function Home() {
       {/* Navigation */}
       <nav className="bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2.5 rounded-xl shadow-lg">
-                <FaTractor className="text-2xl text-white" />
+          <div className="flex justify-between items-center h-16 md:h-20">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2 sm:p-2.5 rounded-xl shadow-lg">
+                <FaTractor className="text-xl sm:text-2xl text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                   Gamletun Vedlikehold
                 </h1>
-                <p className="text-xs text-gray-500">Utstyr & Maskinpark</p>
+                <p className="text-xs text-gray-500 hidden sm:block">Utstyr & Maskinpark</p>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <Link href="/reports" className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-5 py-2.5 rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 font-medium">
-                <HiDocumentReport className="text-xl" />
-                <span className="hidden sm:inline">Generer Rapport</span>
+            <div className="flex items-center gap-2 sm:gap-4">
+              <Link href="/reports" className="flex items-center gap-1 sm:gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl hover:shadow-lg active:scale-95 transition-all duration-200 font-medium touch-manipulation">
+                <HiDocumentReport className="text-lg sm:text-xl" />
+                <span className="hidden sm:inline text-sm sm:text-base">Generer Rapport</span>
+                <span className="sm:hidden text-xs">Rapport</span>
               </Link>
               {user && <UserMenu email={user.email || ''} />}
             </div>
