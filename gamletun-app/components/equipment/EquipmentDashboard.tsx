@@ -57,41 +57,34 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
 
   return (
     <>
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Totalt Utstyr</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{totalEquipment}</p>
+      {/* Compact Stats Card */}
+      <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 mb-6">
+        <div className="grid grid-cols-3 gap-3 sm:gap-6">
+          {/* Totalt Utstyr */}
+          <div className="flex flex-col items-center text-center">
+            <div className="bg-blue-100 p-2 sm:p-3 rounded-xl mb-2">
+              <MdConstruction className="text-xl sm:text-2xl text-blue-600" />
             </div>
-            <div className="bg-blue-100 p-4 rounded-xl">
-              <MdConstruction className="text-3xl text-blue-600" />
-            </div>
+            <p className="text-xs sm:text-sm text-gray-500 mb-1">Utstyr</p>
+            <p className="text-xl sm:text-2xl font-bold text-gray-900">{totalEquipment}</p>
           </div>
-        </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Kategorier</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{categories.length}</p>
+          {/* Kategorier */}
+          <div className="flex flex-col items-center text-center border-x border-gray-200">
+            <div className="bg-green-100 p-2 sm:p-3 rounded-xl mb-2">
+              <FaTools className="text-xl sm:text-2xl text-green-600" />
             </div>
-            <div className="bg-green-100 p-4 rounded-xl">
-              <FaTools className="text-3xl text-green-600" />
-            </div>
+            <p className="text-xs sm:text-sm text-gray-500 mb-1">Kategorier</p>
+            <p className="text-xl sm:text-2xl font-bold text-gray-900">{categories.length}</p>
           </div>
-        </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 hover:shadow-xl transition-shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-500">Vedlikehold siste 30 dager</p>
-              <p className="text-3xl font-bold text-gray-900 mt-1">{maintenanceLast30Days}</p>
+          {/* Vedlikehold */}
+          <div className="flex flex-col items-center text-center">
+            <div className="bg-purple-100 p-2 sm:p-3 rounded-xl mb-2">
+              <BsCalendar3 className="text-xl sm:text-2xl text-purple-600" />
             </div>
-            <div className="bg-purple-100 p-4 rounded-xl">
-              <BsCalendar3 className="text-3xl text-purple-600" />
-            </div>
+            <p className="text-xs sm:text-sm text-gray-500 mb-1">30 dager</p>
+            <p className="text-xl sm:text-2xl font-bold text-gray-900">{maintenanceLast30Days}</p>
           </div>
         </div>
       </div>
