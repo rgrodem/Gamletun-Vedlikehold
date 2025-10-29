@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { FaTruckMoving, FaTools, FaPlus, FaTractor, FaEdit } from 'react-icons/fa';
 import { MdConstruction, MdOutlineSpeed } from 'react-icons/md';
 import { HiDocumentReport, HiClock } from 'react-icons/hi';
@@ -47,10 +48,6 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
 
   const handleSuccess = () => {
     router.refresh();
-  };
-
-  const handleEquipmentClick = (equipmentId: string) => {
-    router.push(`/equipment/${equipmentId}`);
   };
 
   const totalEquipment = equipment.length;
@@ -123,9 +120,10 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
 
             return (
               <div key={item.id} className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:scale-[1.02]">
-                <div
-                  onClick={() => handleEquipmentClick(item.id)}
-                  className="p-6 border-b border-gray-100 cursor-pointer"
+                <Link
+                  href={`/equipment/${item.id}`}
+                  prefetch={true}
+                  className="block p-6 border-b border-gray-100 cursor-pointer"
                   style={{
                     background: `linear-gradient(to bottom right, ${categoryColor}15, ${categoryColor}05)`
                   }}
@@ -161,7 +159,7 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
                       </span>
                     </div>
                   </div>
-                </div>
+                </Link>
 
                 <div className="p-6">
                   <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">

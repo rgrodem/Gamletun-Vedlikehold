@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import ReportClient from '@/components/reports/ReportClient';
 
-export const dynamic = 'force-dynamic';
+// Revalidate every 30 seconds
+export const revalidate = 30;
 
 export default async function ReportsPage() {
   const supabase = await createClient();

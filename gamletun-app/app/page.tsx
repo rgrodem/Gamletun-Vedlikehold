@@ -5,7 +5,8 @@ import EquipmentDashboard from '@/components/equipment/EquipmentDashboard';
 import UserMenu from '@/components/auth/UserMenu';
 import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
+// Revalidate every 60 seconds instead of on every request
+export const revalidate = 60;
 
 export default async function Home() {
   const supabase = await createClient();

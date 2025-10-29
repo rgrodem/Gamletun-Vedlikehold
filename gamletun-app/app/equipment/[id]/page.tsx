@@ -2,7 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import EquipmentDetailClient from '@/components/equipment/EquipmentDetailClient';
 
-export const dynamic = 'force-dynamic';
+// Revalidate every 30 seconds
+export const revalidate = 30;
 
 interface PageProps {
   params: Promise<{
