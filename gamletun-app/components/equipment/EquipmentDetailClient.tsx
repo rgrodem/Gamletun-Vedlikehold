@@ -27,6 +27,7 @@ interface Equipment {
   category: Category | null;
   category_id: string | null;
   notes: string | null;
+  image_url: string | null;
 }
 
 interface MaintenanceLog {
