@@ -23,7 +23,7 @@ export default function ImageUpload({
   onImageRemoved,
   bucket,
   folder,
-  maxSizeMB = 5,
+  maxSizeMB = 10,
   label = 'Last opp bilde',
   description,
   aspectRatio = 'square',
