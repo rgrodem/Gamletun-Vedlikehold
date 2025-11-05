@@ -163,10 +163,11 @@ export default function ReportClient({
             <button
               onClick={generatePDF}
               disabled={logs.length === 0}
-              className="flex items-center gap-2 bg-gradient-to-r from-red-600 to-pink-600 text-white px-5 py-2.5 rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-pink-600 text-white px-4 sm:px-5 py-2.5 rounded-xl hover:shadow-lg active:scale-95 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px]"
+              aria-label="Eksporter rapport til PDF"
             >
-              <FaFilePdf className="text-xl" />
-              <span className="hidden sm:inline">Eksporter PDF</span>
+              <FaFilePdf className="text-lg sm:text-xl" />
+              <span className="text-sm sm:text-base">PDF</span>
             </button>
           </div>
         </div>
@@ -195,35 +196,35 @@ export default function ReportClient({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Hurtigvalg måned
             </label>
-            <div className="flex flex-wrap gap-2">
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
               <button
                 onClick={() => selectMonth(0)}
-                className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium"
+                className="px-3 sm:px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 active:bg-blue-300 transition-colors font-medium text-sm touch-manipulation min-h-[44px]"
               >
                 Denne måneden
               </button>
               <button
                 onClick={() => selectMonth(1)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 active:bg-gray-300 transition-colors text-sm touch-manipulation min-h-[44px]"
               >
                 Forrige måned
               </button>
               <button
                 onClick={() => selectMonth(2)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 active:bg-gray-300 transition-colors text-sm touch-manipulation min-h-[44px]"
               >
-                2 måneder siden
+                2 mnd siden
               </button>
               <button
                 onClick={() => selectMonth(3)}
-                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-3 sm:px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 active:bg-gray-300 transition-colors text-sm touch-manipulation min-h-[44px]"
               >
-                3 måneder siden
+                3 mnd siden
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Start Date */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -292,7 +293,8 @@ export default function ReportClient({
           <button
             onClick={fetchFilteredData}
             disabled={loading}
-            className="mt-4 w-full md:w-auto px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-lg transition-all duration-200 font-medium disabled:opacity-50"
+            className="mt-4 w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-lg active:scale-95 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px]"
+            aria-label="Oppdater rapport med valgte filtre"
           >
             {loading ? 'Laster...' : 'Oppdater rapport'}
           </button>
@@ -341,64 +343,97 @@ export default function ReportClient({
           </div>
         </div>
 
-        {/* Results Table */}
+        {/* Results Table / Cards */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          <div className="p-6 border-b border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900">Vedlikeholdslogger</h3>
+          <div className="p-4 sm:p-6 border-b border-gray-200">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">Vedlikeholdslogger</h3>
           </div>
 
           {logs.length === 0 ? (
-            <div className="p-12 text-center">
-              <FaCalendarAlt className="text-6xl text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg">Ingen vedlikeholdslogger funnet for valgt periode</p>
+            <div className="p-8 sm:p-12 text-center">
+              <FaCalendarAlt className="text-4xl sm:text-6xl text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500 text-base sm:text-lg">Ingen vedlikeholdslogger funnet for valgt periode</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Dato
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Utstyr
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Kategori
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Beskrivelse
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {logs.map((log) => (
-                    <tr key={log.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {new Date(log.performed_date).toLocaleDateString('nb-NO')}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {log.equipment?.name || 'Ukjent'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {log.equipment?.category?.name || '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                          {log.maintenance_type?.type_name || 'Vedlikehold'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-500">
-                        {log.description || '-'}
-                      </td>
+            <>
+              {/* Mobile: Cards */}
+              <div className="md:hidden divide-y divide-gray-200">
+                {logs.map((log) => (
+                  <div key={log.id} className="p-4 hover:bg-gray-50 active:bg-gray-100 transition-colors">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <h4 className="font-semibold text-gray-900 text-sm mb-1">
+                          {log.equipment?.name || 'Ukjent'}
+                        </h4>
+                        <p className="text-xs text-gray-500">
+                          {log.equipment?.category?.name || '-'}
+                        </p>
+                      </div>
+                      <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full whitespace-nowrap ml-2">
+                        {log.maintenance_type?.type_name || 'Vedlikehold'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-gray-600 mb-2">
+                      <FaCalendarAlt className="text-blue-600" />
+                      <span>{new Date(log.performed_date).toLocaleDateString('nb-NO')}</span>
+                    </div>
+                    {log.description && (
+                      <p className="text-sm text-gray-700 bg-gray-50 rounded-lg p-2 mt-2">
+                        {log.description}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop: Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Dato
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Utstyr
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Kategori
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Beskrivelse
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {logs.map((log) => (
+                      <tr key={log.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(log.performed_date).toLocaleDateString('nb-NO')}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {log.equipment?.name || 'Ukjent'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {log.equipment?.category?.name || '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                            {log.maintenance_type?.type_name || 'Vedlikehold'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-500">
+                          {log.description || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </main>

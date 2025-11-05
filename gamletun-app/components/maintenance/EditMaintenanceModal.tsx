@@ -82,19 +82,20 @@ export default function EditMaintenanceModal({ log, equipmentName, onClose, onSu
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full my-8 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="sticky top-0 bg-white flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 rounded-t-2xl z-10">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">Rediger Vedlikehold</h2>
-            <p className="text-sm text-gray-600 mt-1">{equipmentName}</p>
+            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Rediger Vedlikehold</h2>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">{equipmentName}</p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-2 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+            aria-label="Lukk modal"
           >
-            <FaTimes className="text-xl text-gray-500" />
+            <FaTimes className="text-lg sm:text-xl text-gray-500" />
           </button>
         </div>
 
@@ -153,12 +154,13 @@ export default function EditMaintenanceModal({ log, equipmentName, onClose, onSu
           {/* Delete Confirmation */}
           {showDeleteConfirm && (
             <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
-              <p className="text-red-900 font-semibold mb-3">Er du sikker på at du vil slette dette vedlikeholdet?</p>
-              <div className="flex gap-2">
+              <p className="text-sm sm:text-base text-red-900 font-semibold mb-3">Er du sikker på at du vil slette dette vedlikeholdet?</p>
+              <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   type="button"
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                  className="flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 active:bg-gray-400 transition-colors font-medium touch-manipulation min-h-[44px]"
+                  aria-label="Avbryt sletting"
                 >
                   Avbryt
                 </button>
@@ -166,7 +168,8 @@ export default function EditMaintenanceModal({ log, equipmentName, onClose, onSu
                   type="button"
                   onClick={handleDelete}
                   disabled={loading}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 active:bg-red-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px]"
+                  aria-label="Bekreft sletting"
                 >
                   {loading ? 'Sletter...' : 'Slett'}
                 </button>
@@ -175,12 +178,13 @@ export default function EditMaintenanceModal({ log, equipmentName, onClose, onSu
           )}
 
           {/* Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <button
               type="button"
               onClick={() => setShowDeleteConfirm(true)}
               disabled={loading || showDeleteConfirm}
-              className="px-6 py-3 border-2 border-red-300 text-red-700 font-semibold rounded-xl hover:bg-red-50 transition-colors disabled:opacity-50 flex items-center gap-2"
+              className="px-6 py-3 border-2 border-red-300 text-red-700 font-semibold rounded-xl hover:bg-red-50 active:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
+              aria-label="Slett vedlikehold"
             >
               <FaTrash />
               <span>Slett</span>
@@ -188,14 +192,16 @@ export default function EditMaintenanceModal({ log, equipmentName, onClose, onSu
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 transition-colors"
+              className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors touch-manipulation min-h-[44px]"
+              aria-label="Avbryt og lukk"
             >
               Avbryt
             </button>
             <button
               type="submit"
               disabled={loading || showDeleteConfirm}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
+              aria-label="Lagre endringer"
             >
               {loading ? (
                 <span>Lagrer...</span>

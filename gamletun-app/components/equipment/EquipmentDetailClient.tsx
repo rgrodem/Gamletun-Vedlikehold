@@ -117,18 +117,18 @@ export default function EquipmentDetailClient({
             <span>Tilbake til oversikt</span>
           </Link>
 
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
             <div>
               <div className="flex items-center gap-3 mb-2">
                 {equipment.category && (
-                  <span className="text-3xl">{equipment.category.icon}</span>
+                  <span className="text-2xl sm:text-3xl">{equipment.category.icon}</span>
                 )}
-                <h1 className="text-3xl font-bold text-gray-900">{equipment.name}</h1>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{equipment.name}</h1>
               </div>
               {equipment.model && (
-                <p className="text-gray-600 mb-2">Modell: {equipment.model}</p>
+                <p className="text-sm sm:text-base text-gray-600 mb-2">Modell: {equipment.model}</p>
               )}
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 <span
                   className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(equipment.status)}`}
                 >
@@ -142,26 +142,30 @@ export default function EquipmentDetailClient({
               </div>
             </div>
 
-            <div className="flex gap-3">
+            {/* Mobile: Stacked buttons, Desktop: Side-by-side */}
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full lg:w-auto">
               <button
                 onClick={() => setShowEditModal(true)}
-                className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-6 py-3 rounded-xl transition-all duration-200 font-medium"
+                className="flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 px-4 py-3 rounded-xl transition-all duration-200 font-medium touch-manipulation min-h-[44px]"
+                aria-label="Rediger utstyr"
               >
-                <FaEdit />
+                <FaEdit className="text-lg" />
                 <span>Rediger</span>
               </button>
               <button
                 onClick={() => setShowLogModal(true)}
-                className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-200 font-medium"
+                className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-xl hover:shadow-lg active:scale-[0.98] transition-all duration-200 font-medium touch-manipulation min-h-[44px]"
+                aria-label="Logg vedlikehold"
               >
-                <FaTools />
+                <FaTools className="text-lg" />
                 <span>Logg Vedlikehold</span>
               </button>
               <button
                 onClick={exportToCSV}
-                className="flex items-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-200 font-medium"
+                className="flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-3 rounded-xl hover:shadow-lg active:scale-[0.98] transition-all duration-200 font-medium touch-manipulation min-h-[44px]"
+                aria-label="Eksporter til CSV"
               >
-                <FaFileExport />
+                <FaFileExport className="text-lg" />
                 <span>Eksporter</span>
               </button>
             </div>
