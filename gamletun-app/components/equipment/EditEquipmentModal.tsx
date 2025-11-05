@@ -112,16 +112,17 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8 max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-t-2xl flex justify-between items-center">
-          <h2 className="text-2xl font-bold">Rediger Utstyr</h2>
+        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 sm:p-6 rounded-t-2xl flex justify-between items-center z-10">
+          <h2 className="text-xl sm:text-2xl font-bold">Rediger Utstyr</h2>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+            className="p-2 hover:bg-white/20 active:bg-white/30 rounded-lg transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
+            aria-label="Lukk modal"
           >
-            <FaTimes className="text-xl" />
+            <FaTimes className="text-lg sm:text-xl" />
           </button>
         </div>
 
@@ -242,11 +243,12 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-6 rounded-lg hover:shadow-lg transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-6 rounded-lg hover:shadow-lg active:scale-95 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px]"
+              aria-label="Lagre endringer"
             >
               <FaSave />
               {loading ? 'Lagrer...' : 'Lagre endringer'}
@@ -256,7 +258,8 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
               type="button"
               onClick={() => setShowDeleteConfirm(true)}
               disabled={loading}
-              className="flex items-center justify-center gap-2 bg-red-600 text-white py-3 px-6 rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 bg-red-600 text-white py-3 px-6 rounded-lg hover:bg-red-700 active:bg-red-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px]"
+              aria-label="Slett utstyr"
             >
               <FaTrash />
               Slett
@@ -268,24 +271,26 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60] p-4">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">Bekreft sletting</h3>
-            <p className="text-gray-600 mb-6">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-4 sm:p-6">
+            <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Bekreft sletting</h3>
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
               Er du sikker på at du vil slette <strong>{equipment.name}</strong>?
               Dette vil også slette all vedlikeholdshistorikk for dette utstyret.
               Denne handlingen kan ikke angres.
             </p>
-            <div className="flex gap-3">
+            <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 active:bg-gray-100 transition-colors font-medium touch-manipulation min-h-[44px]"
+                aria-label="Avbryt sletting"
               >
                 Avbryt
               </button>
               <button
                 onClick={handleDelete}
                 disabled={loading}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50"
+                className="flex-1 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 active:bg-red-800 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation min-h-[44px]"
+                aria-label="Bekreft sletting"
               >
                 {loading ? 'Sletter...' : 'Ja, slett'}
               </button>
