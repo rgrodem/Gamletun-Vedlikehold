@@ -175,7 +175,7 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
               onImageRemoved={handleImageRemoved}
               bucket="equipment-images"
               folder={equipment.id}
-              maxSizeMB={10}
+              maxSizeMB={15}
               label="Bilde av utstyr"
               description="Last opp et bilde av utstyret (erstatter emoji-ikon). iPhone-bilder støttes."
               aspectRatio="landscape"
