@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { FaTimes, FaSave, FaTrash } from 'react-icons/fa';
 import { createClient } from '@/lib/supabase/client';
+import ImageUpload from '../uploads/ImageUpload';
+import { deleteFile } from '@/lib/storage';
 
 interface Category {
   id: string;
@@ -18,6 +20,7 @@ interface Equipment {
   status: string;
   category_id: string | null;
   notes: string | null;
+  image_url: string | null;
 }
 
 interface EditEquipmentModalProps {
@@ -35,9 +38,29 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
   const [status, setStatus] = useState(equipment.status);
   const [categoryId, setCategoryId] = useState(equipment.category_id || '');
   const [notes, setNotes] = useState(equipment.notes || '');
+  const [imageUrl, setImageUrl] = useState<string | null>(equipment.image_url);
+  const [imagePath, setImagePath] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
+  const handleImageUploaded = (url: string, path: string) => {
+    setImageUrl(url);
+    setImagePath(path);
+  };
+
+  const handleImageRemoved = async () => {
+    // Delete old image from storage if exists
+    if (equipment.image_url && imagePath) {
+      try {
+        await deleteFile('equipment-images', imagePath);
+      } catch (error) {
+        console.error('Error deleting old image:', error);
+      }
+    }
+    setImageUrl(null);
+    setImagePath(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +80,7 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
           status,
           category_id: categoryId || null,
           notes: notes.trim() || null,
+          image_url: imageUrl,
         })
         .eq('id', equipment.id);
 
@@ -140,6 +164,21 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="F.eks. Traktor, Gravemaskin"
+            />
+          </div>
+
+          {/* Equipment Image */}
+          <div>
+            <ImageUpload
+              currentImageUrl={imageUrl}
+              onImageUploaded={handleImageUploaded}
+              onImageRemoved={handleImageRemoved}
+              bucket="equipment-images"
+              folder={equipment.id}
+              maxSizeMB={5}
+              label="Bilde av utstyr"
+              description="Last opp et bilde av utstyret (erstatter emoji-ikon)"
+              aspectRatio="landscape"
             />
           </div>
 
