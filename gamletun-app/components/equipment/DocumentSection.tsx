@@ -72,6 +72,9 @@ export default function DocumentSection({ equipmentId, onUpdate }: DocumentSecti
 
     setUploading(true);
     try {
+      // Get current user (optional)
+      const { data: { user } } = await supabase.auth.getUser();
+
       // Upload file to Supabase Storage
       const result = await uploadFile('equipment-documents', selectedFile, equipmentId);
 
@@ -86,6 +89,7 @@ export default function DocumentSection({ equipmentId, onUpdate }: DocumentSecti
           file_type: selectedFile.type,
           document_type: documentType,
           description: description || null,
+          uploaded_by: user?.id || null,
         });
 
       if (error) throw error;

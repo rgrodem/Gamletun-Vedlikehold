@@ -52,13 +52,8 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
     try {
       const supabase = createClient();
 
-      // Get current user
+      // Get current user (but don't require it)
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setError('Du må være innlogget for å logge vedlikehold');
-        setLoading(false);
-        return;
-      }
 
       // First, create or get maintenance type
       let maintenanceTypeId = null;
@@ -90,7 +85,7 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
         }
       }
 
-      // Create maintenance log with current user as performed_by
+      // Create maintenance log (performed_by is optional)
       const { data: newLog, error: logError } = await supabase
         .from('maintenance_logs')
         .insert({
@@ -98,7 +93,7 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
           maintenance_type_id: maintenanceTypeId,
           description: description || null,
           performed_date: performedDate,
-          performed_by: user.id,
+          performed_by: user?.id || null, // Allow null if user doesn't exist
         })
         .select()
         .single();
@@ -126,7 +121,7 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
                 file_size: file.size,
                 file_type: file.type,
                 attachment_type: attachmentType,
-                uploaded_by: user.id,
+                uploaded_by: user?.id || null,
               });
           } catch (uploadError) {
             console.error('Error uploading attachment:', uploadError);
