@@ -50,7 +50,7 @@ Nå må vi opprette de tre storage buckets:
      - **Name:** `equipment-images`
      - **Public bucket:** ✅ **HUK AV** (bilder må være offentlige for å vises)
      - **Allowed MIME types:** `image/jpeg, image/png, image/webp, image/heic`
-     - **Max file size:** `15 MB` (støtter iPhone-bilder)
+     - **Max file size:** `40 MB` (støtter store filer inkl. iPhone-bilder)
    - Klikk **"Create bucket"**
 
 ### 2. Equipment Documents Bucket
@@ -59,9 +59,9 @@ Nå må vi opprette de tre storage buckets:
    - Klikk **"New bucket"** igjen
    - Fyll inn:
      - **Name:** `equipment-documents`
-     - **Public bucket:** ❌ **Ikke huk av**
+     - **Public bucket:** ✅ **HUK AV** (dokumenter må være offentlige for å lastes ned)
      - **Allowed MIME types:** `application/pdf, image/jpeg, image/png, image/webp, application/vnd.ms-excel, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/msword, application/vnd.openxmlformats-officedocument.wordprocessingml.document`
-     - **Max file size:** `10 MB`
+     - **Max file size:** `40 MB`
    - Klikk **"Create bucket"**
 
 ### 3. Maintenance Attachments Bucket
@@ -72,7 +72,7 @@ Nå må vi opprette de tre storage buckets:
      - **Name:** `maintenance-attachments`
      - **Public bucket:** ✅ **HUK AV** (bilder/dokumenter må være offentlige for å vises)
      - **Allowed MIME types:** `image/jpeg, image/png, image/webp, image/heic, application/pdf`
-     - **Max file size:** `10 MB`
+     - **Max file size:** `40 MB`
    - Klikk **"Create bucket"**
 
 ✅ **Ferdig!** Du skal nå se tre buckets i storage-oversikten.
@@ -163,11 +163,11 @@ Sjekk at alt er på plass:
 
 Som standard er dette satt opp:
 
-- **Equipment Images:** Maks 15 MB per bilde (støtter iPhone-bilder)
-- **Equipment Documents:** Maks 10 MB per dokument
-- **Maintenance Attachments:** Maks 10 MB per fil
+- **Equipment Images:** Maks 40 MB per bilde
+- **Equipment Documents:** Maks 40 MB per dokument
+- **Maintenance Attachments:** Maks 40 MB per fil
 
-Du kan endre disse i bucket-innstillingene hvis du trenger større filer.
+Dette er en generøs grense som støtter de fleste brukstilfeller, inkludert store iPhone-bilder og omfattende dokumenter. Du kan endre disse i bucket-innstillingene hvis du trenger andre grenser.
 
 ---
 

@@ -19,7 +19,7 @@ export default function FileUpload({
   onFileUploaded,
   bucket,
   folder,
-  maxSizeMB = 10,
+  maxSizeMB = 40,
   allowedTypes = [
     'application/pdf',
     'image/jpeg',

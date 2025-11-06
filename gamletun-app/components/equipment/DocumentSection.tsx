@@ -57,9 +57,9 @@ export default function DocumentSection({ equipmentId, onUpdate }: DocumentSecti
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
 
-      // Check file size (max 10MB)
-      if (file.size > 10 * 1024 * 1024) {
-        alert('Filen er for stor. Maksimal størrelse er 10 MB.');
+      // Check file size (max 40MB)
+      if (file.size > 40 * 1024 * 1024) {
+        alert('Filen er for stor. Maksimal størrelse er 40 MB.');
         return;
       }
 
@@ -225,7 +225,7 @@ export default function DocumentSection({ equipmentId, onUpdate }: DocumentSecti
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Velg fil (max 10 MB)
+                Velg fil (max 40 MB)
               </label>
               <input
                 type="file"

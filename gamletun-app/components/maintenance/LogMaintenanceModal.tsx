@@ -29,10 +29,10 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
     if (e.target.files) {
       const newFiles = Array.from(e.target.files);
 
-      // Check file sizes (max 10MB each)
-      const invalidFiles = newFiles.filter(file => file.size > 10 * 1024 * 1024);
+      // Check file sizes (max 40MB each)
+      const invalidFiles = newFiles.filter(file => file.size > 40 * 1024 * 1024);
       if (invalidFiles.length > 0) {
-        alert(`Noen filer er for store. Maksimal størrelse er 10 MB per fil.`);
+        alert(`Noen filer er for store. Maksimal størrelse er 40 MB per fil.`);
         return;
       }
 
@@ -234,7 +234,7 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
                 />
               </div>
               <p className="text-xs text-gray-500">
-                Last opp bilder av utført arbeid, vedlikeholdsskjema eller annen dokumentasjon (maks 10 MB per fil)
+                Last opp bilder av utført arbeid, vedlikeholdsskjema eller annen dokumentasjon (maks 40 MB per fil)
               </p>
 
               {/* Selected files list */}
