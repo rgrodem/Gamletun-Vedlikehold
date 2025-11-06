@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { FaEnvelope, FaLock, FaSignInAlt } from 'react-icons/fa';
 
@@ -61,9 +62,17 @@ export default function LoginForm() {
 
         {/* Password */}
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-            Passord
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Passord
+            </label>
+            <Link
+              href="/forgot-password"
+              className="text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+            >
+              Glemt passord?
+            </Link>
+          </div>
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <FaLock className="text-gray-400" />
