@@ -48,9 +48,9 @@ Nå må vi opprette de tre storage buckets:
    - Klikk på **"New bucket"** (grønn knapp)
    - Fyll inn:
      - **Name:** `equipment-images`
-     - **Public bucket:** ❌ **Ikke huk av** (må være privat)
+     - **Public bucket:** ✅ **HUK AV** (bilder må være offentlige for å vises)
      - **Allowed MIME types:** `image/jpeg, image/png, image/webp, image/heic`
-     - **Max file size:** `5 MB` (eller høyere hvis du vil)
+     - **Max file size:** `15 MB` (støtter iPhone-bilder)
    - Klikk **"Create bucket"**
 
 ### 2. Equipment Documents Bucket
@@ -163,7 +163,7 @@ Sjekk at alt er på plass:
 
 Som standard er dette satt opp:
 
-- **Equipment Images:** Maks 5 MB per bilde
+- **Equipment Images:** Maks 15 MB per bilde (støtter iPhone-bilder)
 - **Equipment Documents:** Maks 10 MB per dokument
 - **Maintenance Attachments:** Maks 10 MB per fil
 
@@ -189,6 +189,16 @@ Du kan endre disse i bucket-innstillingene hvis du trenger større filer.
 ### Filer vises ikke
 - ✅ Sjekk at SELECT policy er aktivert på bucketen
 - ✅ Hard refresh i nettleseren (Ctrl/Cmd + Shift + R)
+
+### Bilder viser rødt kryss (X)
+Dette betyr at bucketen er privat, men må være offentlig:
+1. Gå til Storage i Supabase Dashboard
+2. Finn `equipment-images` bucketen
+3. Klikk på de tre prikkene (⋮) ved siden av bucket-navnet
+4. Velg "Edit bucket"
+5. **Slå PÅ "Public bucket"** (toggle til på)
+6. Klikk "Save"
+7. Refresh appen - bildene skal nå vises!
 
 ---
 
