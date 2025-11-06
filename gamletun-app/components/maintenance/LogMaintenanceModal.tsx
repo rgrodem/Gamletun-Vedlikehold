@@ -1,8 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import { FaTools, FaTimes } from 'react-icons/fa';
+import { FaTools, FaTimes, FaImage, FaFileAlt, FaTrash } from 'react-icons/fa';
 import { createClient } from '@/lib/supabase/client';
+import { uploadFile, formatFileSize } from '@/lib/storage';
 
 interface Equipment {
   id: string;
@@ -22,6 +23,26 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
   const [performedDate, setPerformedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [attachments, setAttachments] = useState<File[]>([]);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+
+      // Check file sizes (max 40MB each)
+      const invalidFiles = newFiles.filter(file => file.size > 40 * 1024 * 1024);
+      if (invalidFiles.length > 0) {
+        alert(`Noen filer er for store. Maksimal størrelse er 40 MB per fil.`);
+        return;
+      }
+
+      setAttachments([...attachments, ...newFiles]);
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(attachments.filter((_, i) => i !== index));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,13 +52,8 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
     try {
       const supabase = createClient();
 
-      // Get current user
+      // Get current user (but don't require it)
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        setError('Du må være innlogget for å logge vedlikehold');
-        setLoading(false);
-        return;
-      }
 
       // First, create or get maintenance type
       let maintenanceTypeId = null;
@@ -69,18 +85,50 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
         }
       }
 
-      // Create maintenance log with current user as performed_by
-      const { error: logError } = await supabase
+      // Create maintenance log (performed_by is optional)
+      const { data: newLog, error: logError } = await supabase
         .from('maintenance_logs')
         .insert({
           equipment_id: equipment.id,
           maintenance_type_id: maintenanceTypeId,
           description: description || null,
           performed_date: performedDate,
-          performed_by: user.id,
-        });
+          performed_by: user?.id || null, // Allow null if user doesn't exist
+        })
+        .select()
+        .single();
 
       if (logError) throw logError;
+
+      // Upload attachments if any
+      if (attachments.length > 0 && newLog) {
+        for (const file of attachments) {
+          try {
+            // Upload file to storage
+            const result = await uploadFile('maintenance-attachments', file, newLog.id);
+
+            // Determine attachment type
+            const attachmentType = file.type.startsWith('image/') ? 'image' :
+                                   file.type === 'application/pdf' ? 'document' : 'form';
+
+            // Save attachment record to database
+            await supabase
+              .from('maintenance_attachments')
+              .insert({
+                maintenance_log_id: newLog.id,
+                file_name: file.name,
+                file_path: result.path,
+                file_size: file.size,
+                file_type: file.type,
+                attachment_type: attachmentType,
+                uploaded_by: user?.id || null,
+              });
+          } catch (uploadError) {
+            console.error('Error uploading attachment:', uploadError);
+            // Continue with other files even if one fails
+          }
+        }
+      }
 
       onSuccess();
       onClose();
@@ -162,6 +210,60 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
               required
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
             />
+          </div>
+
+          {/* File Attachments */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Vedlegg (bilder/dokumenter)
+            </label>
+            <div className="space-y-3">
+              {/* File input */}
+              <div className="relative">
+                <input
+                  type="file"
+                  onChange={handleFileSelect}
+                  accept="image/*,.pdf"
+                  multiple
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                />
+              </div>
+              <p className="text-xs text-gray-500">
+                Last opp bilder av utført arbeid, vedlikeholdsskjema eller annen dokumentasjon (maks 40 MB per fil)
+              </p>
+
+              {/* Selected files list */}
+              {attachments.length > 0 && (
+                <div className="space-y-2">
+                  {attachments.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        {file.type.startsWith('image/') ? (
+                          <FaImage className="text-blue-500 flex-shrink-0" />
+                        ) : (
+                          <FaFileAlt className="text-red-500 flex-shrink-0" />
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
+                          <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeAttachment(index)}
+                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0 touch-manipulation min-w-[40px] min-h-[40px]"
+                        aria-label="Fjern fil"
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Buttons */}

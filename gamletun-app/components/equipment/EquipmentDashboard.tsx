@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { FaTruckMoving, FaTools, FaPlus, FaTractor, FaEdit } from 'react-icons/fa';
 import { MdConstruction, MdOutlineSpeed } from 'react-icons/md';
 import { HiDocumentReport, HiClock } from 'react-icons/hi';
@@ -28,6 +29,7 @@ interface Equipment {
   category_id: string | null;
   category: Category | null;
   notes: string | null;
+  image_url: string | null;
 }
 
 interface MaintenanceLog {
@@ -123,14 +125,27 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-4">
-                      <div
-                        className="p-4 rounded-2xl shadow-lg group-hover:scale-110 transition-transform text-3xl"
-                        style={{
-                          background: `linear-gradient(to bottom right, ${categoryColor}, ${categoryColor}dd)`
-                        }}
-                      >
-                        {categoryIcon}
-                      </div>
+                      {/* Equipment Image or Icon */}
+                      {item.image_url ? (
+                        <div className="relative w-16 h-16 rounded-2xl shadow-lg group-hover:scale-110 transition-transform overflow-hidden flex-shrink-0">
+                          <Image
+                            src={item.image_url}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                            sizes="64px"
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          className="p-4 rounded-2xl shadow-lg group-hover:scale-110 transition-transform text-3xl flex-shrink-0"
+                          style={{
+                            background: `linear-gradient(to bottom right, ${categoryColor}, ${categoryColor}dd)`
+                          }}
+                        >
+                          {categoryIcon}
+                        </div>
+                      )}
                       <div>
                         <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">{item.name}</h3>
                         <p className="text-sm text-gray-600">{item.model || 'Ingen modell'}</p>
