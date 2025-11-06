@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { FaArrowLeft, FaTools, FaEdit, FaTrash, FaFileExport } from 'react-icons/fa';
 import { HiClock } from 'react-icons/hi';
 import MaintenanceHistory from '../maintenance/MaintenanceHistory';
 import LogMaintenanceModal from '../maintenance/LogMaintenanceModal';
 import EditEquipmentModal from './EditEquipmentModal';
+import DocumentSection from './DocumentSection';
 
 interface Category {
   id: string;
@@ -119,27 +121,47 @@ export default function EquipmentDetailClient({
           </Link>
 
           <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                {equipment.category && (
-                  <span className="text-2xl sm:text-3xl">{equipment.category.icon}</span>
-                )}
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">{equipment.name}</h1>
-              </div>
-              {equipment.model && (
-                <p className="text-sm sm:text-base text-gray-600 mb-2">Modell: {equipment.model}</p>
+            <div className="flex gap-4">
+              {/* Equipment Image or Icon */}
+              {equipment.image_url ? (
+                <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl shadow-lg overflow-hidden flex-shrink-0">
+                  <Image
+                    src={equipment.image_url}
+                    alt={equipment.name}
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 80px, 96px"
+                  />
+                </div>
+              ) : (
+                equipment.category && (
+                  <div
+                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl shadow-lg flex items-center justify-center text-4xl sm:text-5xl flex-shrink-0"
+                    style={{
+                      background: `linear-gradient(to bottom right, ${equipment.category.color}, ${equipment.category.color}dd)`
+                    }}
+                  >
+                    {equipment.category.icon}
+                  </div>
+                )
               )}
-              <div className="flex flex-wrap items-center gap-3">
-                <span
-                  className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(equipment.status)}`}
-                >
-                  {getStatusText(equipment.status)}
-                </span>
-                {equipment.category && (
-                  <span className="text-sm text-gray-500">
-                    {equipment.category.name}
-                  </span>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{equipment.name}</h1>
+                {equipment.model && (
+                  <p className="text-sm sm:text-base text-gray-600 mb-2">Modell: {equipment.model}</p>
                 )}
+                <div className="flex flex-wrap items-center gap-3">
+                  <span
+                    className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(equipment.status)}`}
+                  >
+                    {getStatusText(equipment.status)}
+                  </span>
+                  {equipment.category && (
+                    <span className="text-sm text-gray-500">
+                      {equipment.category.name}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -220,6 +242,11 @@ export default function EquipmentDetailClient({
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Documents */}
+          <div className="lg:col-span-3">
+            <DocumentSection equipmentId={equipment.id} onUpdate={handleSuccess} />
           </div>
 
           {/* Maintenance History */}

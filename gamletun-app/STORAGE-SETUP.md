@@ -70,7 +70,7 @@ Nå må vi opprette de tre storage buckets:
    - Klikk **"New bucket"** igjen
    - Fyll inn:
      - **Name:** `maintenance-attachments`
-     - **Public bucket:** ❌ **Ikke huk av**
+     - **Public bucket:** ✅ **HUK AV** (bilder/dokumenter må være offentlige for å vises)
      - **Allowed MIME types:** `image/jpeg, image/png, image/webp, image/heic, application/pdf`
      - **Max file size:** `10 MB`
    - Klikk **"Create bucket"**

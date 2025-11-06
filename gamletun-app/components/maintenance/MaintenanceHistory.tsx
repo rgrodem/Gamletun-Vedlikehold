@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { FaTools, FaCalendar, FaEdit } from 'react-icons/fa';
+import { useState, useEffect } from 'react';
+import { FaTools, FaCalendar, FaEdit, FaImage, FaFilePdf, FaFileAlt, FaDownload } from 'react-icons/fa';
 import { HiClock } from 'react-icons/hi';
+import Image from 'next/image';
 import EditMaintenanceModal from './EditMaintenanceModal';
+import { createClient } from '@/lib/supabase/client';
 
 interface MaintenanceLog {
   id: string;
@@ -15,6 +17,16 @@ interface MaintenanceLog {
   } | null;
 }
 
+interface MaintenanceAttachment {
+  id: string;
+  maintenance_log_id: string;
+  file_name: string;
+  file_path: string;
+  file_type: string | null;
+  attachment_type: string | null;
+  created_at: string;
+}
+
 interface MaintenanceHistoryProps {
   logs: MaintenanceLog[];
   equipmentName: string;
@@ -23,6 +35,56 @@ interface MaintenanceHistoryProps {
 
 export default function MaintenanceHistory({ logs, equipmentName, onUpdate }: MaintenanceHistoryProps) {
   const [editingLog, setEditingLog] = useState<MaintenanceLog | null>(null);
+  const [attachments, setAttachments] = useState<Record<string, MaintenanceAttachment[]>>({});
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const supabase = createClient();
+
+  useEffect(() => {
+    loadAllAttachments();
+  }, [logs]);
+
+  const loadAllAttachments = async () => {
+    if (logs.length === 0) return;
+
+    try {
+      const logIds = logs.map(log => log.id);
+      const { data, error } = await supabase
+        .from('maintenance_attachments')
+        .select('*')
+        .in('maintenance_log_id', logIds)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Group attachments by log ID
+      const grouped: Record<string, MaintenanceAttachment[]> = {};
+      data?.forEach(attachment => {
+        if (!grouped[attachment.maintenance_log_id]) {
+          grouped[attachment.maintenance_log_id] = [];
+        }
+        grouped[attachment.maintenance_log_id].push(attachment);
+      });
+
+      setAttachments(grouped);
+    } catch (error) {
+      console.error('Error loading attachments:', error);
+    }
+  };
+
+  const getFileUrl = (filePath: string) => {
+    const { data } = supabase.storage
+      .from('maintenance-attachments')
+      .getPublicUrl(filePath);
+    return data.publicUrl;
+  };
+
+  const handleDownload = (attachment: MaintenanceAttachment) => {
+    const url = getFileUrl(attachment.file_path);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = attachment.file_name;
+    link.click();
+  };
 
   if (logs.length === 0) {
     return (
@@ -91,10 +153,75 @@ export default function MaintenanceHistory({ logs, equipmentName, onUpdate }: Ma
                   {log.description}
                 </p>
               )}
+
+              {/* Attachments */}
+              {attachments[log.id] && attachments[log.id].length > 0 && (
+                <div className="mt-4">
+                  <p className="text-xs font-semibold text-gray-600 mb-2">Vedlegg:</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {attachments[log.id].map((attachment) => {
+                      const isImage = attachment.file_type?.startsWith('image/');
+                      const fileUrl = getFileUrl(attachment.file_path);
+
+                      return (
+                        <div key={attachment.id} className="relative group">
+                          {isImage ? (
+                            <button
+                              onClick={() => setSelectedImage(fileUrl)}
+                              className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-400 transition-all cursor-pointer"
+                            >
+                              <Image
+                                src={fileUrl}
+                                alt={attachment.file_name}
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+                              />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleDownload(attachment)}
+                              className="w-full aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-400 transition-all cursor-pointer bg-gray-50 flex flex-col items-center justify-center gap-2 p-2"
+                            >
+                              {attachment.file_type === 'application/pdf' ? (
+                                <FaFilePdf className="text-3xl text-red-500" />
+                              ) : (
+                                <FaFileAlt className="text-3xl text-gray-500" />
+                              )}
+                              <p className="text-xs text-gray-600 text-center truncate w-full px-1">
+                                {attachment.file_name}
+                              </p>
+                              <FaDownload className="text-xs text-blue-600" />
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
       </div>
+
+      {/* Image Modal */}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] w-full h-full">
+            <Image
+              src={selectedImage}
+              alt="Vedlegg"
+              fill
+              className="object-contain"
+              sizes="(max-width: 1024px) 100vw, 1024px"
+            />
+          </div>
+        </div>
+      )}
 
       {/* Edit Modal */}
       {editingLog && (
