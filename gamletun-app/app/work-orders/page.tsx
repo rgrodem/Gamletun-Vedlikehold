@@ -3,7 +3,6 @@ import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import UserMenu from '@/components/auth/UserMenu';
 import WorkOrderList from '@/components/work-orders/WorkOrderList';
-import { WorkOrder } from '@/lib/work-orders';
 
 // Revalidate every 60 seconds
 export const revalidate = 60;
@@ -106,7 +105,7 @@ export default async function WorkOrdersPage({
         {workOrders && workOrders.length > 0 ? (
           <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100">
             <WorkOrderList
-              workOrders={workOrders as WorkOrder[]}
+              workOrders={workOrders as any[]}
               showEquipmentName={true}
               onStatusChange={() => {}}
             />
