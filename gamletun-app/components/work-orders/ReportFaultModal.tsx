@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { FaTimes, FaExclamationTriangle } from 'react-icons/fa';
 import { createWorkOrder, WorkOrderPriority } from '@/lib/work-orders';
-import FileUpload from '../uploads/FileUpload';
 
 interface Equipment {
   id: string;
