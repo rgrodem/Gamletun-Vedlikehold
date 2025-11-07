@@ -11,9 +11,10 @@ export const revalidate = 60;
 export default async function WorkOrdersPage({
   searchParams,
 }: {
-  searchParams: { filter?: string };
+  searchParams: Promise<{ filter?: string }>;
 }) {
   const supabase = await createClient();
+  const params = await searchParams;
 
   // Get current user
   const {
@@ -30,7 +31,7 @@ export default async function WorkOrdersPage({
     .order('created_at', { ascending: false });
 
   // Apply filters from URL
-  const filter = searchParams.filter;
+  const filter = params.filter;
   const today = new Date().toISOString();
   const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
