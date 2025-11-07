@@ -2,7 +2,7 @@ import { FaTractor } from 'react-icons/fa';
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
 import UserMenu from '@/components/auth/UserMenu';
-import WorkOrderList from '@/components/work-orders/WorkOrderList';
+import WorkOrderListWrapper from '@/components/work-orders/WorkOrderListWrapper';
 
 // Revalidate every 60 seconds
 export const revalidate = 60;
@@ -104,10 +104,9 @@ export default async function WorkOrdersPage({
 
         {workOrders && workOrders.length > 0 ? (
           <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100">
-            <WorkOrderList
+            <WorkOrderListWrapper
               workOrders={workOrders as any[]}
               showEquipmentName={true}
-              onStatusChange={() => {}}
             />
           </div>
         ) : (
