@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FaTimes, FaEdit, FaTrash, FaComment, FaExclamationTriangle } from 'react-icons/fa';
+import { FaTimes, FaEdit, FaTrash, FaComment, FaExclamationTriangle, FaPlay, FaPause, FaCheckCircle } from 'react-icons/fa';
 import {
   WorkOrder,
   WorkOrderComment,
+  WorkOrderStatus,
   getWorkOrderComments,
   addWorkOrderComment,
   updateWorkOrder,
@@ -87,6 +88,22 @@ export default function WorkOrderDetailModal({ workOrder, onClose, onUpdate }: W
     } catch (error) {
       console.error('Error deleting work order:', error);
       alert('Kunne ikke slette arbeidsordre');
+    }
+  };
+
+  const handleStatusChange = async (newStatus: WorkOrderStatus) => {
+    try {
+      await updateWorkOrder(workOrder.id, { status: newStatus });
+      await addWorkOrderComment(
+        workOrder.id,
+        `Status endret fra ${statusLabels[workOrder.status]} til ${statusLabels[newStatus]}`,
+        workOrder.status,
+        newStatus
+      );
+      onUpdate();
+    } catch (error) {
+      console.error('Error changing status:', error);
+      alert('Kunne ikke endre status');
     }
   };
 
@@ -192,6 +209,54 @@ export default function WorkOrderDetailModal({ workOrder, onClose, onUpdate }: W
 
         {/* Details */}
         <div className="p-6 space-y-6">
+          {/* Status Change Section */}
+          {!['completed', 'closed'].includes(workOrder.status) && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-3">Endre status</h3>
+              <div className="flex flex-wrap gap-2">
+                {workOrder.status !== 'open' && (
+                  <button
+                    onClick={() => handleStatusChange('open')}
+                    className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm"
+                  >
+                    <FaPause className="text-sm" />
+                    <span>Tilbake til Åpen</span>
+                  </button>
+                )}
+                {workOrder.status === 'open' && (
+                  <button
+                    onClick={() => handleStatusChange('in_progress')}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                  >
+                    <FaPlay className="text-sm" />
+                    <span>Start arbeid</span>
+                  </button>
+                )}
+                {workOrder.status === 'in_progress' && (
+                  <button
+                    onClick={() => handleStatusChange('waiting_parts')}
+                    className="flex items-center gap-2 px-4 py-2 bg-orange-100 border-2 border-orange-300 text-orange-700 rounded-lg hover:bg-orange-200 transition-colors font-medium text-sm"
+                  >
+                    <FaPause className="text-sm" />
+                    <span>Venter deler</span>
+                  </button>
+                )}
+                {workOrder.status === 'waiting_parts' && (
+                  <button
+                    onClick={() => handleStatusChange('in_progress')}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+                  >
+                    <FaPlay className="text-sm" />
+                    <span>Fortsett arbeid</span>
+                  </button>
+                )}
+              </div>
+              <p className="text-xs text-gray-600 mt-2">
+                Nåværende status: <span className="font-semibold">{statusLabels[workOrder.status]}</span>
+              </p>
+            </div>
+          )}
+
           {/* Info Grid */}
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             <div>

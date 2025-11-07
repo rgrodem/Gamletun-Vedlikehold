@@ -229,6 +229,14 @@ export async function updateWorkOrder(
 ): Promise<WorkOrder> {
   const supabase = createClient();
 
+  // First, get the current work order to access equipment_id
+  const { data: currentWorkOrder } = await supabase
+    .from('work_orders')
+    .select('equipment_id, status')
+    .eq('id', id)
+    .single();
+
+  // Update the work order
   const { data, error } = await supabase
     .from('work_orders')
     .update(updates)
@@ -239,6 +247,57 @@ export async function updateWorkOrder(
   if (error) {
     console.error('Error updating work order:', error);
     throw error;
+  }
+
+  // Update equipment status based on work order status change
+  if (currentWorkOrder && updates.status && updates.status !== currentWorkOrder.status) {
+    const equipmentId = currentWorkOrder.equipment_id;
+
+    // If work order is starting (open -> in_progress or scheduled -> in_progress)
+    if (updates.status === 'in_progress') {
+      await supabase
+        .from('equipment')
+        .update({ status: 'maintenance' })
+        .eq('id', equipmentId);
+    }
+
+    // If work order is completed or closed, check if there are other active work orders
+    if (updates.status === 'completed' || updates.status === 'closed') {
+      // Check for other active work orders on this equipment
+      const { data: activeWorkOrders } = await supabase
+        .from('work_orders')
+        .select('id')
+        .eq('equipment_id', equipmentId)
+        .in('status', ['in_progress', 'waiting_parts'])
+        .neq('id', id)
+        .limit(1);
+
+      // Only set equipment back to active if no other work orders are in progress
+      if (!activeWorkOrders || activeWorkOrders.length === 0) {
+        await supabase
+          .from('equipment')
+          .update({ status: 'active' })
+          .eq('id', equipmentId);
+      }
+    }
+
+    // If going back to open from in_progress, check if no other work orders are active
+    if (currentWorkOrder.status === 'in_progress' && updates.status === 'open') {
+      const { data: activeWorkOrders } = await supabase
+        .from('work_orders')
+        .select('id')
+        .eq('equipment_id', equipmentId)
+        .in('status', ['in_progress', 'waiting_parts'])
+        .neq('id', id)
+        .limit(1);
+
+      if (!activeWorkOrders || activeWorkOrders.length === 0) {
+        await supabase
+          .from('equipment')
+          .update({ status: 'active' })
+          .eq('id', equipmentId);
+      }
+    }
   }
 
   return data;
