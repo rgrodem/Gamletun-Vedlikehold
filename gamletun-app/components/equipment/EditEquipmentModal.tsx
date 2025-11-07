@@ -18,6 +18,7 @@ interface Equipment {
   status: string;
   category_id: string | null;
   notes: string | null;
+  image_url: string | null;
 }
 
 interface EditEquipmentModalProps {
@@ -35,6 +36,7 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
   const [status, setStatus] = useState(equipment.status);
   const [categoryId, setCategoryId] = useState(equipment.category_id || '');
   const [notes, setNotes] = useState(equipment.notes || '');
+  const [imageUrl, setImageUrl] = useState(equipment.image_url || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -57,6 +59,7 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
           status,
           category_id: categoryId || null,
           notes: notes.trim() || null,
+          image_url: imageUrl.trim() || null,
         })
         .eq('id', equipment.id);
 
@@ -218,6 +221,21 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
               onChange={(e) => setPurchaseDate(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
+          </div>
+
+          {/* Image URL */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Bilde URL
+            </label>
+            <input
+              type="url"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="https://eksempel.no/bilde.jpg"
+            />
+            <p className="text-xs text-gray-500 mt-1">Direktelenke til et bilde av utstyret</p>
           </div>
 
           {/* Notes */}

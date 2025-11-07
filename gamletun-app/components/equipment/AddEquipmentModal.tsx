@@ -21,6 +21,7 @@ export default function AddEquipmentModal({ categories, onClose, onSuccess }: Ad
   const [name, setName] = useState('');
   const [model, setModel] = useState('');
   const [categoryId, setCategoryId] = useState('');
+  const [imageUrl, setImageUrl] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -38,6 +39,7 @@ export default function AddEquipmentModal({ categories, onClose, onSuccess }: Ad
           name,
           model: model || null,
           category_id: categoryId || null,
+          image_url: imageUrl || null,
           status: 'active',
         });
 
@@ -120,6 +122,21 @@ export default function AddEquipmentModal({ categories, onClose, onSuccess }: Ad
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Image URL */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Bilde URL
+            </label>
+            <input
+              type="url"
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              placeholder="https://eksempel.no/bilde.jpg"
+            />
+            <p className="text-xs text-gray-500 mt-1">Direktelenke til et bilde av utstyret</p>
           </div>
 
           {/* Buttons */}

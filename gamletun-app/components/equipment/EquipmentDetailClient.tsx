@@ -28,6 +28,7 @@ interface Equipment {
   category: Category | null;
   category_id: string | null;
   notes: string | null;
+  image_url: string | null;
 }
 
 interface MaintenanceLog {
@@ -119,11 +120,19 @@ export default function EquipmentDetailClient({
           </Link>
 
           <div className="flex items-start justify-between">
-            <div>
+            <div className="flex-1">
               <div className="flex items-center gap-3 mb-2">
-                {equipment.category && (
+                {equipment.image_url ? (
+                  <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg flex-shrink-0">
+                    <img
+                      src={equipment.image_url}
+                      alt={equipment.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ) : equipment.category ? (
                   <span className="text-3xl">{equipment.category.icon}</span>
-                )}
+                ) : null}
                 <h1 className="text-3xl font-bold text-gray-900">{equipment.name}</h1>
               </div>
               {equipment.model && (

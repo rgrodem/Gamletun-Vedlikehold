@@ -150,10 +150,10 @@ export default function WorkOrderList({
                       {/* Title and Equipment */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          {showEquipmentName && wo.equipment && (
+                          {showEquipmentName && wo.equipment?.name && (
                             <span className="font-semibold text-gray-900">{wo.equipment.name}</span>
                           )}
-                          {showEquipmentName && wo.equipment && <span className="text-gray-400">•</span>}
+                          {showEquipmentName && wo.equipment?.name && <span className="text-gray-400">•</span>}
                           <h3 className="font-medium text-gray-900">{wo.title}</h3>
                         </div>
 

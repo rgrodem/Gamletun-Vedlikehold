@@ -29,6 +29,7 @@ interface Equipment {
   category_id: string | null;
   category: Category | null;
   notes: string | null;
+  image_url: string | null;
 }
 
 interface MaintenanceLog {
@@ -135,14 +136,24 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-4">
-                      <div
-                        className="p-4 rounded-2xl shadow-lg group-hover:scale-110 transition-transform text-3xl"
-                        style={{
-                          background: `linear-gradient(to bottom right, ${categoryColor}, ${categoryColor}dd)`
-                        }}
-                      >
-                        {categoryIcon}
-                      </div>
+                      {item.image_url ? (
+                        <div className="relative w-16 h-16 rounded-2xl overflow-hidden shadow-lg group-hover:scale-110 transition-transform">
+                          <img
+                            src={item.image_url}
+                            alt={item.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                      ) : (
+                        <div
+                          className="p-4 rounded-2xl shadow-lg group-hover:scale-110 transition-transform text-3xl"
+                          style={{
+                            background: `linear-gradient(to bottom right, ${categoryColor}, ${categoryColor}dd)`
+                          }}
+                        >
+                          {categoryIcon}
+                        </div>
+                      )}
                       <div>
                         <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">{item.name}</h3>
                         <p className="text-sm text-gray-600">{item.model || 'Ingen modell'}</p>
