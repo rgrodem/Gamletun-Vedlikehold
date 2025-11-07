@@ -8,6 +8,8 @@ import { HiClock } from 'react-icons/hi';
 import MaintenanceHistory from '../maintenance/MaintenanceHistory';
 import LogMaintenanceModal from '../maintenance/LogMaintenanceModal';
 import EditEquipmentModal from './EditEquipmentModal';
+import DocumentSection from './DocumentSection';
+import WorkOrderSection from '../work-orders/WorkOrderSection';
 
 interface Category {
   id: string;
@@ -215,6 +217,16 @@ export default function EquipmentDetailClient({
                 </div>
               </div>
             </div>
+          </div>
+
+          {/* Work Orders */}
+          <div className="lg:col-span-3">
+            <WorkOrderSection equipment={{ id: equipment.id, name: equipment.name }} onUpdate={handleSuccess} />
+          </div>
+
+          {/* Documents */}
+          <div className="lg:col-span-3">
+            <DocumentSection equipmentId={equipment.id} onUpdate={handleSuccess} />
           </div>
 
           {/* Maintenance History */}

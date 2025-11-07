@@ -10,6 +10,7 @@ import { BsCalendar3 } from 'react-icons/bs';
 import AddEquipmentModal from './AddEquipmentModal';
 import LogMaintenanceModal from '../maintenance/LogMaintenanceModal';
 import EditEquipmentModal from './EditEquipmentModal';
+import WorkOrderDashboardCard from '../work-orders/WorkOrderDashboardCard';
 
 interface Category {
   id: string;
@@ -38,9 +39,10 @@ interface Props {
   categories: Category[];
   equipment: Equipment[];
   recentMaintenance: MaintenanceLog[];
+  workOrderCounts: Record<string, number>;
 }
 
-export default function EquipmentDashboard({ categories, equipment, recentMaintenance }: Props) {
+export default function EquipmentDashboard({ categories, equipment, recentMaintenance, workOrderCounts }: Props) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [maintenanceEquipment, setMaintenanceEquipment] = useState<Equipment | null>(null);
   const [editEquipment, setEditEquipment] = useState<Equipment | null>(null);
@@ -57,6 +59,9 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
 
   return (
     <>
+      {/* Work Orders Overview */}
+      <WorkOrderDashboardCard />
+
       {/* Compact Stats Card */}
       <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 mb-6">
         <div className="grid grid-cols-3 gap-3 sm:gap-6">
@@ -110,9 +115,16 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
           {equipment.map((item) => {
             const categoryColor = item.category?.color || '#6b7280';
             const categoryIcon = item.category?.icon || '⚙️';
+            const openWorkOrders = workOrderCounts[item.id] || 0;
 
             return (
-              <div key={item.id} className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:scale-[1.02]">
+              <div key={item.id} className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:scale-[1.02] relative">
+                {/* Work Order Badge */}
+                {openWorkOrders > 0 && (
+                  <div className="absolute top-3 right-3 z-10 bg-red-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-full shadow-lg border-2 border-white animate-pulse">
+                    {openWorkOrders}
+                  </div>
+                )}
                 <Link
                   href={`/equipment/${item.id}`}
                   prefetch={true}
