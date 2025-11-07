@@ -3,11 +3,15 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Gamletun Vedlikehold",
-  description: "Vedlikeholdslogg for gårdsutstyr",
+  description: "Vedlikeholdssystem for Gamletun maskinpark",
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Gamletun",
+  },
+  formatDetection: {
+    telephone: false,
   },
 };
 
@@ -16,7 +20,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: "#10b981",
+  themeColor: "#2563eb",
 };
 
 export default function RootLayout({
