@@ -37,17 +37,17 @@ export default async function WorkOrdersPage({
 
   if (filter === 'overdue') {
     query = query
-      .in('status', ['open', 'scheduled', 'in_progress'])
+      .in('status', ['open', 'scheduled', 'in_progress', 'waiting_parts'])
       .lt('due_date', today);
   } else if (filter === 'thisweek') {
     query = query
-      .in('status', ['open', 'scheduled', 'in_progress'])
+      .in('status', ['open', 'scheduled', 'in_progress', 'waiting_parts'])
       .gte('due_date', today)
       .lte('due_date', nextWeek);
   } else if (filter === 'faults') {
     query = query
       .eq('type', 'corrective')
-      .in('status', ['open', 'in_progress']);
+      .in('status', ['open', 'in_progress', 'waiting_parts']);
   } else if (filter === 'scheduled') {
     query = query.eq('status', 'scheduled');
   } else if (filter === 'in_progress') {

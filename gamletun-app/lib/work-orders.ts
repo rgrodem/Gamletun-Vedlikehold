@@ -129,14 +129,14 @@ export async function getWorkOrdersDashboard() {
   const { data: overdue } = await supabase
     .from('work_orders')
     .select('id')
-    .in('status', ['open', 'scheduled', 'in_progress'])
+    .in('status', ['open', 'scheduled', 'in_progress', 'waiting_parts'])
     .lt('due_date', today);
 
   // This week
   const { data: thisWeek } = await supabase
     .from('work_orders')
     .select('id')
-    .in('status', ['open', 'scheduled', 'in_progress'])
+    .in('status', ['open', 'scheduled', 'in_progress', 'waiting_parts'])
     .gte('due_date', today)
     .lte('due_date', nextWeek);
 
@@ -145,7 +145,7 @@ export async function getWorkOrdersDashboard() {
     .from('work_orders')
     .select('id')
     .eq('type', 'corrective')
-    .in('status', ['open', 'in_progress']);
+    .in('status', ['open', 'in_progress', 'waiting_parts']);
 
   // Scheduled
   const { data: scheduled } = await supabase
