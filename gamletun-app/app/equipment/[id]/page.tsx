@@ -29,7 +29,11 @@ export default async function EquipmentDetailPage({ params }: PageProps) {
   // Fetch maintenance logs
   const { data: maintenanceLogs } = await supabase
     .from('maintenance_logs')
-    .select('*, maintenance_type:maintenance_types(type_name)')
+    .select(`
+      *,
+      maintenance_type:maintenance_types(type_name),
+      performed_by_profile:performed_by(id, full_name)
+    `)
     .eq('equipment_id', id)
     .order('performed_date', { ascending: false });
 

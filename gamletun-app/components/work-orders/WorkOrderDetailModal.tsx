@@ -371,7 +371,15 @@ export default function WorkOrderDetailModal({ workOrder, onClose, onUpdate }: W
                       </div>
                     )}
                     <p className="text-sm text-gray-900 mb-2">{comment.comment}</p>
-                    <p className="text-xs text-gray-500">{formatDate(comment.created_at)}</p>
+                    <div className="flex items-center gap-2 text-xs text-gray-500">
+                      <span>{formatDate(comment.created_at)}</span>
+                      {comment.user_profile && (
+                        <>
+                          <span className="text-gray-300">•</span>
+                          <span>{comment.user_profile.full_name}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
