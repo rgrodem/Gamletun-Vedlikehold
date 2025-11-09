@@ -45,8 +45,8 @@ export default async function CategoryDetailPage({
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 md:h-20">
             <Link href="/" className="flex items-center gap-2 sm:gap-3">
-              <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2 sm:p-2.5 rounded-xl shadow-lg">
-                <FaTractor className="text-xl sm:text-2xl text-white" />
+              <div className="bg-white p-2 rounded-xl shadow-lg">
+                <Image src="/logo.png" alt="Gamletun Gaard" width={48} height={48} className="object-contain" priority />
               </div>
               <div>
                 <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">

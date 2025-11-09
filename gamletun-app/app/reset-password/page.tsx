@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { FaTractor, FaLock, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
+import { FaLock, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
+import Image from 'next/image';
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState('');
@@ -166,10 +167,10 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-md">
         {/* Logo and Header */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center bg-gradient-to-br from-blue-600 to-indigo-600 p-4 rounded-2xl shadow-xl mb-4">
-            <FaTractor className="text-5xl text-white" />
+          <div className="inline-flex items-center justify-center bg-white p-6 rounded-2xl shadow-xl mb-4">
+            <div className="relative h-20 w-48"><Image src="/logo.png" alt="Gamletun Gaard" fill className="object-contain" priority /></div>
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Nytt passord
           </h1>
           <p className="text-gray-600">Skriv inn ditt nye passord</p>
