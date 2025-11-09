@@ -10,6 +10,7 @@ import MaintenanceHistory from '../maintenance/MaintenanceHistory';
 import LogMaintenanceModal from '../maintenance/LogMaintenanceModal';
 import EditEquipmentModal from './EditEquipmentModal';
 import WorkOrderSection from '../work-orders/WorkOrderSection';
+import DocumentSection from './DocumentSection';
 
 interface Category {
   id: string;
@@ -247,6 +248,11 @@ export default function EquipmentDetailClient({
           {/* Work Orders */}
           <div className="lg:col-span-3">
             <WorkOrderSection equipment={{ id: equipment.id, name: equipment.name }} onUpdate={handleSuccess} />
+          </div>
+
+          {/* Documents */}
+          <div className="lg:col-span-3">
+            <DocumentSection equipmentId={equipment.id} onUpdate={handleSuccess} />
           </div>
 
           {/* Maintenance History */}

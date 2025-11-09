@@ -11,7 +11,6 @@ import { BsCalendar3 } from 'react-icons/bs';
 import AddEquipmentModal from './AddEquipmentModal';
 import LogMaintenanceModal from '../maintenance/LogMaintenanceModal';
 import EditEquipmentModal from './EditEquipmentModal';
-import WorkOrderDashboardCard from '../work-orders/WorkOrderDashboardCard';
 
 interface Category {
   id: string;
@@ -41,10 +40,9 @@ interface Props {
   categories: Category[];
   equipment: Equipment[];
   recentMaintenance: MaintenanceLog[];
-  workOrderCounts: Record<string, number>;
 }
 
-export default function EquipmentDashboard({ categories, equipment, recentMaintenance, workOrderCounts }: Props) {
+export default function EquipmentDashboard({ categories, equipment, recentMaintenance }: Props) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [maintenanceEquipment, setMaintenanceEquipment] = useState<Equipment | null>(null);
   const [editEquipment, setEditEquipment] = useState<Equipment | null>(null);
@@ -61,38 +59,44 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
 
   return (
     <>
-      {/* Work Orders Overview */}
-      <WorkOrderDashboardCard />
-
       {/* Compact Stats Card */}
       <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 mb-6">
         <div className="grid grid-cols-3 gap-3 sm:gap-6">
           {/* Totalt Utstyr */}
-          <div className="flex flex-col items-center text-center">
-            <div className="bg-blue-100 p-2 sm:p-3 rounded-xl mb-2">
+          <Link
+            href="/overview/equipment"
+            className="flex flex-col items-center text-center hover:bg-blue-50 rounded-xl p-2 transition-colors cursor-pointer group"
+          >
+            <div className="bg-blue-100 p-2 sm:p-3 rounded-xl mb-2 group-hover:scale-110 transition-transform">
               <MdConstruction className="text-xl sm:text-2xl text-blue-600" />
             </div>
             <p className="text-xs sm:text-sm text-gray-500 mb-1">Utstyr</p>
-            <p className="text-xl sm:text-2xl font-bold text-gray-900">{totalEquipment}</p>
-          </div>
+            <p className="text-xl sm:text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{totalEquipment}</p>
+          </Link>
 
           {/* Kategorier */}
-          <div className="flex flex-col items-center text-center border-x border-gray-200">
-            <div className="bg-green-100 p-2 sm:p-3 rounded-xl mb-2">
+          <Link
+            href="/overview/categories"
+            className="flex flex-col items-center text-center border-x border-gray-200 hover:bg-green-50 rounded-xl p-2 transition-colors cursor-pointer group"
+          >
+            <div className="bg-green-100 p-2 sm:p-3 rounded-xl mb-2 group-hover:scale-110 transition-transform">
               <FaTools className="text-xl sm:text-2xl text-green-600" />
             </div>
             <p className="text-xs sm:text-sm text-gray-500 mb-1">Kategorier</p>
-            <p className="text-xl sm:text-2xl font-bold text-gray-900">{categories.length}</p>
-          </div>
+            <p className="text-xl sm:text-2xl font-bold text-gray-900 group-hover:text-green-600 transition-colors">{categories.length}</p>
+          </Link>
 
           {/* Vedlikehold */}
-          <div className="flex flex-col items-center text-center">
-            <div className="bg-purple-100 p-2 sm:p-3 rounded-xl mb-2">
+          <Link
+            href="/overview/maintenance"
+            className="flex flex-col items-center text-center hover:bg-purple-50 rounded-xl p-2 transition-colors cursor-pointer group"
+          >
+            <div className="bg-purple-100 p-2 sm:p-3 rounded-xl mb-2 group-hover:scale-110 transition-transform">
               <BsCalendar3 className="text-xl sm:text-2xl text-purple-600" />
             </div>
             <p className="text-xs sm:text-sm text-gray-500 mb-1">30 dager</p>
-            <p className="text-xl sm:text-2xl font-bold text-gray-900">{maintenanceLast30Days}</p>
-          </div>
+            <p className="text-xl sm:text-2xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors">{maintenanceLast30Days}</p>
+          </Link>
         </div>
       </div>
 
@@ -117,16 +121,9 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
           {equipment.map((item) => {
             const categoryColor = item.category?.color || '#6b7280';
             const categoryIcon = item.category?.icon || '⚙️';
-            const openWorkOrders = workOrderCounts[item.id] || 0;
 
             return (
-              <div key={item.id} className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:scale-[1.02] relative">
-                {/* Work Order Badge */}
-                {openWorkOrders > 0 && (
-                  <div className="absolute top-3 right-3 z-10 bg-red-500 text-white text-xs font-bold px-2.5 py-1.5 rounded-full shadow-lg border-2 border-white animate-pulse">
-                    {openWorkOrders}
-                  </div>
-                )}
+              <div key={item.id} className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:scale-[1.02]">
                 <Link
                   href={`/equipment/${item.id}`}
                   prefetch={true}

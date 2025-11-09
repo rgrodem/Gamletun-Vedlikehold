@@ -1,0 +1,124 @@
+import { FaTractor, FaArrowLeft } from 'react-icons/fa';
+import { createClient } from '@/lib/supabase/server';
+import Link from 'next/link';
+import UserMenu from '@/components/auth/UserMenu';
+
+export const revalidate = 60;
+
+export default async function CategoriesOverviewPage() {
+  const supabase = await createClient();
+
+  // Get current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Fetch all categories with equipment count
+  const { data: categories } = await supabase
+    .from('categories')
+    .select(`
+      *,
+      equipment(count)
+    `)
+    .order('name');
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Navigation */}
+      <nav className="bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16 md:h-20">
+            <Link href="/" className="flex items-center gap-2 sm:gap-3">
+              <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2 sm:p-2.5 rounded-xl shadow-lg">
+                <FaTractor className="text-xl sm:text-2xl text-white" />
+              </div>
+              <div>
+                <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                  Gamletun Vedlikehold
+                </h1>
+                <p className="text-xs text-gray-500 hidden sm:block">Kategorioversikt</p>
+              </div>
+            </Link>
+            <div className="flex items-center gap-2 sm:gap-4">
+              {user && <UserMenu email={user.email || ''} />}
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-4 transition-colors"
+          >
+            <FaArrowLeft />
+            <span>Tilbake til oversikt</span>
+          </Link>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Kategorier</h1>
+          <p className="text-gray-600">
+            {categories?.length || 0} {categories?.length === 1 ? 'kategori' : 'kategorier'}
+          </p>
+        </div>
+
+        {/* Categories Grid */}
+        {categories && categories.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {categories.map((category: any) => {
+              const equipmentCount = category.equipment?.[0]?.count || 0;
+
+              return (
+                <Link
+                  key={category.id}
+                  href={`/overview/categories/${category.id}`}
+                  className="group bg-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:scale-105"
+                >
+                  <div className="flex items-start gap-4">
+                    <div
+                      className="p-4 rounded-2xl text-4xl shadow-lg group-hover:scale-110 transition-transform"
+                      style={{
+                        background: `linear-gradient(to bottom right, ${category.color}, ${category.color}dd)`,
+                      }}
+                    >
+                      {category.icon}
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors mb-1">
+                        {category.name}
+                      </h3>
+                      <p className="text-sm text-gray-600">
+                        {equipmentCount} {equipmentCount === 1 ? 'utstyr' : 'utstyr'}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl p-12 text-center shadow-lg border border-gray-100">
+            <div className="text-6xl mb-4">📂</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Ingen kategorier</h3>
+            <p className="text-gray-600 mb-6">Opprett kategorier for å organisere utstyret ditt</p>
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all font-semibold"
+            >
+              Gå til dashboard
+            </Link>
+          </div>
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="mt-16 bg-white/50 backdrop-blur-sm border-t border-gray-200 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <p className="text-sm text-gray-600">© 2025 Gamletun. Alle rettigheter reservert.</p>
+          <p className="text-xs text-gray-500 mt-1">www.gamletun.no</p>
+        </div>
+      </footer>
+    </div>
+  );
+}
