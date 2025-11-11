@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FaTruckMoving, FaTools, FaPlus, FaTractor, FaEdit } from 'react-icons/fa';
+import { FaTruckMoving, FaTools, FaPlus, FaTractor, FaEdit, FaHandPaper, FaCalendarAlt } from 'react-icons/fa';
 import { MdConstruction, MdOutlineSpeed } from 'react-icons/md';
 import { HiDocumentReport, HiClock } from 'react-icons/hi';
 import { BsCalendar3 } from 'react-icons/bs';
@@ -98,6 +98,39 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
             <p className="text-xl sm:text-2xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors">{maintenanceLast30Days}</p>
           </Link>
         </div>
+      </div>
+
+      {/* Reservation Links */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        <Link
+          href="/overview/my-reservations"
+          className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="bg-white/20 p-4 rounded-xl group-hover:scale-110 transition-transform">
+              <FaCalendarAlt className="text-3xl" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold">Mine Reservasjoner</h3>
+              <p className="text-sm text-blue-100 mt-1">Se dine utstyrsreservasjoner</p>
+            </div>
+          </div>
+        </Link>
+
+        <Link
+          href="/overview/in-use"
+          className="bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="bg-white/20 p-4 rounded-xl group-hover:scale-110 transition-transform">
+              <FaHandPaper className="text-3xl" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold">Utstyr i Bruk</h3>
+              <p className="text-sm text-purple-100 mt-1">Se hvem som bruker hva</p>
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* Add Equipment Button */}
