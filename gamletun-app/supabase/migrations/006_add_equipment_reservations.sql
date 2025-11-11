@@ -1,5 +1,10 @@
--- Add 'in_use' status to equipment
-ALTER TYPE equipment_status ADD VALUE IF NOT EXISTS 'in_use';
+-- Add 'in_use' status to equipment (update CHECK constraint)
+ALTER TABLE public.equipment
+DROP CONSTRAINT IF EXISTS equipment_status_check;
+
+ALTER TABLE public.equipment
+ADD CONSTRAINT equipment_status_check
+CHECK (status IN ('active', 'inactive', 'maintenance', 'in_use'));
 
 -- Create equipment_reservations table
 CREATE TABLE IF NOT EXISTS public.equipment_reservations (
