@@ -136,7 +136,7 @@ export default function ReservationModal({ equipment, onClose, onSuccess }: Rese
         <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-t-2xl flex justify-between items-center z-10">
           <div>
             <h2 className="text-2xl font-bold">Reserver Utstyr</h2>
-            <p className="text-sm text-blue-100 mt-1">{equipment.name}</p>
+            <p className="text-sm text-white/90 mt-1">{equipment.name}</p>
           </div>
           <button
             onClick={onClose}

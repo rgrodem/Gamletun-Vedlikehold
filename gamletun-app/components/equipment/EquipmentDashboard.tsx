@@ -112,7 +112,7 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
             </div>
             <div>
               <h3 className="text-lg font-bold">Mine Reservasjoner</h3>
-              <p className="text-sm text-blue-100 mt-1">Se dine utstyrsreservasjoner</p>
+              <p className="text-sm text-white/90 mt-1">Se dine utstyrsreservasjoner</p>
             </div>
           </div>
         </Link>
@@ -127,7 +127,7 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
             </div>
             <div>
               <h3 className="text-lg font-bold">Utstyr i Bruk</h3>
-              <p className="text-sm text-purple-100 mt-1">Se hvem som bruker hva</p>
+              <p className="text-sm text-white/90 mt-1">Se hvem som bruker hva</p>
             </div>
           </div>
         </Link>

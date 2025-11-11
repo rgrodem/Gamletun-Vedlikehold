@@ -128,7 +128,7 @@ export default function InUseClient({ reservations }: InUseClientProps) {
                       )}
                       <div className="flex items-center gap-2 mt-2">
                         <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
-                        <span className="text-xs font-medium text-blue-700">
+                        <span className="text-sm font-bold text-gray-900">
                           {isStarted ? 'Pågår nå' : 'Planlagt'}
                         </span>
                       </div>
