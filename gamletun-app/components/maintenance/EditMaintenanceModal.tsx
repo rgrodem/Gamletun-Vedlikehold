@@ -116,7 +116,7 @@ export default function EditMaintenanceModal({ log, equipmentName, onClose, onSu
               type="text"
               value={typeValue}
               disabled
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-600 cursor-not-allowed"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl bg-gray-50 text-gray-800 cursor-not-allowed"
             />
             <p className="text-xs text-gray-500 mt-1">
               Type kan ikke endres etter opprettelse
@@ -132,7 +132,7 @@ export default function EditMaintenanceModal({ log, equipmentName, onClose, onSu
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 transition-all resize-none text-gray-900 placeholder:text-gray-600"
               placeholder="Beskriv hva som ble gjort..."
             />
           </div>
@@ -147,7 +147,7 @@ export default function EditMaintenanceModal({ log, equipmentName, onClose, onSu
               value={performedDate}
               onChange={(e) => setPerformedDate(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 transition-all text-gray-900"
             />
           </div>
 

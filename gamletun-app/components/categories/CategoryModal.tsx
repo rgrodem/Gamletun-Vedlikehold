@@ -124,7 +124,7 @@ export default function CategoryModal({ category, onClose, onSuccess }: Category
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder:text-gray-600"
               placeholder="F.eks. Gravemaskiner"
               required
             />
@@ -163,7 +163,7 @@ export default function CategoryModal({ category, onClose, onSuccess }: Category
                 type="text"
                 value={customIcon}
                 onChange={(e) => setCustomIcon(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-center text-2xl text-gray-900 placeholder:text-gray-600"
                 placeholder="🌟"
                 maxLength={2}
               />
@@ -211,7 +211,7 @@ export default function CategoryModal({ category, onClose, onSuccess }: Category
                   type="text"
                   value={color}
                   onChange={(e) => setColor(e.target.value)}
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm"
+                  className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm text-gray-900 placeholder:text-gray-600"
                   placeholder="#3b82f6"
                 />
               </div>

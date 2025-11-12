@@ -278,9 +278,24 @@ export async function updateWorkOrder(
 
       // Only set equipment back to active if no other work orders are in progress
       if (!activeWorkOrders || activeWorkOrders.length === 0) {
+        // Check if equipment has an active reservation
+        const now = new Date().toISOString();
+        const { data: activeReservation } = await supabase
+          .from('equipment_reservations')
+          .select('id')
+          .eq('equipment_id', equipmentId)
+          .eq('status', 'active')
+          .lte('start_time', now)
+          .or(`end_time.is.null,end_time.gte.${now}`)
+          .limit(1)
+          .single();
+
+        // Set to 'in_use' if there's an active reservation, otherwise 'active'
+        const newStatus = activeReservation ? 'in_use' : 'active';
+
         await supabase
           .from('equipment')
-          .update({ status: 'active' })
+          .update({ status: newStatus })
           .eq('id', equipmentId);
       }
     }
@@ -296,9 +311,24 @@ export async function updateWorkOrder(
         .limit(1);
 
       if (!activeWorkOrders || activeWorkOrders.length === 0) {
+        // Check if equipment has an active reservation
+        const now = new Date().toISOString();
+        const { data: activeReservation } = await supabase
+          .from('equipment_reservations')
+          .select('id')
+          .eq('equipment_id', equipmentId)
+          .eq('status', 'active')
+          .lte('start_time', now)
+          .or(`end_time.is.null,end_time.gte.${now}`)
+          .limit(1)
+          .single();
+
+        // Set to 'in_use' if there's an active reservation, otherwise 'active'
+        const newStatus = activeReservation ? 'in_use' : 'active';
+
         await supabase
           .from('equipment')
-          .update({ status: 'active' })
+          .update({ status: newStatus })
           .eq('id', equipmentId);
       }
     }

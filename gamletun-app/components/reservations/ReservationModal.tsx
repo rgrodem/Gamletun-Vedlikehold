@@ -206,7 +206,7 @@ export default function ReservationModal({ equipment, onClose, onSuccess }: Rese
                   }}
                   min={new Date().toISOString().split('T')[0]}
                   required
-                  className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900"
                 />
                 <input
                   type="time"
@@ -216,7 +216,7 @@ export default function ReservationModal({ equipment, onClose, onSuccess }: Rese
                     setAvailabilityChecked(false);
                   }}
                   required
-                  className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900"
                 />
               </div>
             </div>
@@ -256,7 +256,7 @@ export default function ReservationModal({ equipment, onClose, onSuccess }: Rese
                   }}
                   min={mode === 'scheduled' ? startDate : new Date().toISOString().split('T')[0]}
                   required
-                  className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900"
                 />
                 <input
                   type="time"
@@ -266,7 +266,7 @@ export default function ReservationModal({ equipment, onClose, onSuccess }: Rese
                     setAvailabilityChecked(false);
                   }}
                   required
-                  className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
+                  className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900"
                 />
               </div>
             </div>
@@ -281,7 +281,7 @@ export default function ReservationModal({ equipment, onClose, onSuccess }: Rese
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 resize-none"
               placeholder="F.eks. hva du skal bruke utstyret til..."
             />
           </div>

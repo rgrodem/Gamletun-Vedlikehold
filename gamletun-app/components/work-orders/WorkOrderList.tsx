@@ -100,27 +100,29 @@ export default function WorkOrderList({
   return (
     <div className="space-y-4">
       {/* Filter Tabs */}
-      <div className="flex flex-wrap gap-2 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
-        {([
-          { key: 'all', label: 'Alle' },
-          { key: 'overdue', label: 'Forfalt' },
-          { key: 'faults', label: 'Feil' },
-          { key: 'scheduled', label: 'Planlagt' },
-          { key: 'in_progress', label: 'Pågår' },
-          { key: 'completed', label: 'Fullført' },
-        ] as { key: FilterTab; label: string }[]).map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 rounded-lg font-medium transition-all touch-manipulation min-h-[40px] ${
-              activeTab === tab.key
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            {tab.label} ({counts[tab.key]})
-          </button>
-        ))}
+      <div className="overflow-x-auto">
+        <div className="flex gap-2 bg-white p-2 rounded-xl shadow-sm border border-gray-200 min-w-min">
+          {([
+            { key: 'all', label: 'Alle' },
+            { key: 'overdue', label: 'Forfalt' },
+            { key: 'faults', label: 'Feil' },
+            { key: 'scheduled', label: 'Planlagt' },
+            { key: 'in_progress', label: 'Pågår' },
+            { key: 'completed', label: 'Fullført' },
+          ] as { key: FilterTab; label: string }[]).map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`px-4 py-2 rounded-lg font-medium transition-all touch-manipulation min-h-[40px] whitespace-nowrap ${
+                activeTab === tab.key
+                  ? 'bg-blue-600 text-white shadow-md'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {tab.label} ({counts[tab.key]})
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Work Orders List */}

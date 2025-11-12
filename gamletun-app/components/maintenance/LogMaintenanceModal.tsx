@@ -176,7 +176,7 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
               value={typeValue}
               onChange={(e) => setTypeValue(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 transition-all text-gray-900 placeholder:text-gray-600"
               placeholder="F.eks. Smøring, Oljeskift, Rust-inspeksjon"
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -193,7 +193,7 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 transition-all resize-none text-gray-900 placeholder:text-gray-600"
               placeholder="Beskriv hva som ble gjort..."
             />
           </div>
@@ -208,7 +208,7 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
               value={performedDate}
               onChange={(e) => setPerformedDate(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 transition-all text-gray-900"
             />
           </div>
 
@@ -225,7 +225,7 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
                   onChange={handleFileSelect}
                   accept="image/*,.pdf"
                   multiple
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
                 />
               </div>
               <p className="text-xs text-gray-500">

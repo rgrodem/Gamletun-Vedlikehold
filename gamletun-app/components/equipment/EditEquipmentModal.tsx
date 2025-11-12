@@ -162,7 +162,7 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder:text-gray-600"
               placeholder="F.eks. Traktor, Gravemaskin"
             />
           </div>
@@ -191,7 +191,7 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
               type="text"
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder:text-gray-600"
               placeholder="F.eks. John Deere 6430"
             />
           </div>
@@ -205,7 +205,7 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
               type="text"
               value={serialNumber}
               onChange={(e) => setSerialNumber(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 placeholder:text-gray-600"
               placeholder="F.eks. ABC123456"
             />
           </div>
@@ -270,7 +270,7 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={4}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none text-gray-900 placeholder:text-gray-600"
               placeholder="Ekstra informasjon om utstyret..."
             />
           </div>

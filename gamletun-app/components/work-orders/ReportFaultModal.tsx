@@ -88,7 +88,7 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all min-h-[44px]"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all min-h-[44px] text-gray-900 placeholder:text-gray-600"
               placeholder="F.eks. Hydraulikk-lekkasje, Lys defekt, Motor starter ikke"
             />
             <p className="text-xs text-gray-500 mt-1">Kort beskrivelse av feilen</p>
@@ -132,7 +132,7 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all resize-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all resize-none text-gray-900 placeholder:text-gray-600"
               placeholder="Detaljert beskrivelse av problemet..."
             />
           </div>

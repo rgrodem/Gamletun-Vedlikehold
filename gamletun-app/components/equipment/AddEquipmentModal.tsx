@@ -87,7 +87,7 @@ export default function AddEquipmentModal({ categories, onClose, onSuccess }: Ad
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 transition-all text-gray-900 placeholder:text-gray-600"
               placeholder="F.eks. Gravemaskin Volvo"
             />
           </div>
@@ -101,7 +101,7 @@ export default function AddEquipmentModal({ categories, onClose, onSuccess }: Ad
               type="text"
               value={model}
               onChange={(e) => setModel(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 transition-all text-gray-900 placeholder:text-gray-600"
               placeholder="F.eks. EC20"
             />
           </div>
@@ -114,7 +114,7 @@ export default function AddEquipmentModal({ categories, onClose, onSuccess }: Ad
             <select
               value={categoryId}
               onChange={(e) => setCategoryId(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 transition-all"
             >
               <option value="">Velg kategori (valgfritt)</option>
               {categories.map((cat) => (
@@ -134,7 +134,7 @@ export default function AddEquipmentModal({ categories, onClose, onSuccess }: Ad
               type="url"
               value={imageUrl}
               onChange={(e) => setImageUrl(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 transition-all"
               placeholder="https://eksempel.no/bilde.jpg"
             />
             <p className="text-xs text-gray-500 mt-1">Direktelenke til et bilde av utstyret</p>

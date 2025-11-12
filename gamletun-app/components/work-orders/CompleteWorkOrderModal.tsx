@@ -149,7 +149,7 @@ export default function CompleteWorkOrderModal({ workOrder, onClose, onSuccess }
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               rows={4}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all resize-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all resize-none text-gray-900 placeholder:text-gray-600"
               placeholder="Beskriv hva som ble gjort, hvilke deler som ble byttet, etc..."
             />
           </div>

@@ -112,7 +112,7 @@ export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all min-h-[44px]"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 transition-all min-h-[44px] text-gray-900 placeholder:text-gray-600"
               placeholder="F.eks. Årlig service, Oljeskift, Smøring"
             />
           </div>
@@ -126,7 +126,7 @@ export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 transition-all resize-none"
               placeholder="Beskriv vedlikeholdsoppgaven..."
             />
           </div>
@@ -141,7 +141,7 @@ export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess
               value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
               required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all min-h-[44px]"
+              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 transition-all min-h-[44px]"
             />
           </div>
 
@@ -192,7 +192,7 @@ export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess
                 step="0.5"
                 value={estimatedHours}
                 onChange={(e) => setEstimatedHours(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all min-h-[44px]"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 transition-all min-h-[44px]"
                 placeholder="F.eks. 2.5"
               />
             </div>
@@ -205,7 +205,7 @@ export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess
                 step="100"
                 value={estimatedCost}
                 onChange={(e) => setEstimatedCost(e.target.value)}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all min-h-[44px]"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 transition-all min-h-[44px]"
                 placeholder="F.eks. 5000"
               />
             </div>
@@ -238,7 +238,7 @@ export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess
                   value={newChecklistItem}
                   onChange={(e) => setNewChecklistItem(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addChecklistItem())}
-                  className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all min-h-[44px]"
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-gray-900 transition-all min-h-[44px] text-gray-900 placeholder:text-gray-600"
                   placeholder="Legg til oppgave..."
                 />
                 <button
