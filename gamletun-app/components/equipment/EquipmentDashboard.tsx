@@ -195,15 +195,18 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
                     </div>
                     <div className={`px-3 py-1 rounded-full ${
                       item.status === 'active' ? 'bg-green-100' :
+                      item.status === 'in_use' ? 'bg-blue-100' :
                       item.status === 'maintenance' ? 'bg-yellow-100' :
                       'bg-gray-100'
                     }`}>
                       <span className={`text-xs font-semibold ${
                         item.status === 'active' ? 'text-green-700' :
+                        item.status === 'in_use' ? 'text-blue-700' :
                         item.status === 'maintenance' ? 'text-yellow-700' :
                         'text-gray-700'
                       }`}>
                         {item.status === 'active' ? 'Aktiv' :
+                         item.status === 'in_use' ? 'I bruk' :
                          item.status === 'maintenance' ? 'Vedlikehold' :
                          'Inaktiv'}
                       </span>

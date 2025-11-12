@@ -142,10 +142,12 @@ export default async function CategoryDetailPage({
                 <div className="p-6">
                   <div className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
                     item.status === 'active' ? 'bg-green-100 text-green-700' :
+                    item.status === 'in_use' ? 'bg-blue-100 text-blue-700' :
                     item.status === 'maintenance' ? 'bg-yellow-100 text-yellow-700' :
                     'bg-gray-100 text-gray-700'
                   }`}>
                     {item.status === 'active' ? 'Aktiv' :
+                     item.status === 'in_use' ? 'I bruk' :
                      item.status === 'maintenance' ? 'Under vedlikehold' :
                      'Inaktiv'}
                   </div>

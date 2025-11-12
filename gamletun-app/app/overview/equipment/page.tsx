@@ -138,10 +138,12 @@ export default async function EquipmentOverviewPage() {
                           <p className="text-sm text-gray-600 truncate">{item.model || 'Ingen modell'}</p>
                           <div className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs ${
                             item.status === 'active' ? 'bg-green-100 text-green-700' :
+                            item.status === 'in_use' ? 'bg-blue-100 text-blue-700' :
                             item.status === 'maintenance' ? 'bg-yellow-100 text-yellow-700' :
                             'bg-gray-100 text-gray-700'
                           }`}>
                             {item.status === 'active' ? 'Aktiv' :
+                             item.status === 'in_use' ? 'I bruk' :
                              item.status === 'maintenance' ? 'Vedlikehold' :
                              'Inaktiv'}
                           </div>
@@ -197,10 +199,12 @@ export default async function EquipmentOverviewPage() {
                         <p className="text-sm text-gray-600 truncate">{item.model || 'Ingen modell'}</p>
                         <div className={`inline-block mt-1 px-2 py-0.5 rounded-full text-xs ${
                           item.status === 'active' ? 'bg-green-100 text-green-700' :
+                          item.status === 'in_use' ? 'bg-blue-100 text-blue-700' :
                           item.status === 'maintenance' ? 'bg-yellow-100 text-yellow-700' :
                           'bg-gray-100 text-gray-700'
                         }`}>
                           {item.status === 'active' ? 'Aktiv' :
+                           item.status === 'in_use' ? 'I bruk' :
                            item.status === 'maintenance' ? 'Vedlikehold' :
                            'Inaktiv'}
                         </div>
