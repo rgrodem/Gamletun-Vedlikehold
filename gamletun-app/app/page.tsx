@@ -1,10 +1,9 @@
-import { FaTractor } from 'react-icons/fa';
 import { HiDocumentReport } from 'react-icons/hi';
 import { createClient } from '@/lib/supabase/server';
 import EquipmentDashboard from '@/components/equipment/EquipmentDashboard';
 import UserMenu from '@/components/auth/UserMenu';
 import Link from 'next/link';
-import { getOpenWorkOrderCountsByEquipment } from '@/lib/work-orders';
+import Image from 'next/image';
 
 // Revalidate every 60 seconds instead of on every request
 export const revalidate = 60;
@@ -41,9 +40,6 @@ export default async function Home() {
     .select('id')
     .gte('performed_date', thirtyDaysAgo.toISOString().split('T')[0]);
 
-  // Fetch work order counts by equipment
-  const workOrderCounts = await getOpenWorkOrderCountsByEquipment();
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Navigation */}
@@ -51,12 +47,18 @@ export default async function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16 md:h-20">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2 sm:p-2.5 rounded-xl shadow-lg">
-                <FaTractor className="text-xl sm:text-2xl text-white" />
+              <div className="relative h-12 w-32 sm:h-14 sm:w-40">
+                <Image
+                  src="/logo.png"
+                  alt="Gamletun Gaard"
+                  fill
+                  className="object-contain"
+                  priority
+                />
               </div>
-              <div>
-                <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Gamletun Vedlikehold
+              <div className="border-l border-gray-300 pl-2 sm:pl-3">
+                <h1 className="text-sm sm:text-base font-semibold text-gray-900">
+                  Vedlikehold
                 </h1>
                 <p className="text-xs text-gray-500 hidden sm:block">Utstyr & Maskinpark</p>
               </div>
@@ -79,7 +81,6 @@ export default async function Home() {
           categories={categories || []}
           equipment={equipment || []}
           recentMaintenance={recentMaintenance || []}
-          workOrderCounts={workOrderCounts}
         />
       </main>
 

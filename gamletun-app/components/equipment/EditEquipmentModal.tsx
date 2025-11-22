@@ -241,6 +241,7 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option value="active">Aktiv</option>
+                <option value="in_use">I bruk</option>
                 <option value="maintenance">Under vedlikehold</option>
                 <option value="inactive">Inaktiv</option>
               </select>

@@ -1,15 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FaArrowLeft, FaTools, FaEdit, FaTrash, FaFileExport } from 'react-icons/fa';
+import { FaArrowLeft, FaTools, FaEdit, FaTrash, FaFileExport, FaHandPaper } from 'react-icons/fa';
 import { HiClock } from 'react-icons/hi';
 import MaintenanceHistory from '../maintenance/MaintenanceHistory';
 import LogMaintenanceModal from '../maintenance/LogMaintenanceModal';
 import EditEquipmentModal from './EditEquipmentModal';
 import WorkOrderSection from '../work-orders/WorkOrderSection';
+import DocumentSection from './DocumentSection';
+import ReservationModal from '../reservations/ReservationModal';
+import ActiveReservationBadge from '../reservations/ActiveReservationBadge';
+import { getActiveReservationForEquipment, type Reservation } from '@/lib/reservations';
 
 interface Category {
   id: string;
@@ -55,9 +59,28 @@ export default function EquipmentDetailClient({
 }: EquipmentDetailClientProps) {
   const [showLogModal, setShowLogModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showReservationModal, setShowReservationModal] = useState(false);
+  const [activeReservation, setActiveReservation] = useState<Reservation | null>(null);
+  const [loadingReservation, setLoadingReservation] = useState(true);
   const router = useRouter();
 
+  useEffect(() => {
+    loadActiveReservation();
+  }, [equipment.id]);
+
+  const loadActiveReservation = async () => {
+    try {
+      const reservation = await getActiveReservationForEquipment(equipment.id);
+      setActiveReservation(reservation);
+    } catch (error) {
+      console.error('Error loading reservation:', error);
+    } finally {
+      setLoadingReservation(false);
+    }
+  };
+
   const handleSuccess = () => {
+    loadActiveReservation();
     router.refresh();
   };
 
@@ -67,6 +90,8 @@ export default function EquipmentDetailClient({
         return 'bg-green-100 text-green-800 border-green-200';
       case 'maintenance':
         return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'in_use':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'inactive':
         return 'bg-gray-100 text-gray-800 border-gray-200';
       default:
@@ -80,6 +105,8 @@ export default function EquipmentDetailClient({
         return 'Aktiv';
       case 'maintenance':
         return 'Under vedlikehold';
+      case 'in_use':
+        return 'I bruk';
       case 'inactive':
         return 'Inaktiv';
       default:
@@ -167,6 +194,17 @@ export default function EquipmentDetailClient({
 
             {/* Mobile: Stacked buttons, Desktop: Side-by-side */}
             <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full lg:w-auto">
+              {!activeReservation && equipment.status !== 'maintenance' && (
+                <button
+                  onClick={() => setShowReservationModal(true)}
+                  disabled={loadingReservation}
+                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-3 rounded-xl hover:shadow-lg active:scale-[0.98] transition-all duration-200 font-medium touch-manipulation min-h-[44px] disabled:opacity-50"
+                  aria-label="Reserver utstyr"
+                >
+                  <FaHandPaper className="text-lg" />
+                  <span>Reserver</span>
+                </button>
+              )}
               <button
                 onClick={() => setShowEditModal(true)}
                 className="flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 px-4 py-3 rounded-xl transition-all duration-200 font-medium touch-manipulation min-h-[44px]"
@@ -199,6 +237,13 @@ export default function EquipmentDetailClient({
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Active Reservation Badge */}
+          {activeReservation && (
+            <div className="lg:col-span-3">
+              <ActiveReservationBadge reservation={activeReservation} onUpdate={handleSuccess} />
+            </div>
+          )}
+
           {/* Stats */}
           <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
@@ -249,6 +294,11 @@ export default function EquipmentDetailClient({
             <WorkOrderSection equipment={{ id: equipment.id, name: equipment.name }} onUpdate={handleSuccess} />
           </div>
 
+          {/* Documents */}
+          <div className="lg:col-span-3">
+            <DocumentSection equipmentId={equipment.id} onUpdate={handleSuccess} />
+          </div>
+
           {/* Maintenance History */}
           <div className="lg:col-span-3 bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
             <MaintenanceHistory logs={maintenanceLogs} equipmentName={equipment.name} onUpdate={handleSuccess} />
@@ -270,6 +320,14 @@ export default function EquipmentDetailClient({
           equipment={equipment}
           categories={categories}
           onClose={() => setShowEditModal(false)}
+          onSuccess={handleSuccess}
+        />
+      )}
+
+      {showReservationModal && (
+        <ReservationModal
+          equipment={equipment}
+          onClose={() => setShowReservationModal(false)}
           onSuccess={handleSuccess}
         />
       )}

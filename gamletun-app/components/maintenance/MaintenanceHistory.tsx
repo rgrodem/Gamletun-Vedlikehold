@@ -15,6 +15,10 @@ interface MaintenanceLog {
   maintenance_type: {
     type_name: string;
   } | null;
+  performed_by_profile?: {
+    id: string;
+    full_name: string;
+  } | null;
 }
 
 interface MaintenanceAttachment {
@@ -136,6 +140,12 @@ export default function MaintenanceHistory({ logs, equipmentName, onUpdate }: Ma
                     <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
                       <FaCalendar className="text-xs" />
                       <span>{formatDate(log.performed_date)}</span>
+                      {log.performed_by_profile && (
+                        <>
+                          <span className="text-gray-300">•</span>
+                          <span>{log.performed_by_profile.full_name}</span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>

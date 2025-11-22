@@ -51,6 +51,10 @@ export interface WorkOrderComment {
   status_change_from: string | null;
   status_change_to: string | null;
   created_at: string;
+  user_profile?: {
+    id: string;
+    full_name: string;
+  } | null;
 }
 
 export interface CreateWorkOrderData {
@@ -393,7 +397,10 @@ export async function getWorkOrderComments(workOrderId: string): Promise<WorkOrd
 
   const { data, error } = await supabase
     .from('work_order_comments')
-    .select('*')
+    .select(`
+      *,
+      user_profile:user_id(id, full_name)
+    `)
     .eq('work_order_id', workOrderId)
     .order('created_at', { ascending: false });
 

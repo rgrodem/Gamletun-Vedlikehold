@@ -168,12 +168,14 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
                   {/* Status Badge */}
                   <div className="absolute top-4 right-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm backdrop-blur-md ${item.status === 'active' ? 'bg-green-500/90 text-white' :
-                        item.status === 'maintenance' ? 'bg-yellow-500/90 text-white' :
-                          'bg-gray-500/90 text-white'
+                        item.status === 'in_use' ? 'bg-blue-500/90 text-white' :
+                          item.status === 'maintenance' ? 'bg-yellow-500/90 text-white' :
+                            'bg-gray-500/90 text-white'
                       }`}>
                       {item.status === 'active' ? 'Aktiv' :
-                        item.status === 'maintenance' ? 'Vedlikehold' :
-                          'Inaktiv'}
+                        item.status === 'in_use' ? 'I bruk' :
+                          item.status === 'maintenance' ? 'Vedlikehold' :
+                            'Inaktiv'}
                     </span>
                   </div>
 

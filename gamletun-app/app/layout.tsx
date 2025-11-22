@@ -6,11 +6,15 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Gamletun Vedlikehold",
-  description: "Vedlikeholdslogg for gårdsutstyr",
+  description: "Vedlikeholdssystem for Gamletun maskinpark",
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Gamletun",
+  },
+  formatDetection: {
+    telephone: false,
   },
 };
 
