@@ -11,6 +11,7 @@ import { BsCalendar3 } from 'react-icons/bs';
 import AddEquipmentModal from './AddEquipmentModal';
 import LogMaintenanceModal from '../maintenance/LogMaintenanceModal';
 import EditEquipmentModal from './EditEquipmentModal';
+import FutureReservations from '../reservations/FutureReservations';
 import WorkOrderDashboardCard from '../work-orders/WorkOrderDashboardCard';
 
 interface Category {
@@ -69,12 +70,22 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
 
   return (
     <div className="space-y-8">
-      {/* Work Orders Overview */}
-      <WorkOrderDashboardCard />
+      {/* Top Section: Work Orders & Future Reservations */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <WorkOrderDashboardCard />
+        </div>
+        <div className="lg:col-span-1">
+          <FutureReservations />
+        </div>
+      </div>
 
-      {/* Stats Overview */}
+      {/* Stats Overview - Clickable Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+        <div
+          onClick={() => { setSearchTerm(''); setSelectedCategory('all'); }}
+          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]"
+        >
           <div className="p-4 bg-blue-50 rounded-xl text-blue-600">
             <MdConstruction className="text-2xl" />
           </div>
@@ -84,7 +95,13 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+        <div
+          onClick={() => {
+            const select = document.querySelector('select');
+            if (select) (select as HTMLElement).focus();
+          }}
+          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]"
+        >
           <div className="p-4 bg-green-50 rounded-xl text-green-600">
             <FaTools className="text-2xl" />
           </div>
@@ -94,7 +111,7 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-shadow">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]">
           <div className="p-4 bg-purple-50 rounded-xl text-purple-600">
             <BsCalendar3 className="text-2xl" />
           </div>
@@ -149,8 +166,12 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
             const openWorkOrders = workOrderCounts[item.id] || 0;
 
             return (
-              <div key={item.id} className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col h-full">
-                <Link href={`/equipment/${item.id}`} className="block relative h-48 bg-gray-50 overflow-hidden">
+              <Link
+                key={item.id}
+                href={`/equipment/${item.id}`}
+                className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col h-full hover:-translate-y-1"
+              >
+                <div className="relative h-48 bg-gray-50 overflow-hidden">
                   {item.image_url ? (
                     <Image
                       src={item.image_url}
@@ -186,19 +207,19 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
                       {openWorkOrders}
                     </div>
                   )}
-                </Link>
+                </div>
 
                 <div className="p-5 flex-1 flex flex-col">
                   <div className="flex items-start justify-between mb-2">
                     <div>
                       <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">{item.category?.name || 'Ukjent'}</p>
-                      <Link href={`/equipment/${item.id}`} className="text-lg font-bold text-gray-900 hover:text-blue-600 transition-colors line-clamp-1">
+                      <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">
                         {item.name}
-                      </Link>
+                      </h3>
                     </div>
                   </div>
 
-                  <p className="text-sm text-gray-500 mb-4 line-clamp-1">{item.model || 'Ingen modellspesifikasjon'}</p>
+                  <p className="text-sm text-gray-500 line-clamp-1">{item.model || 'Ingen modellspesifikasjon'}</p>
 
                   <div className="mt-auto pt-4 border-t border-gray-100 flex justify-end">
                     <span className="text-sm text-blue-600 font-medium group-hover:translate-x-1 transition-transform flex items-center gap-1">
@@ -206,7 +227,7 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
                     </span>
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
@@ -262,4 +283,3 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
     </div>
   );
 }
-
