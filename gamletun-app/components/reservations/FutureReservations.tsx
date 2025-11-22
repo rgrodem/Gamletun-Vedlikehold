@@ -33,15 +33,19 @@ export default function FutureReservations() {
           equipment_id,
           start_time,
           end_time,
-          equipment:equipment_id (name, image_url)
+          equipment!equipment_id (
+            name,
+            image_url
+          )
         `)
                 .gte('start_time', now)
                 .order('start_time', { ascending: true })
                 .limit(5);
 
             if (!error && data) {
-                // Cast the data to match our interface since Supabase types might be loose
                 setReservations(data as any[]);
+            } else if (error) {
+                console.error('Error fetching reservations:', error);
             }
             setLoading(false);
         };
@@ -51,11 +55,19 @@ export default function FutureReservations() {
 
     return (
         <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
-                    <FaCalendarAlt className="text-xl" />
+            <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
+                        <FaCalendarAlt className="text-xl" />
+                    </div>
+                    <h3 className="font-bold text-gray-900">Kommende reservasjoner</h3>
                 </div>
-                <h3 className="font-bold text-gray-900">Kommende reservasjoner</h3>
+                <Link
+                    href="/reservations"
+                    className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                >
+                    Se alle →
+                </Link>
             </div>
 
             {loading ? (
