@@ -35,6 +35,7 @@ export default function FutureReservations() {
           equipment_id,
           start_time,
           end_time,
+          user_id,
           equipment (
             name,
             image_url
