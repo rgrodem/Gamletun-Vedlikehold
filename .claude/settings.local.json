@@ -38,7 +38,13 @@
       "Bash(powershell -Command \"Remove-Item -Recurse -Force BMAD-METHOD\")",
       "Bash(git add:*)",
       "Bash(git rm:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git merge:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
