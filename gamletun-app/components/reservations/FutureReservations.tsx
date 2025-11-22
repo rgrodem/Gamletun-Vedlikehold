@@ -26,6 +26,8 @@ export default function FutureReservations() {
             const supabase = createClient();
             const now = new Date().toISOString();
 
+            console.log('Fetching reservations after:', now);
+
             const { data, error } = await supabase
                 .from('reservations')
                 .select(`
@@ -33,7 +35,7 @@ export default function FutureReservations() {
           equipment_id,
           start_time,
           end_time,
-          equipment!equipment_id (
+          equipment (
             name,
             image_url
           )
@@ -42,8 +44,16 @@ export default function FutureReservations() {
                 .order('start_time', { ascending: true })
                 .limit(5);
 
+            console.log('Reservations query result:', { data, error });
+
             if (!error && data) {
-                setReservations(data as any[]);
+                // Transform equipment to handle potential array format
+                const transformed = data.map(r => ({
+                    ...r,
+                    equipment: Array.isArray(r.equipment) ? r.equipment[0] : r.equipment
+                }));
+                setReservations(transformed);
+                console.log('Transformed reservations:', transformed);
             } else if (error) {
                 console.error('Error fetching reservations:', error);
             }
@@ -54,7 +64,10 @@ export default function FutureReservations() {
     }, []);
 
     return (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <Link
+            href="/reservations"
+            className="block bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all group"
+        >
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                     <div className="p-2 bg-indigo-50 rounded-lg text-indigo-600">
@@ -62,12 +75,9 @@ export default function FutureReservations() {
                     </div>
                     <h3 className="font-bold text-gray-900">Kommende reservasjoner</h3>
                 </div>
-                <Link
-                    href="/reservations"
-                    className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
-                >
+                <span className="text-sm text-indigo-600 group-hover:text-indigo-700 font-medium">
                     Se alle →
-                </Link>
+                </span>
             </div>
 
             {loading ? (
@@ -82,7 +92,7 @@ export default function FutureReservations() {
                     <p className="text-sm text-gray-500">Ingen kommende reservasjoner</p>
                 </div>
             ) : (
-                <div className="space-y-3">
+                <div className="space-y-3" onClick={(e) => e.stopPropagation()}>
                     {reservations.map((res) => (
                         <Link
                             key={res.id}
@@ -114,6 +124,6 @@ export default function FutureReservations() {
                     ))}
                 </div>
             )}
-        </div>
+        </Link>
     );
 }
