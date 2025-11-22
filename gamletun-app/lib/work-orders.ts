@@ -1,5 +1,6 @@
 // Work Orders API functions
 import { createClient } from '@/lib/supabase/client';
+import { refreshEquipmentStatus } from './equipment-status';
 
 export type WorkOrderType = 'scheduled' | 'corrective' | 'inspection';
 export type WorkOrderStatus = 'open' | 'scheduled' | 'in_progress' | 'waiting_parts' | 'completed' | 'closed';
@@ -253,51 +254,9 @@ export async function updateWorkOrder(
   if (currentWorkOrder && updates.status && updates.status !== currentWorkOrder.status) {
     const equipmentId = currentWorkOrder.equipment_id;
 
-    // If work order is starting (open -> in_progress or scheduled -> in_progress)
-    if (updates.status === 'in_progress') {
-      await supabase
-        .from('equipment')
-        .update({ status: 'maintenance' })
-        .eq('id', equipmentId);
-    }
-
-    // If work order is completed or closed, check if there are other active work orders
-    if (updates.status === 'completed' || updates.status === 'closed') {
-      // Check for other active work orders on this equipment
-      const { data: activeWorkOrders } = await supabase
-        .from('work_orders')
-        .select('id')
-        .eq('equipment_id', equipmentId)
-        .in('status', ['in_progress', 'waiting_parts'])
-        .neq('id', id)
-        .limit(1);
-
-      // Only set equipment back to active if no other work orders are in progress
-      if (!activeWorkOrders || activeWorkOrders.length === 0) {
-        await supabase
-          .from('equipment')
-          .update({ status: 'active' })
-          .eq('id', equipmentId);
-      }
-    }
-
-    // If going back to open from in_progress, check if no other work orders are active
-    if (currentWorkOrder.status === 'in_progress' && updates.status === 'open') {
-      const { data: activeWorkOrders } = await supabase
-        .from('work_orders')
-        .select('id')
-        .eq('equipment_id', equipmentId)
-        .in('status', ['in_progress', 'waiting_parts'])
-        .neq('id', id)
-        .limit(1);
-
-      if (!activeWorkOrders || activeWorkOrders.length === 0) {
-        await supabase
-          .from('equipment')
-          .update({ status: 'active' })
-          .eq('id', equipmentId);
-      }
-    }
+    // Use the centralized helper to determine and set the correct status
+    // This handles all edge cases including multiple active work orders
+    await refreshEquipmentStatus(equipmentId);
   }
 
   return data;
