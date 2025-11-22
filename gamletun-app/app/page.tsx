@@ -48,10 +48,11 @@ export default async function Home() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Navigation */}
       <nav className="bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16 md:h-20">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16 md:h-20">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="relative h-12 w-32 sm:h-14 sm:w-40">
+              {/* Logo - smaller on mobile */}
+              <div className="relative h-10 w-24 sm:h-12 sm:w-32 md:h-14 md:w-40">
                 <Image
                   src="/logo.png"
                   alt="Gamletun Gaard"
@@ -60,18 +61,22 @@ export default async function Home() {
                   priority
                 />
               </div>
-              <div className="border-l border-gray-300 pl-2 sm:pl-3">
-                <h1 className="text-sm sm:text-base font-semibold text-gray-900">
+              {/* Divider and title - hidden on very small screens */}
+              <div className="hidden xs:block border-l border-gray-300 pl-2 sm:pl-3">
+                <h1 className="text-xs sm:text-sm md:text-base font-semibold text-gray-900">
                   Vedlikehold
                 </h1>
                 <p className="text-xs text-gray-500 hidden sm:block">Utstyr & Maskinpark</p>
               </div>
             </div>
-            <div className="flex items-center gap-2 sm:gap-4">
-              <Link href="/reports" className="flex items-center gap-1 sm:gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 sm:px-5 py-2 sm:py-2.5 rounded-xl hover:shadow-lg active:scale-95 transition-all duration-200 font-medium touch-manipulation">
-                <HiDocumentReport className="text-lg sm:text-xl" />
-                <span className="hidden sm:inline text-sm sm:text-base">Generer Rapport</span>
-                <span className="sm:hidden text-xs">Rapport</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4">
+              {/* Rapport button - more compact on mobile */}
+              <Link
+                href="/reports"
+                className="flex items-center gap-1 sm:gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-2.5 sm:px-4 md:px-5 py-1.5 sm:py-2 md:py-2.5 rounded-lg sm:rounded-xl hover:shadow-lg active:scale-95 transition-all duration-200 font-medium touch-manipulation text-xs sm:text-sm"
+              >
+                <HiDocumentReport className="text-base sm:text-lg md:text-xl" />
+                <span className="hidden xs:inline">Rapport</span>
               </Link>
               {user && <UserMenu email={user.email || ''} />}
             </div>
