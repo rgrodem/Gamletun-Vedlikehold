@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
+
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Gamletun Vedlikehold",
@@ -20,7 +23,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: "#2563eb",
+  themeColor: "#4f46e5", // Primary color
 };
 
 export default function RootLayout({
@@ -30,7 +33,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="no">
-      <body className="antialiased">
+      <body className={`${inter.className} antialiased bg-background text-foreground`}>
         {children}
       </body>
     </html>

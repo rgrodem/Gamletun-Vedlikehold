@@ -4,13 +4,15 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FaTruckMoving, FaTools, FaPlus, FaTractor, FaEdit, FaHandPaper, FaCalendarAlt } from 'react-icons/fa';
+import { FaTruckMoving, FaTools, FaPlus, FaTractor, FaEdit, FaSearch } from 'react-icons/fa';
 import { MdConstruction, MdOutlineSpeed } from 'react-icons/md';
 import { HiDocumentReport, HiClock } from 'react-icons/hi';
 import { BsCalendar3 } from 'react-icons/bs';
 import AddEquipmentModal from './AddEquipmentModal';
 import LogMaintenanceModal from '../maintenance/LogMaintenanceModal';
 import EditEquipmentModal from './EditEquipmentModal';
+import FutureReservations from '../reservations/FutureReservations';
+import WorkOrderDashboardCard from '../work-orders/WorkOrderDashboardCard';
 
 interface Category {
   id: string;
@@ -40,12 +42,15 @@ interface Props {
   categories: Category[];
   equipment: Equipment[];
   recentMaintenance: MaintenanceLog[];
+  workOrderCounts: Record<string, number>;
 }
 
-export default function EquipmentDashboard({ categories, equipment, recentMaintenance }: Props) {
+export default function EquipmentDashboard({ categories, equipment, recentMaintenance, workOrderCounts }: Props) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [maintenanceEquipment, setMaintenanceEquipment] = useState<Equipment | null>(null);
   const [editEquipment, setEditEquipment] = useState<Equipment | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const router = useRouter();
 
   const handleSuccess = () => {
@@ -53,210 +58,199 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
   };
 
   const totalEquipment = equipment.length;
-
-  // Count all maintenance registrations in last 30 days
   const maintenanceLast30Days = recentMaintenance.length;
 
+  // Filter equipment
+  const filteredEquipment = equipment.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.model?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || item.category_id === selectedCategory;
+    return matchesSearch && matchesCategory;
+  });
+
   return (
-    <>
-      {/* Compact Stats Card */}
-      <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100 mb-6">
-        <div className="grid grid-cols-3 gap-3 sm:gap-6">
-          {/* Totalt Utstyr */}
-          <Link
-            href="/overview/equipment"
-            className="flex flex-col items-center text-center hover:bg-blue-50 rounded-xl p-2 transition-colors cursor-pointer group"
-          >
-            <div className="bg-blue-100 p-2 sm:p-3 rounded-xl mb-2 group-hover:scale-110 transition-transform">
-              <MdConstruction className="text-xl sm:text-2xl text-blue-600" />
-            </div>
-            <p className="text-xs sm:text-sm text-gray-500 mb-1">Utstyr</p>
-            <p className="text-xl sm:text-2xl font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{totalEquipment}</p>
-          </Link>
-
-          {/* Kategorier */}
-          <Link
-            href="/overview/categories"
-            className="flex flex-col items-center text-center border-x border-gray-200 hover:bg-green-50 rounded-xl p-2 transition-colors cursor-pointer group"
-          >
-            <div className="bg-green-100 p-2 sm:p-3 rounded-xl mb-2 group-hover:scale-110 transition-transform">
-              <FaTools className="text-xl sm:text-2xl text-green-600" />
-            </div>
-            <p className="text-xs sm:text-sm text-gray-500 mb-1">Kategorier</p>
-            <p className="text-xl sm:text-2xl font-bold text-gray-900 group-hover:text-green-600 transition-colors">{categories.length}</p>
-          </Link>
-
-          {/* Vedlikehold */}
-          <Link
-            href="/overview/maintenance"
-            className="flex flex-col items-center text-center hover:bg-purple-50 rounded-xl p-2 transition-colors cursor-pointer group"
-          >
-            <div className="bg-purple-100 p-2 sm:p-3 rounded-xl mb-2 group-hover:scale-110 transition-transform">
-              <BsCalendar3 className="text-xl sm:text-2xl text-purple-600" />
-            </div>
-            <p className="text-xs sm:text-sm text-gray-500 mb-1">30 dager</p>
-            <p className="text-xl sm:text-2xl font-bold text-gray-900 group-hover:text-purple-600 transition-colors">{maintenanceLast30Days}</p>
-          </Link>
+    <div className="space-y-8">
+      {/* Top Section: Work Orders & Future Reservations */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <WorkOrderDashboardCard />
+        </div>
+        <div className="lg:col-span-1">
+          <FutureReservations />
         </div>
       </div>
 
-      {/* Reservation Links */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <Link
-          href="/overview/my-reservations"
-          className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all group"
+      {/* Stats Overview - Clickable Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+        <div
+          onClick={() => { setSearchTerm(''); setSelectedCategory('all'); }}
+          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]"
         >
-          <div className="flex items-center gap-4">
-            <div className="bg-white/20 p-4 rounded-xl group-hover:scale-110 transition-transform">
-              <FaCalendarAlt className="text-3xl" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold">Mine Reservasjoner</h3>
-              <p className="text-sm text-white/90 mt-1">Se dine utstyrsreservasjoner</p>
-            </div>
+          <div className="p-4 bg-blue-50 rounded-xl text-blue-600">
+            <MdConstruction className="text-2xl" />
           </div>
-        </Link>
+          <div>
+            <p className="text-sm text-gray-500 font-medium">Totalt Utstyr</p>
+            <p className="text-2xl font-bold text-gray-900">{totalEquipment}</p>
+          </div>
+        </div>
 
-        <Link
-          href="/overview/in-use"
-          className="bg-gradient-to-br from-purple-500 to-pink-600 text-white rounded-2xl p-6 shadow-lg hover:shadow-2xl transition-all group"
+        <div
+          onClick={() => {
+            const select = document.querySelector('select');
+            if (select) (select as HTMLElement).focus();
+          }}
+          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]"
         >
-          <div className="flex items-center gap-4">
-            <div className="bg-white/20 p-4 rounded-xl group-hover:scale-110 transition-transform">
-              <FaHandPaper className="text-3xl" />
-            </div>
-            <div>
-              <h3 className="text-lg font-bold">Utstyr i Bruk</h3>
-              <p className="text-sm text-white/90 mt-1">Se hvem som bruker hva</p>
-            </div>
+          <div className="p-4 bg-green-50 rounded-xl text-green-600">
+            <FaTools className="text-2xl" />
           </div>
-        </Link>
+          <div>
+            <p className="text-sm text-gray-500 font-medium">Kategorier</p>
+            <p className="text-2xl font-bold text-gray-900">{categories.length}</p>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]">
+          <div className="p-4 bg-purple-50 rounded-xl text-purple-600">
+            <BsCalendar3 className="text-2xl" />
+          </div>
+          <div>
+            <p className="text-sm text-gray-500 font-medium">Vedlikehold (30d)</p>
+            <p className="text-2xl font-bold text-gray-900">{maintenanceLast30Days}</p>
+          </div>
+        </div>
       </div>
 
-      {/* Add Equipment Button */}
-      <div className="mb-6">
+      {/* Actions & Filters */}
+      <div className="flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center">
+        <div className="flex flex-col sm:flex-row gap-4 w-full lg:w-auto">
+          <div className="relative group">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+            <input
+              type="text"
+              placeholder="Søk etter utstyr..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full sm:w-64 pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none shadow-sm"
+            />
+          </div>
+
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="w-full sm:w-auto px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none shadow-sm cursor-pointer"
+          >
+            <option value="all">Alle kategorier</option>
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </select>
+        </div>
+
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center justify-center gap-2 sm:gap-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-2xl hover:shadow-2xl active:scale-95 transition-all duration-200 font-semibold shadow-lg w-full sm:w-auto touch-manipulation min-h-[44px]"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/30 active:scale-95 transition-all font-semibold"
         >
-          <div className="bg-white/20 p-2 rounded-lg">
-            <FaPlus className="text-lg sm:text-xl" />
-          </div>
-          <span className="text-base sm:text-lg">Nytt Utstyr</span>
+          <FaPlus />
+          <span>Nytt Utstyr</span>
         </button>
       </div>
 
       {/* Equipment Grid */}
-      <h2 className="text-2xl font-bold text-gray-900 mb-6">Alt Utstyr</h2>
-
-      {equipment.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {equipment.map((item) => {
+      {filteredEquipment.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+          {filteredEquipment.map((item) => {
             const categoryColor = item.category?.color || '#6b7280';
             const categoryIcon = item.category?.icon || '⚙️';
+            const openWorkOrders = workOrderCounts[item.id] || 0;
 
             return (
-              <div key={item.id} className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:scale-[1.02]">
-                <Link
-                  href={`/equipment/${item.id}`}
-                  prefetch={true}
-                  className="block p-6 border-b border-gray-100 cursor-pointer"
-                  style={{
-                    background: `linear-gradient(to bottom right, ${categoryColor}15, ${categoryColor}05)`
-                  }}
-                >
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-4">
-                      {/* Equipment Image or Icon */}
-                      {item.image_url ? (
-                        <div className="relative w-16 h-16 rounded-2xl shadow-lg group-hover:scale-110 transition-transform overflow-hidden flex-shrink-0">
-                          <Image
-                            src={item.image_url}
-                            alt={item.name}
-                            fill
-                            className="object-cover"
-                            sizes="64px"
-                          />
-                        </div>
-                      ) : (
-                        <div
-                          className="p-4 rounded-2xl shadow-lg group-hover:scale-110 transition-transform text-3xl flex-shrink-0"
-                          style={{
-                            background: `linear-gradient(to bottom right, ${categoryColor}, ${categoryColor}dd)`
-                          }}
-                        >
-                          {categoryIcon}
-                        </div>
-                      )}
-                      <div>
-                        <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">{item.name}</h3>
-                        <p className="text-sm text-gray-600">{item.model || 'Ingen modell'}</p>
-                      </div>
+              <Link
+                key={item.id}
+                href={`/equipment/${item.id}`}
+                className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col h-full hover:-translate-y-1"
+              >
+                <div className="relative h-48 bg-gray-50 overflow-hidden">
+                  {item.image_url ? (
+                    <Image
+                      src={item.image_url}
+                      alt={item.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-6xl opacity-20" style={{ color: categoryColor }}>
+                      {categoryIcon}
                     </div>
-                    <div className={`px-3 py-1 rounded-full ${
-                      item.status === 'active' ? 'bg-green-100' :
-                      item.status === 'in_use' ? 'bg-blue-100' :
-                      item.status === 'maintenance' ? 'bg-yellow-100' :
-                      'bg-gray-100'
-                    }`}>
-                      <span className={`text-xs font-semibold ${
-                        item.status === 'active' ? 'text-green-700' :
-                        item.status === 'in_use' ? 'text-blue-700' :
-                        item.status === 'maintenance' ? 'text-yellow-700' :
-                        'text-gray-700'
-                      }`}>
-                        {item.status === 'active' ? 'Aktiv' :
-                         item.status === 'in_use' ? 'I bruk' :
-                         item.status === 'maintenance' ? 'Vedlikehold' :
-                         'Inaktiv'}
-                      </span>
-                    </div>
-                  </div>
-                </Link>
+                  )}
 
-                <div className="p-6">
-                  <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-                    <HiClock className="text-lg" />
-                    <span>Kategori: {item.category?.name || 'Ukjent'}</span>
+                  {/* Status Badge */}
+                  <div className="absolute top-4 right-4">
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm backdrop-blur-md ${item.status === 'active' ? 'bg-green-500/90 text-white' :
+                      item.status === 'in_use' ? 'bg-blue-500/90 text-white' :
+                        item.status === 'maintenance' ? 'bg-yellow-500/90 text-white' :
+                          'bg-gray-500/90 text-white'
+                      }`}>
+                      {item.status === 'active' ? 'Aktiv' :
+                        item.status === 'in_use' ? 'I bruk' :
+                          item.status === 'maintenance' ? 'Vedlikehold' :
+                            'Inaktiv'}
+                    </span>
                   </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditEquipment(item);
-                      }}
-                      className="flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 px-3 sm:px-4 py-3 rounded-xl transition-all duration-200 font-medium touch-manipulation min-h-[44px]"
-                      aria-label="Rediger utstyr"
-                    >
-                      <FaEdit className="text-lg" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMaintenanceEquipment(item);
-                      }}
-                      className="flex-1 flex items-center justify-center gap-1 sm:gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 sm:px-4 py-3 rounded-xl hover:shadow-lg active:scale-95 transition-all duration-200 font-medium touch-manipulation min-h-[44px]"
-                    >
-                      <FaTools className="text-base sm:text-lg" />
-                      <span className="text-sm sm:text-base">Logg Vedlikehold</span>
-                    </button>
+
+                  {/* Work Order Badge */}
+                  {openWorkOrders > 0 && (
+                    <div className="absolute top-4 left-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse flex items-center gap-1">
+                      <FaTools className="text-[10px]" />
+                      {openWorkOrders}
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="text-xs font-bold text-blue-600 uppercase tracking-wider mb-1">{item.category?.name || 'Ukjent'}</p>
+                      <h3 className="text-lg font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+                        {item.name}
+                      </h3>
+                    </div>
+                  </div>
+
+                  <p className="text-sm text-gray-500 line-clamp-1">{item.model || 'Ingen modellspesifikasjon'}</p>
+
+                  <div className="mt-auto pt-4 border-t border-gray-100 flex justify-end">
+                    <span className="text-sm text-blue-600 font-medium group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                      Se detaljer <span aria-hidden="true">→</span>
+                    </span>
                   </div>
                 </div>
-              </div>
+              </Link>
             );
           })}
         </div>
       ) : (
-        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-12 text-center">
-          <MdConstruction className="text-6xl text-blue-300 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Ingen utstyr registrert ennå</h3>
-          <p className="text-gray-600 mb-6">Kom i gang ved å legge til ditt første utstyr!</p>
+        <div className="bg-white border border-gray-200 rounded-2xl p-12 text-center shadow-sm">
+          <div className="w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6 text-blue-500">
+            <FaSearch className="text-3xl" />
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Ingen utstyr funnet</h3>
+          <p className="text-gray-500 mb-8 max-w-md mx-auto">
+            {searchTerm || selectedCategory !== 'all'
+              ? 'Prøv å justere søkeordene eller filteret for å finne det du leter etter.'
+              : 'Kom i gang ved å legge til ditt første utstyr i systemet.'}
+          </p>
           <button
-            onClick={() => setShowAddModal(true)}
-            className="inline-flex items-center gap-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all font-semibold"
+            onClick={() => {
+              setSearchTerm('');
+              setSelectedCategory('all');
+              if (!searchTerm && selectedCategory === 'all') setShowAddModal(true);
+            }}
+            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
           >
-            <FaPlus />
-            <span>Legg til utstyr</span>
+            {searchTerm || selectedCategory !== 'all' ? 'Nullstill filter' : 'Legg til utstyr'}
           </button>
         </div>
       )}
@@ -286,6 +280,6 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
           onSuccess={handleSuccess}
         />
       )}
-    </>
+    </div>
   );
 }

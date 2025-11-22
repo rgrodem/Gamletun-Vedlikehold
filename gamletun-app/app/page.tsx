@@ -4,6 +4,7 @@ import EquipmentDashboard from '@/components/equipment/EquipmentDashboard';
 import UserMenu from '@/components/auth/UserMenu';
 import Link from 'next/link';
 import Image from 'next/image';
+import { getOpenWorkOrderCountsByEquipment } from '@/lib/work-orders';
 
 // Revalidate every 60 seconds instead of on every request
 export const revalidate = 60;
@@ -40,8 +41,11 @@ export default async function Home() {
     .select('id')
     .gte('performed_date', thirtyDaysAgo.toISOString().split('T')[0]);
 
+  // Fetch open work order counts
+  const workOrderCounts = await getOpenWorkOrderCountsByEquipment();
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Navigation */}
       <nav className="bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -81,6 +85,7 @@ export default async function Home() {
           categories={categories || []}
           equipment={equipment || []}
           recentMaintenance={recentMaintenance || []}
+          workOrderCounts={workOrderCounts}
         />
       </main>
 
