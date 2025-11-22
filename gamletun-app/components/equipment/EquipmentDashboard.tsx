@@ -36,6 +36,7 @@ interface Equipment {
 
 interface MaintenanceLog {
   id: string;
+  equipment_id: string;
 }
 
 interface Props {
@@ -51,6 +52,7 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
   const [editEquipment, setEditEquipment] = useState<Equipment | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [showMaintenanceOnly, setShowMaintenanceOnly] = useState(false);
   const router = useRouter();
 
   const handleSuccess = () => {
@@ -61,11 +63,16 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
   const maintenanceLast30Days = recentMaintenance.length;
 
   // Filter equipment
+  // Filter equipment
   const filteredEquipment = equipment.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.model?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || item.category_id === selectedCategory;
-    return matchesSearch && matchesCategory;
+
+    // Check if equipment has had maintenance in the last 30 days
+    const hasRecentMaintenance = !showMaintenanceOnly || recentMaintenance.some(log => log.equipment_id === item.id);
+
+    return matchesSearch && matchesCategory && hasRecentMaintenance;
   });
 
   return (
@@ -83,7 +90,11 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
       {/* Stats Overview - Clickable Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
         <div
-          onClick={() => { setSearchTerm(''); setSelectedCategory('all'); }}
+          onClick={() => {
+            setSearchTerm('');
+            setSelectedCategory('all');
+            setShowMaintenanceOnly(false);
+          }}
           className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 flex items-center gap-3 sm:gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]"
         >
           <div className="p-3 sm:p-4 bg-blue-50 rounded-xl text-blue-600">
@@ -97,6 +108,7 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
 
         <div
           onClick={() => {
+            setShowMaintenanceOnly(false);
             const select = document.querySelector('select');
             if (select) (select as HTMLElement).focus();
           }}
@@ -111,7 +123,14 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 flex items-center gap-3 sm:gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98] col-span-2 lg:col-span-1">
+        <div
+          onClick={() => {
+            setSearchTerm('');
+            setSelectedCategory('all');
+            setShowMaintenanceOnly(true);
+          }}
+          className={`bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 flex items-center gap-3 sm:gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98] col-span-2 lg:col-span-1 ${showMaintenanceOnly ? 'ring-2 ring-purple-500 ring-offset-2' : ''}`}
+        >
           <div className="p-3 sm:p-4 bg-purple-50 rounded-xl text-purple-600">
             <BsCalendar3 className="text-xl sm:text-2xl" />
           </div>
@@ -238,7 +257,7 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
           </div>
           <h3 className="text-xl font-bold text-gray-900 mb-2">Ingen utstyr funnet</h3>
           <p className="text-gray-500 mb-8 max-w-md mx-auto">
-            {searchTerm || selectedCategory !== 'all'
+            {searchTerm || selectedCategory !== 'all' || showMaintenanceOnly
               ? 'Prøv å justere søkeordene eller filteret for å finne det du leter etter.'
               : 'Kom i gang ved å legge til ditt første utstyr i systemet.'}
           </p>
@@ -246,11 +265,12 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
             onClick={() => {
               setSearchTerm('');
               setSelectedCategory('all');
-              if (!searchTerm && selectedCategory === 'all') setShowAddModal(true);
+              setShowMaintenanceOnly(false);
+              if (!searchTerm && selectedCategory === 'all' && !showMaintenanceOnly) setShowAddModal(true);
             }}
             className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-semibold transition-colors"
           >
-            {searchTerm || selectedCategory !== 'all' ? 'Nullstill filter' : 'Legg til utstyr'}
+            {searchTerm || selectedCategory !== 'all' || showMaintenanceOnly ? 'Nullstill filter' : 'Legg til utstyr'}
           </button>
         </div>
       )}

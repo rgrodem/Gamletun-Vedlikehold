@@ -38,7 +38,7 @@ export default async function Home() {
 
   const { data: recentMaintenance } = await supabase
     .from('maintenance_logs')
-    .select('id')
+    .select('id, equipment_id')
     .gte('performed_date', thirtyDaysAgo.toISOString().split('T')[0]);
 
   // Fetch open work order counts
