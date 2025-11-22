@@ -45,7 +45,7 @@ export default function WorkOrderDashboardCard() {
   const totalPending = stats.overdue + stats.thisWeek + stats.openFaults;
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-8">
+    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 mb-8">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div>
           <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
@@ -69,13 +69,13 @@ export default function WorkOrderDashboardCard() {
         </Link>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Forfalt */}
         <Link
           href="/work-orders?filter=overdue"
-          className={`relative p-6 rounded-2xl border transition-all duration-300 hover:shadow-lg group ${stats.overdue > 0
-              ? 'bg-red-50 border-red-100 hover:border-red-200'
-              : 'bg-gray-50 border-gray-100 hover:border-gray-200'
+          className={`relative p-4 sm:p-6 rounded-2xl border transition-all duration-300 hover:shadow-lg group ${stats.overdue > 0
+            ? 'bg-red-50 border-red-100 hover:border-red-200'
+            : 'bg-gray-50 border-gray-100 hover:border-gray-200'
             }`}
         >
           <div className="flex items-start justify-between mb-4">
@@ -90,10 +90,10 @@ export default function WorkOrderDashboardCard() {
             )}
           </div>
           <div>
-            <p className={`text-3xl font-bold mb-1 ${stats.overdue > 0 ? 'text-red-700' : 'text-gray-400'}`}>
+            <p className={`text-2xl sm:text-3xl font-bold mb-1 ${stats.overdue > 0 ? 'text-red-700' : 'text-gray-400'}`}>
               {stats.overdue}
             </p>
-            <p className={`text-sm font-medium ${stats.overdue > 0 ? 'text-red-600' : 'text-gray-500'}`}>
+            <p className={`text-xs sm:text-sm font-medium ${stats.overdue > 0 ? 'text-red-600' : 'text-gray-500'}`}>
               Forfalt
             </p>
           </div>
@@ -102,9 +102,9 @@ export default function WorkOrderDashboardCard() {
         {/* Denne uken */}
         <Link
           href="/work-orders?filter=thisweek"
-          className={`relative p-6 rounded-2xl border transition-all duration-300 hover:shadow-lg group ${stats.thisWeek > 0
-              ? 'bg-orange-50 border-orange-100 hover:border-orange-200'
-              : 'bg-gray-50 border-gray-100 hover:border-gray-200'
+          className={`relative p-4 sm:p-6 rounded-2xl border transition-all duration-300 hover:shadow-lg group ${stats.thisWeek > 0
+            ? 'bg-orange-50 border-orange-100 hover:border-orange-200'
+            : 'bg-gray-50 border-gray-100 hover:border-gray-200'
             }`}
         >
           <div className="flex items-start justify-between mb-4">
@@ -113,10 +113,10 @@ export default function WorkOrderDashboardCard() {
             </div>
           </div>
           <div>
-            <p className={`text-3xl font-bold mb-1 ${stats.thisWeek > 0 ? 'text-orange-700' : 'text-gray-400'}`}>
+            <p className={`text-2xl sm:text-3xl font-bold mb-1 ${stats.thisWeek > 0 ? 'text-orange-700' : 'text-gray-400'}`}>
               {stats.thisWeek}
             </p>
-            <p className={`text-sm font-medium ${stats.thisWeek > 0 ? 'text-orange-600' : 'text-gray-500'}`}>
+            <p className={`text-xs sm:text-sm font-medium ${stats.thisWeek > 0 ? 'text-orange-600' : 'text-gray-500'}`}>
               Denne uken
             </p>
           </div>
@@ -125,9 +125,9 @@ export default function WorkOrderDashboardCard() {
         {/* Åpne feil */}
         <Link
           href="/work-orders?filter=faults"
-          className={`relative p-6 rounded-2xl border transition-all duration-300 hover:shadow-lg group ${stats.openFaults > 0
-              ? 'bg-yellow-50 border-yellow-100 hover:border-yellow-200'
-              : 'bg-gray-50 border-gray-100 hover:border-gray-200'
+          className={`relative p-4 sm:p-6 rounded-2xl border transition-all duration-300 hover:shadow-lg group ${stats.openFaults > 0
+            ? 'bg-yellow-50 border-yellow-100 hover:border-yellow-200'
+            : 'bg-gray-50 border-gray-100 hover:border-gray-200'
             }`}
         >
           <div className="flex items-start justify-between mb-4">
@@ -136,10 +136,10 @@ export default function WorkOrderDashboardCard() {
             </div>
           </div>
           <div>
-            <p className={`text-3xl font-bold mb-1 ${stats.openFaults > 0 ? 'text-yellow-700' : 'text-gray-400'}`}>
+            <p className={`text-2xl sm:text-3xl font-bold mb-1 ${stats.openFaults > 0 ? 'text-yellow-700' : 'text-gray-400'}`}>
               {stats.openFaults}
             </p>
-            <p className={`text-sm font-medium ${stats.openFaults > 0 ? 'text-yellow-600' : 'text-gray-500'}`}>
+            <p className={`text-xs sm:text-sm font-medium ${stats.openFaults > 0 ? 'text-yellow-600' : 'text-gray-500'}`}>
               Åpne feil
             </p>
           </div>
@@ -148,9 +148,9 @@ export default function WorkOrderDashboardCard() {
         {/* Planlagt */}
         <Link
           href="/work-orders?filter=scheduled"
-          className={`relative p-6 rounded-2xl border transition-all duration-300 hover:shadow-lg group ${stats.scheduled > 0
-              ? 'bg-blue-50 border-blue-100 hover:border-blue-200'
-              : 'bg-gray-50 border-gray-100 hover:border-gray-200'
+          className={`relative p-4 sm:p-6 rounded-2xl border transition-all duration-300 hover:shadow-lg group ${stats.scheduled > 0
+            ? 'bg-blue-50 border-blue-100 hover:border-blue-200'
+            : 'bg-gray-50 border-gray-100 hover:border-gray-200'
             }`}
         >
           <div className="flex items-start justify-between mb-4">
@@ -159,10 +159,10 @@ export default function WorkOrderDashboardCard() {
             </div>
           </div>
           <div>
-            <p className={`text-3xl font-bold mb-1 ${stats.scheduled > 0 ? 'text-blue-700' : 'text-gray-400'}`}>
+            <p className={`text-2xl sm:text-3xl font-bold mb-1 ${stats.scheduled > 0 ? 'text-blue-700' : 'text-gray-400'}`}>
               {stats.scheduled}
             </p>
-            <p className={`text-sm font-medium ${stats.scheduled > 0 ? 'text-blue-600' : 'text-gray-500'}`}>
+            <p className={`text-xs sm:text-sm font-medium ${stats.scheduled > 0 ? 'text-blue-600' : 'text-gray-500'}`}>
               Planlagt
             </p>
           </div>

@@ -68,7 +68,7 @@ export default function FutureReservations() {
     return (
         <Link
             href="/reservations"
-            className="block bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all group"
+            className="block bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all group"
         >
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
