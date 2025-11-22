@@ -21,10 +21,10 @@ export default function UserMenu({ email }: UserMenuProps) {
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-4 py-2 bg-white/50 hover:bg-white/80 rounded-xl transition-all border border-gray-200"
+        className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-1.5 sm:py-2 bg-white/50 hover:bg-white/80 rounded-lg sm:rounded-xl transition-all border border-gray-200"
       >
-        <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-2 rounded-lg">
-          <FaUser className="text-white text-sm" />
+        <div className="bg-gradient-to-br from-blue-600 to-indigo-600 p-1.5 sm:p-2 rounded-lg">
+          <FaUser className="text-white text-xs sm:text-sm" />
         </div>
         <span className="hidden md:block text-sm font-medium text-gray-700">{email}</span>
       </button>
