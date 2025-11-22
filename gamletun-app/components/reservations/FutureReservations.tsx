@@ -24,12 +24,12 @@ export default function FutureReservations() {
     useEffect(() => {
         const fetchReservations = async () => {
             const supabase = createClient();
-            const now = new Date().toISOString();
+            const now = new Date().toISO String();
 
             console.log('Fetching reservations after:', now);
 
             const { data, error } = await supabase
-                .from('reservations')
+                .from('equipment_reservations')
                 .select(`
           id,
           equipment_id,
@@ -42,6 +42,7 @@ export default function FutureReservations() {
           )
         `)
                 .gte('start_time', now)
+                .eq('status', 'active')
                 .order('start_time', { ascending: true })
                 .limit(5);
 

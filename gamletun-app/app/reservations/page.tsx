@@ -6,7 +6,7 @@ export default async function ReservationsPage() {
 
   // Fetch all reservations with equipment details
   const { data: rawReservations } = await supabase
-    .from('reservations')
+    .from('equipment_reservations')
     .select(`
       id,
       equipment_id,
