@@ -168,9 +168,9 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
                   {/* Status Badge */}
                   <div className="absolute top-4 right-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm backdrop-blur-md ${item.status === 'active' ? 'bg-green-500/90 text-white' :
-                        item.status === 'in_use' ? 'bg-blue-500/90 text-white' :
-                          item.status === 'maintenance' ? 'bg-yellow-500/90 text-white' :
-                            'bg-gray-500/90 text-white'
+                      item.status === 'in_use' ? 'bg-blue-500/90 text-white' :
+                        item.status === 'maintenance' ? 'bg-yellow-500/90 text-white' :
+                          'bg-gray-500/90 text-white'
                       }`}>
                       {item.status === 'active' ? 'Aktiv' :
                         item.status === 'in_use' ? 'I bruk' :
@@ -200,27 +200,10 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
 
                   <p className="text-sm text-gray-500 mb-4 line-clamp-1">{item.model || 'Ingen modellspesifikasjon'}</p>
 
-                  <div className="mt-auto pt-4 border-t border-gray-100 flex gap-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditEquipment(item);
-                      }}
-                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Rediger"
-                    >
-                      <FaEdit className="text-lg" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setMaintenanceEquipment(item);
-                      }}
-                      className="flex-1 flex items-center justify-center gap-2 bg-gray-50 hover:bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                    >
-                      <FaTools />
-                      <span>Logg</span>
-                    </button>
+                  <div className="mt-auto pt-4 border-t border-gray-100 flex justify-end">
+                    <span className="text-sm text-blue-600 font-medium group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                      Se detaljer <span aria-hidden="true">→</span>
+                    </span>
                   </div>
                 </div>
               </div>
