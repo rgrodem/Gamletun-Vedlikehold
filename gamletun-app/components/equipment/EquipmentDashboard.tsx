@@ -81,17 +81,17 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
       </div>
 
       {/* Stats Overview - Clickable Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
         <div
           onClick={() => { setSearchTerm(''); setSelectedCategory('all'); }}
-          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]"
+          className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 flex items-center gap-3 sm:gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]"
         >
-          <div className="p-4 bg-blue-50 rounded-xl text-blue-600">
-            <MdConstruction className="text-2xl" />
+          <div className="p-3 sm:p-4 bg-blue-50 rounded-xl text-blue-600">
+            <MdConstruction className="text-xl sm:text-2xl" />
           </div>
           <div>
-            <p className="text-sm text-gray-500 font-medium">Totalt Utstyr</p>
-            <p className="text-2xl font-bold text-gray-900">{totalEquipment}</p>
+            <p className="text-xs sm:text-sm text-gray-500 font-medium">Totalt Utstyr</p>
+            <p className="text-xl sm:text-2xl font-bold text-gray-900">{totalEquipment}</p>
           </div>
         </div>
 
@@ -100,24 +100,24 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
             const select = document.querySelector('select');
             if (select) (select as HTMLElement).focus();
           }}
-          className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]"
+          className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 flex items-center gap-3 sm:gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]"
         >
-          <div className="p-4 bg-green-50 rounded-xl text-green-600">
-            <FaTools className="text-2xl" />
+          <div className="p-3 sm:p-4 bg-green-50 rounded-xl text-green-600">
+            <FaTools className="text-xl sm:text-2xl" />
           </div>
           <div>
-            <p className="text-sm text-gray-500 font-medium">Kategorier</p>
-            <p className="text-2xl font-bold text-gray-900">{categories.length}</p>
+            <p className="text-xs sm:text-sm text-gray-500 font-medium">Kategorier</p>
+            <p className="text-xl sm:text-2xl font-bold text-gray-900">{categories.length}</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]">
-          <div className="p-4 bg-purple-50 rounded-xl text-purple-600">
-            <BsCalendar3 className="text-2xl" />
+        <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 flex items-center gap-3 sm:gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98] col-span-2 lg:col-span-1">
+          <div className="p-3 sm:p-4 bg-purple-50 rounded-xl text-purple-600">
+            <BsCalendar3 className="text-xl sm:text-2xl" />
           </div>
           <div>
-            <p className="text-sm text-gray-500 font-medium">Vedlikehold (30d)</p>
-            <p className="text-2xl font-bold text-gray-900">{maintenanceLast30Days}</p>
+            <p className="text-xs sm:text-sm text-gray-500 font-medium">Vedlikehold (30d)</p>
+            <p className="text-xl sm:text-2xl font-bold text-gray-900">{maintenanceLast30Days}</p>
           </div>
         </div>
       </div>
@@ -159,7 +159,7 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
 
       {/* Equipment Grid */}
       {filteredEquipment.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {filteredEquipment.map((item) => {
             const categoryColor = item.category?.color || '#6b7280';
             const categoryIcon = item.category?.icon || '⚙️';
