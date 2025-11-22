@@ -24,7 +24,7 @@ export default function FutureReservations() {
     useEffect(() => {
         const fetchReservations = async () => {
             const supabase = createClient();
-            const now = new Date().toISO String();
+            const now = new Date().toISOString();
 
             console.log('Fetching reservations after:', now);
 
