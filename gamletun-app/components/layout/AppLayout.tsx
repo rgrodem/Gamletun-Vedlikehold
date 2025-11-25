@@ -25,13 +25,13 @@ export default function AppLayout({ children, email, workOrderStats }: AppLayout
         {/* Main Content */}
         <div className="flex-1 flex flex-col min-h-screen lg:ml-0">
           {/* Top Header */}
-          <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-40 shadow-sm">
+          <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
             <div className="px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center h-14 sm:h-16">
+              <div className="flex justify-between items-center h-16">
                 {/* Mobile: Show logo */}
                 <div className="lg:hidden">
-                  <Link href="/" className="flex items-center gap-2">
-                    <div className="relative h-8 w-24 sm:h-10 sm:w-28">
+                  <Link href="/" className="flex items-center gap-3">
+                    <div className="relative h-10 w-32">
                       <Image
                         src="/logo.png"
                         alt="Gamletun Gaard"
@@ -40,7 +40,9 @@ export default function AppLayout({ children, email, workOrderStats }: AppLayout
                         priority
                       />
                     </div>
-                    <span className="text-xs font-medium text-gray-600 hidden xs:inline">Vedlikehold</span>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold text-gray-800">Vedlikehold</span>
+                    </div>
                   </Link>
                 </div>
                 {/* Desktop: Empty or breadcrumb */}
