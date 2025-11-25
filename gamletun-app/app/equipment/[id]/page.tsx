@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import EquipmentDetailClient from '@/components/equipment/EquipmentDetailClient';
+import AppLayout from '@/components/layout/AppLayout';
+import { getWorkOrdersDashboard } from '@/lib/work-orders';
 
 // Revalidate every 30 seconds
 export const revalidate = 30;
@@ -14,6 +16,14 @@ interface PageProps {
 export default async function EquipmentDetailPage({ params }: PageProps) {
   const { id } = await params;
   const supabase = await createClient();
+
+  // Get current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Get work order stats for sidebar
+  const workOrderStats = await getWorkOrdersDashboard();
 
   // Fetch equipment details
   const { data: equipment, error: equipmentError } = await supabase
@@ -44,10 +54,12 @@ export default async function EquipmentDetailPage({ params }: PageProps) {
     .order('name');
 
   return (
-    <EquipmentDetailClient
-      equipment={equipment}
-      maintenanceLogs={maintenanceLogs || []}
-      categories={categories || []}
-    />
+    <AppLayout email={user?.email} workOrderStats={workOrderStats}>
+      <EquipmentDetailClient
+        equipment={equipment}
+        maintenanceLogs={maintenanceLogs || []}
+        categories={categories || []}
+      />
+    </AppLayout>
   );
 }

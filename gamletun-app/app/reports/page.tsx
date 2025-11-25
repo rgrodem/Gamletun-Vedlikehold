@@ -1,11 +1,21 @@
 import { createClient } from '@/lib/supabase/server';
 import ReportClient from '@/components/reports/ReportClient';
+import AppLayout from '@/components/layout/AppLayout';
+import { getWorkOrdersDashboard } from '@/lib/work-orders';
 
 // Revalidate every 30 seconds
 export const revalidate = 30;
 
 export default async function ReportsPage() {
   const supabase = await createClient();
+
+  // Get current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // Get work order stats for sidebar
+  const workOrderStats = await getWorkOrdersDashboard();
 
   // Fetch all equipment
   const { data: equipmentData } = await supabase
@@ -43,12 +53,14 @@ export default async function ReportsPage() {
     .order('performed_date', { ascending: false });
 
   return (
-    <ReportClient
-      equipment={equipment || []}
-      maintenanceTypes={maintenanceTypes || []}
-      initialLogs={maintenanceLogs || []}
-      initialStartDate={firstDayOfMonth.toISOString().split('T')[0]}
-      initialEndDate={lastDayOfMonth.toISOString().split('T')[0]}
-    />
+    <AppLayout email={user?.email} workOrderStats={workOrderStats}>
+      <ReportClient
+        equipment={equipment || []}
+        maintenanceTypes={maintenanceTypes || []}
+        initialLogs={maintenanceLogs || []}
+        initialStartDate={firstDayOfMonth.toISOString().split('T')[0]}
+        initialEndDate={lastDayOfMonth.toISOString().split('T')[0]}
+      />
+    </AppLayout>
   );
 }

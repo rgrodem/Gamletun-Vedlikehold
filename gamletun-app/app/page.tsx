@@ -1,10 +1,7 @@
-import { HiDocumentReport } from 'react-icons/hi';
 import { createClient } from '@/lib/supabase/server';
 import EquipmentDashboard from '@/components/equipment/EquipmentDashboard';
-import UserMenu from '@/components/auth/UserMenu';
-import Link from 'next/link';
-import Image from 'next/image';
-import { getOpenWorkOrderCountsByEquipment } from '@/lib/work-orders';
+import AppLayout from '@/components/layout/AppLayout';
+import { getOpenWorkOrderCountsByEquipment, getWorkOrdersDashboard } from '@/lib/work-orders';
 
 // Revalidate every 60 seconds instead of on every request
 export const revalidate = 60;
@@ -38,69 +35,51 @@ export default async function Home() {
 
   const { data: recentMaintenance } = await supabase
     .from('maintenance_logs')
-    .select('id, equipment_id')
+    .select('id, equipment_id, performed_date')
     .gte('performed_date', thirtyDaysAgo.toISOString().split('T')[0]);
 
-  // Fetch open work order counts
-  const workOrderCounts = await getOpenWorkOrderCountsByEquipment();
+  // Fetch last maintenance date per equipment
+  const { data: lastMaintenanceData } = await supabase
+    .from('maintenance_logs')
+    .select('equipment_id, performed_date')
+    .order('performed_date', { ascending: false });
+
+  // Create lookup for last maintenance date
+  const lastMaintenanceDates: Record<string, string> = {};
+  lastMaintenanceData?.forEach(log => {
+    if (!lastMaintenanceDates[log.equipment_id]) {
+      lastMaintenanceDates[log.equipment_id] = log.performed_date;
+    }
+  });
+
+  // Fetch next scheduled work orders per equipment
+  const today = new Date().toISOString();
+  const { data: nextWorkOrdersData } = await supabase
+    .from('work_orders')
+    .select('equipment_id, due_date, title')
+    .in('status', ['open', 'scheduled', 'in_progress', 'waiting_parts'])
+    .not('due_date', 'is', null)
+    .order('due_date', { ascending: true });
+
+  // Fetch open work order counts and dashboard stats
+  const [workOrderCounts, workOrderStats] = await Promise.all([
+    getOpenWorkOrderCountsByEquipment(),
+    getWorkOrdersDashboard(),
+  ]);
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-14 sm:h-16 md:h-20">
-            <div className="flex items-center gap-2 sm:gap-3">
-              {/* Logo - smaller on mobile */}
-              <div className="relative h-10 w-24 sm:h-12 sm:w-32 md:h-14 md:w-40">
-                <Image
-                  src="/logo.png"
-                  alt="Gamletun Gaard"
-                  fill
-                  className="object-contain"
-                  priority
-                />
-              </div>
-              {/* Divider and title - hidden on very small screens */}
-              <div className="hidden xs:block border-l border-gray-300 pl-2 sm:pl-3">
-                <h1 className="text-xs sm:text-sm md:text-base font-semibold text-gray-900">
-                  Vedlikehold
-                </h1>
-                <p className="text-xs text-gray-500 hidden sm:block">Utstyr & Maskinpark</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1.5 sm:gap-2 md:gap-4">
-              {/* Rapport button - more compact on mobile */}
-              <Link
-                href="/reports"
-                className="flex items-center gap-1 sm:gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-2.5 sm:px-4 md:px-5 py-1.5 sm:py-2 md:py-2.5 rounded-lg sm:rounded-xl hover:shadow-lg active:scale-95 transition-all duration-200 font-medium touch-manipulation text-xs sm:text-sm"
-              >
-                <HiDocumentReport className="text-base sm:text-lg md:text-xl" />
-                <span className="hidden xs:inline">Rapport</span>
-              </Link>
-              {user && <UserMenu email={user.email || ''} />}
-            </div>
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <EquipmentDashboard
-          categories={categories || []}
-          equipment={equipment || []}
-          recentMaintenance={recentMaintenance || []}
-          workOrderCounts={workOrderCounts}
-        />
-      </main>
-
-      {/* Footer */}
-      <footer className="mt-16 bg-white/50 backdrop-blur-sm border-t border-gray-200 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-sm text-gray-600">© 2025 Gamletun. Alle rettigheter reservert.</p>
-          <p className="text-xs text-gray-500 mt-1">www.gamletun.no</p>
-        </div>
-      </footer>
-    </div>
+    <AppLayout
+      email={user?.email}
+      workOrderStats={workOrderStats}
+    >
+      <EquipmentDashboard
+        categories={categories || []}
+        equipment={equipment || []}
+        recentMaintenance={recentMaintenance || []}
+        workOrderCounts={workOrderCounts}
+        lastMaintenanceDates={lastMaintenanceDates}
+        nextWorkOrders={nextWorkOrdersData || []}
+      />
+    </AppLayout>
   );
 }
