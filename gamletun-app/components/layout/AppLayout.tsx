@@ -1,6 +1,8 @@
 'use client';
 
 import { ReactNode } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import Sidebar from './Sidebar';
 import UserMenu from '../auth/UserMenu';
 
@@ -26,9 +28,22 @@ export default function AppLayout({ children, email, workOrderStats }: AppLayout
           <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-40 shadow-sm">
             <div className="px-4 sm:px-6 lg:px-8">
               <div className="flex justify-between items-center h-14 sm:h-16">
+                {/* Mobile: Show logo */}
                 <div className="lg:hidden">
-                  {/* Placeholder for mobile - sidebar button is fixed */}
+                  <Link href="/" className="flex items-center gap-2">
+                    <div className="relative h-8 w-24 sm:h-10 sm:w-28">
+                      <Image
+                        src="/logo.png"
+                        alt="Gamletun Gaard"
+                        fill
+                        className="object-contain"
+                        priority
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-gray-600 hidden xs:inline">Vedlikehold</span>
+                  </Link>
                 </div>
+                {/* Desktop: Empty or breadcrumb */}
                 <div className="hidden lg:block">
                   {/* Breadcrumb or page title could go here */}
                 </div>
