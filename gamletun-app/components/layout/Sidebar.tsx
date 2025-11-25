@@ -79,9 +79,9 @@ export default function Sidebar({ workOrderStats }: SidebarProps) {
         </button>
 
         {/* Logo */}
-        <div className="h-16 flex items-center px-4 border-b border-gray-200">
+        <div className="h-20 flex items-center px-4 border-b border-gray-200">
           <Link href="/" className="flex items-center gap-3">
-            <div className="relative h-10 w-28">
+            <div className="relative h-12 w-36">
               <Image
                 src="/logo.png"
                 alt="Gamletun Gaard"

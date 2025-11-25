@@ -45,7 +45,13 @@
       "Bash(git pull:*)",
       "Bash(git merge:*)",
       "Bash(git push:*)",
-      "Bash(npx next@latest build:*)"
+      "Bash(npx next@latest build:*)",
+      "Bash(git config:*)",
+      "Bash(cmdkey /list:*)",
+      "Bash(findstr:*)",
+      "Bash(gh auth status:*)",
+      "Bash(gh auth logout:*)",
+      "Bash(gh pr create:*)"
     ],
     "deny": [],
     "ask": []
