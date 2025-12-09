@@ -26,8 +26,6 @@ export default function FutureReservations() {
             const supabase = createClient();
             const now = new Date().toISOString();
 
-            console.log('Fetching reservations after:', now);
-
             const { data, error } = await supabase
                 .from('equipment_reservations')
                 .select(`
@@ -46,8 +44,6 @@ export default function FutureReservations() {
                 .order('start_time', { ascending: true })
                 .limit(5);
 
-            console.log('Reservations query result:', { data, error });
-
             if (!error && data) {
                 // Transform equipment to handle potential array format
                 const transformed = data.map(r => ({
@@ -55,7 +51,6 @@ export default function FutureReservations() {
                     equipment: Array.isArray(r.equipment) ? r.equipment[0] : r.equipment
                 }));
                 setReservations(transformed);
-                console.log('Transformed reservations:', transformed);
             } else if (error) {
                 console.error('Error fetching reservations:', error);
             }
