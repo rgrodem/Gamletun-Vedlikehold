@@ -143,25 +143,26 @@ export default function EquipmentDashboard({
 
       {/* Actions & Filters - More Compact */}
       <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-        <div className="flex flex-col sm:flex-row gap-3 justify-between items-stretch sm:items-center">
-          <div className="flex flex-col sm:flex-row gap-3 flex-1">
-            {/* Search */}
-            <div className="relative group flex-1 max-w-md">
-              <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-              <input
-                type="text"
-                placeholder="Søk etter utstyr..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all outline-none text-sm"
-              />
-            </div>
+        <div className="flex flex-col gap-3">
+          {/* Search */}
+          <div className="relative group">
+            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+            <input
+              type="text"
+              placeholder="Søk etter utstyr..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all outline-none text-base"
+            />
+          </div>
 
+          {/* Filters Row */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             {/* Category Filter */}
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none cursor-pointer text-sm"
+              className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none cursor-pointer text-base font-medium text-gray-700"
             >
               <option value="all">Alle kategorier</option>
               {categories.map(cat => (
@@ -173,7 +174,7 @@ export default function EquipmentDashboard({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none cursor-pointer text-sm"
+              className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none cursor-pointer text-base font-medium text-gray-700"
             >
               <option value="all">Alle statuser</option>
               <option value="active">Aktiv</option>
@@ -181,16 +182,16 @@ export default function EquipmentDashboard({
               <option value="maintenance">Vedlikehold</option>
               <option value="inactive">Inaktiv</option>
             </select>
-          </div>
 
-          {/* Add Button */}
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg shadow-sm hover:shadow-md active:scale-95 transition-all font-medium text-sm whitespace-nowrap"
-          >
-            <FaPlus className="text-xs" />
-            <span>Nytt Utstyr</span>
-          </button>
+            {/* Add Button */}
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg shadow-sm hover:shadow-md active:scale-95 transition-all font-semibold text-base whitespace-nowrap"
+            >
+              <FaPlus className="text-sm" />
+              <span>Nytt Utstyr</span>
+            </button>
+          </div>
         </div>
 
         {/* Active filters indicator */}
