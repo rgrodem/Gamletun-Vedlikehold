@@ -20,9 +20,9 @@ export default function ResetPasswordPage() {
     // Check if user came from password reset email
     const checkSession = async () => {
       const supabase = createClient();
-      const { data } = await supabase.auth.getSession();
+      const { data } = await supabase.auth.getUser();
 
-      if (data.session) {
+      if (data.user) {
         setValidSession(true);
       }
     };
@@ -36,8 +36,8 @@ export default function ResetPasswordPage() {
     setError(null);
 
     // Validate passwords
-    if (password.length < 6) {
-      setError('Passordet må være minst 6 tegn');
+    if (password.length < 8) {
+      setError('Passordet må være minst 8 tegn');
       setLoading(false);
       return;
     }
@@ -194,12 +194,12 @@ export default function ResetPasswordPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="••••••••"
                 />
               </div>
-              <p className="text-xs text-gray-500 mt-1">Minst 6 tegn</p>
+              <p className="text-xs text-gray-500 mt-1">Minst 8 tegn</p>
             </div>
 
             {/* Confirm Password */}
@@ -217,7 +217,7 @@ export default function ResetPasswordPage() {
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={8}
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                   placeholder="••••••••"
                 />

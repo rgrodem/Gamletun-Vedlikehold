@@ -43,11 +43,6 @@ export default function WorkOrderSection({ equipment, onUpdate }: WorkOrderSecti
     onUpdate();
   };
 
-  const handleStatusChange = () => {
-    loadWorkOrders();
-    onUpdate();
-  };
-
   const openWorkOrders = workOrders.filter(wo =>
     !['completed', 'closed'].includes(wo.status)
   );
@@ -89,7 +84,7 @@ export default function WorkOrderSection({ equipment, onUpdate }: WorkOrderSecti
         <WorkOrderList
           workOrders={workOrders}
           showEquipmentName={false}
-          onStatusChange={handleStatusChange}
+          onStatusChange={handleSuccess}
         />
       ) : (
         <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">

@@ -73,6 +73,34 @@ export interface CreateWorkOrderData {
   checklist?: ChecklistItem[];
 }
 
+export interface UpdateWorkOrderData {
+  type?: WorkOrderType;
+  status?: WorkOrderStatus;
+  priority?: WorkOrderPriority;
+  title?: string;
+  description?: string | null;
+  estimated_hours?: number | null;
+  estimated_cost?: number | null;
+  actual_hours?: number | null;
+  actual_cost?: number | null;
+  due_date?: string | null;
+  scheduled_date?: string | null;
+  is_recurring?: boolean;
+  recurrence_interval_days?: number | null;
+  recurrence_interval_hours?: number | null;
+  next_due_date?: string | null;
+  assigned_to?: string | null;
+  checklist?: ChecklistItem[];
+  completed_at?: string | null;
+  closed_at?: string | null;
+  completed_maintenance_log_id?: string | null;
+}
+
+export function isWorkOrderOverdue(dueDate: string | null, status: WorkOrderStatus): boolean {
+  if (!dueDate || ['completed', 'closed'].includes(status)) return false;
+  return new Date(dueDate) < new Date();
+}
+
 /**
  * Get all work orders with optional filters
  */
@@ -129,34 +157,24 @@ export async function getWorkOrdersDashboard() {
   const supabase = createClient();
   const today = new Date().toISOString();
   const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const activeStatuses = ['open', 'scheduled', 'in_progress', 'waiting_parts'];
 
-  // Overdue
-  const { data: overdue } = await supabase
-    .from('work_orders')
-    .select('id')
-    .in('status', ['open', 'scheduled', 'in_progress', 'waiting_parts'])
-    .lt('due_date', today);
+  const [
+    { data: overdue, error: overdueError },
+    { data: thisWeek, error: thisWeekError },
+    { data: openFaults, error: openFaultsError },
+    { data: scheduled, error: scheduledError },
+  ] = await Promise.all([
+    supabase.from('work_orders').select('id').in('status', activeStatuses).lt('due_date', today),
+    supabase.from('work_orders').select('id').in('status', activeStatuses).gte('due_date', today).lte('due_date', nextWeek),
+    supabase.from('work_orders').select('id').eq('type', 'corrective').in('status', ['open', 'in_progress', 'waiting_parts']),
+    supabase.from('work_orders').select('id').eq('status', 'scheduled'),
+  ]);
 
-  // This week
-  const { data: thisWeek } = await supabase
-    .from('work_orders')
-    .select('id')
-    .in('status', ['open', 'scheduled', 'in_progress', 'waiting_parts'])
-    .gte('due_date', today)
-    .lte('due_date', nextWeek);
-
-  // Open faults
-  const { data: openFaults } = await supabase
-    .from('work_orders')
-    .select('id')
-    .eq('type', 'corrective')
-    .in('status', ['open', 'in_progress', 'waiting_parts']);
-
-  // Scheduled
-  const { data: scheduled } = await supabase
-    .from('work_orders')
-    .select('id')
-    .eq('status', 'scheduled');
+  if (overdueError) console.error('Error fetching overdue count:', overdueError);
+  if (thisWeekError) console.error('Error fetching this week count:', thisWeekError);
+  if (openFaultsError) console.error('Error fetching open faults count:', openFaultsError);
+  if (scheduledError) console.error('Error fetching scheduled count:', scheduledError);
 
   return {
     overdue: overdue?.length || 0,
@@ -230,7 +248,7 @@ export async function createWorkOrder(data: CreateWorkOrderData): Promise<WorkOr
  */
 export async function updateWorkOrder(
   id: string,
-  updates: Partial<WorkOrder>
+  updates: UpdateWorkOrderData
 ): Promise<WorkOrder> {
   const supabase = createClient();
 
@@ -500,7 +518,7 @@ export const priorityColors: Record<WorkOrderPriority, string> = {
   low: 'border-gray-300 text-gray-700',
   medium: 'border-blue-400 text-blue-700',
   high: 'border-orange-400 text-orange-700',
-  urgent: 'border-red-500 text-red-700 animate-pulse',
+  urgent: 'border-red-500 text-red-700 animate-pulse motion-reduce:animate-none',
 };
 
 export const typeLabels: Record<WorkOrderType, string> = {

@@ -40,7 +40,6 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // If not authenticated, redirect to login
-  // If not authenticated, redirect to login
   if (!user) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/login';

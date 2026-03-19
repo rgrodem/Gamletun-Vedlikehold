@@ -266,7 +266,7 @@ export default function EquipmentDashboard({
                     <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm backdrop-blur-md ${
                       item.status === 'active' ? 'bg-green-500/90 text-white' :
                       item.status === 'in_use' ? 'bg-blue-500/90 text-white' :
-                      item.status === 'maintenance' ? 'bg-yellow-500/90 text-white' :
+                      item.status === 'maintenance' ? 'bg-amber-600 text-white' :
                       'bg-gray-500/90 text-white'
                     }`}>
                       {item.status === 'active' ? 'Aktiv' :
@@ -281,7 +281,8 @@ export default function EquipmentDashboard({
                     <Link
                       href={`/work-orders?equipment=${item.id}`}
                       onClick={(e) => e.stopPropagation()}
-                      className="absolute top-3 left-3 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg animate-pulse flex items-center gap-1 transition-colors"
+                      className="absolute top-3 left-3 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg animate-pulse motion-reduce:animate-none flex items-center gap-1 transition-colors"
+                      aria-label={`${openWorkOrders} åpne arbeidsordre`}
                     >
                       <FaTools className="text-[8px]" />
                       {openWorkOrders}

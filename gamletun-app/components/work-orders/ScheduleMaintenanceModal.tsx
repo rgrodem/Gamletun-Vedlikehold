@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FaTimes, FaCalendarAlt, FaPlus, FaTrash } from 'react-icons/fa';
 import { createWorkOrder, ChecklistItem } from '@/lib/work-orders';
 
@@ -16,6 +16,12 @@ interface ScheduleMaintenanceModalProps {
 }
 
 export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess }: ScheduleMaintenanceModalProps) {
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -64,15 +70,16 @@ export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess
 
       onSuccess();
       onClose();
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Error scheduling maintenance:', err);
-      setError(err.message || 'Kunne ikke planlegge vedlikehold');
+      setError(err instanceof Error ? err.message : 'Kunne ikke planlegge vedlikehold');
+    } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="schedule-modal-title">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8 max-h-[90vh] overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-white flex items-center justify-between p-6 border-b border-gray-200 rounded-t-2xl z-10">
@@ -81,7 +88,7 @@ export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess
               <FaCalendarAlt className="text-2xl text-blue-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">Planlegg vedlikehold</h2>
+              <h2 id="schedule-modal-title" className="text-2xl font-bold text-gray-900">Planlegg vedlikehold</h2>
               <p className="text-sm text-gray-600">{equipment.name}</p>
             </div>
           </div>

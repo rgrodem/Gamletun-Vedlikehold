@@ -10,7 +10,8 @@ import {
   priorityColors,
   priorityLabels,
   typeIcons,
-  updateWorkOrder
+  updateWorkOrder,
+  isWorkOrderOverdue,
 } from '@/lib/work-orders';
 import { FaExternalLinkAlt, FaPlay, FaCheckCircle } from 'react-icons/fa';
 import CompleteWorkOrderModal from './CompleteWorkOrderModal';
@@ -32,16 +33,13 @@ export default function WorkOrderList({
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [workOrderToComplete, setWorkOrderToComplete] = useState<WorkOrder | null>(null);
   const [workOrderToView, setWorkOrderToView] = useState<WorkOrder | null>(null);
+  const [startError, setStartError] = useState<string | null>(null);
 
   // Filter work orders based on active tab
   const filteredWorkOrders = workOrders.filter(wo => {
-    const now = new Date();
-    const dueDate = wo.due_date ? new Date(wo.due_date) : null;
-    const isOverdue = dueDate && dueDate < now && !['completed', 'closed'].includes(wo.status);
-
     switch (activeTab) {
       case 'overdue':
-        return isOverdue;
+        return isWorkOrderOverdue(wo.due_date, wo.status);
       case 'faults':
         return wo.type === 'corrective' && !['completed', 'closed'].includes(wo.status);
       case 'scheduled':
@@ -58,10 +56,7 @@ export default function WorkOrderList({
   // Calculate counts for tabs
   const counts = {
     all: workOrders.length,
-    overdue: workOrders.filter(wo => {
-      const dueDate = wo.due_date ? new Date(wo.due_date) : null;
-      return dueDate && dueDate < new Date() && !['completed', 'closed'].includes(wo.status);
-    }).length,
+    overdue: workOrders.filter(wo => isWorkOrderOverdue(wo.due_date, wo.status)).length,
     faults: workOrders.filter(wo => wo.type === 'corrective' && !['completed', 'closed'].includes(wo.status)).length,
     scheduled: workOrders.filter(wo => wo.status === 'scheduled').length,
     in_progress: workOrders.filter(wo => wo.status === 'in_progress').length,
@@ -77,18 +72,14 @@ export default function WorkOrderList({
     });
   };
 
-  const isOverdue = (dueDate: string | null, status: WorkOrderStatus) => {
-    if (!dueDate || ['completed', 'closed'].includes(status)) return false;
-    return new Date(dueDate) < new Date();
-  };
-
   const handleStartWorkOrder = async (workOrder: WorkOrder) => {
+    setStartError(null);
     try {
       await updateWorkOrder(workOrder.id, { status: 'in_progress' });
       onStatusChange?.();
     } catch (error) {
       console.error('Error starting work order:', error);
-      alert('Kunne ikke starte arbeidsordre');
+      setStartError('Kunne ikke starte arbeidsordre. Prøv igjen.');
     }
   };
 
@@ -99,6 +90,11 @@ export default function WorkOrderList({
 
   return (
     <div className="space-y-4">
+      {startError && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+          <p className="text-red-800 text-sm">{startError}</p>
+        </div>
+      )}
       {/* Filter Tabs */}
       <div className="flex flex-wrap gap-2 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
         {([
@@ -131,7 +127,7 @@ export default function WorkOrderList({
       ) : (
         <div className="space-y-3">
           {filteredWorkOrders.map(wo => {
-            const overdueFlag = isOverdue(wo.due_date, wo.status);
+            const overdueFlag = isWorkOrderOverdue(wo.due_date, wo.status);
 
             return (
               <div
@@ -145,7 +141,7 @@ export default function WorkOrderList({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start gap-3 mb-2">
                       {/* Type Icon */}
-                      <span className="text-2xl flex-shrink-0">{typeIcons[wo.type]}</span>
+                      <span className="text-2xl flex-shrink-0" aria-hidden="true">{typeIcons[wo.type]}</span>
 
                       {/* Title and Equipment */}
                       <div className="flex-1 min-w-0">
@@ -179,7 +175,7 @@ export default function WorkOrderList({
 
                           {/* Recurring indicator */}
                           {wo.is_recurring && (
-                            <span className="text-xs text-blue-600 font-medium">🔄 Gjentas</span>
+                            <span className="text-xs text-blue-600 font-medium"><span aria-hidden="true">🔄</span> Gjentas</span>
                           )}
                         </div>
 

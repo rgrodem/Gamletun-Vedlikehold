@@ -2,9 +2,10 @@
 
 import { useRouter } from 'next/navigation';
 import WorkOrderList from './WorkOrderList';
+import { WorkOrder } from '@/lib/work-orders';
 
 interface WorkOrderListWrapperProps {
-  workOrders: any[];
+  workOrders: WorkOrder[];
   showEquipmentName: boolean;
 }
 
