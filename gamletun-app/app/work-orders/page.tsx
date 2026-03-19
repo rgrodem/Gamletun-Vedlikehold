@@ -1,9 +1,10 @@
-import { FaTractor } from 'react-icons/fa';
-import Image from 'next/image';
 import { createClient } from '@/lib/supabase/server';
 import Link from 'next/link';
-import UserMenu from '@/components/auth/UserMenu';
+import AppLayout from '@/components/layout/AppLayout';
 import WorkOrderListWrapper from '@/components/work-orders/WorkOrderListWrapper';
+import WorkOrderCalendar from '@/components/work-orders/WorkOrderCalendar';
+import { getWorkOrdersDashboard } from '@/lib/work-orders';
+import { FaList, FaCalendarAlt, FaFilter } from 'react-icons/fa';
 
 // Revalidate every 60 seconds
 export const revalidate = 60;
@@ -11,7 +12,7 @@ export const revalidate = 60;
 export default async function WorkOrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ filter?: string }>;
+  searchParams: Promise<{ filter?: string; view?: string; equipment?: string }>;
 }) {
   const supabase = await createClient();
   const params = await searchParams;
@@ -21,6 +22,9 @@ export default async function WorkOrdersPage({
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Get work order stats for sidebar
+  const workOrderStats = await getWorkOrdersDashboard();
+
   // Build query based on filter
   let query = supabase
     .from('work_orders')
@@ -28,12 +32,17 @@ export default async function WorkOrdersPage({
       *,
       equipment:equipment_id (id, name)
     `)
-    .order('created_at', { ascending: false });
+    .order('due_date', { ascending: true, nullsFirst: false });
 
   // Apply filters from URL
   const filter = params.filter;
+  const equipmentId = params.equipment;
   const today = new Date().toISOString();
   const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  if (equipmentId) {
+    query = query.eq('equipment_id', equipmentId);
+  }
 
   if (filter === 'overdue') {
     query = query
@@ -49,95 +58,176 @@ export default async function WorkOrdersPage({
       .eq('type', 'corrective')
       .in('status', ['open', 'in_progress', 'waiting_parts']);
   } else if (filter === 'scheduled') {
-    query = query.eq('status', 'scheduled');
+    // Include both status='scheduled' AND any work order with future due_date
+    query = query
+      .in('status', ['open', 'scheduled'])
+      .gte('due_date', today);
   } else if (filter === 'in_progress') {
     query = query.eq('status', 'in_progress');
   } else if (filter === 'completed') {
     query = query.in('status', ['completed', 'closed']);
+  } else if (filter === 'all_open') {
+    query = query.in('status', ['open', 'scheduled', 'in_progress', 'waiting_parts']);
   }
 
   const { data: workOrders } = await query;
 
+  // Get equipment name if filtering by equipment
+  let equipmentName = '';
+  if (equipmentId) {
+    const { data: equipment } = await supabase
+      .from('equipment')
+      .select('name')
+      .eq('id', equipmentId)
+      .single();
+    equipmentName = equipment?.name || '';
+  }
+
+  const view = params.view || 'list';
+
+  const filterLabels: Record<string, string> = {
+    overdue: 'Forfalt',
+    thisweek: 'Denne uken',
+    faults: 'Åpne feil',
+    scheduled: 'Planlagt',
+    in_progress: 'Pågår',
+    completed: 'Fullført',
+    all_open: 'Alle åpne',
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Navigation */}
-      <nav className="bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16 md:h-20">
-            <Link href="/" className="flex items-center gap-2 sm:gap-3">
-              <div className="bg-white p-2 rounded-xl shadow-lg">
-                <Image src="/logo.png" alt="Gamletun Gaard" width={48} height={48} className="object-contain" priority />
-              </div>
-              <div>
-                <h1 className="text-base sm:text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                  Gamletun Vedlikehold
-                </h1>
-                <p className="text-xs text-gray-500 hidden sm:block">Arbeidsordre</p>
-              </div>
-            </Link>
-            <div className="flex items-center gap-2 sm:gap-4">
-              {user && <UserMenu email={user.email || ''} />}
-            </div>
+    <AppLayout email={user?.email} workOrderStats={workOrderStats}>
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Arbeidsordrer</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              {workOrders?.length || 0} {workOrders?.length === 1 ? 'ordre' : 'ordrer'}
+              {filter && ` - ${filterLabels[filter] || filter}`}
+              {equipmentName && ` for ${equipmentName}`}
+            </p>
           </div>
-        </div>
-      </nav>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                Arbeidsordre
-              </h1>
-              <p className="text-sm text-gray-600 mt-1">
-                {workOrders?.length || 0} {workOrders?.length === 1 ? 'ordre' : 'ordrer'} funnet
-              </p>
-            </div>
+          {/* View Toggle */}
+          <div className="flex items-center gap-2">
             <Link
-              href="/"
-              className="px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium text-sm touch-manipulation min-h-[40px] flex items-center"
+              href={`/work-orders?${new URLSearchParams({ ...(filter && { filter }), ...(equipmentId && { equipment: equipmentId }), view: 'list' }).toString()}`}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                view === 'list'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
             >
-              Tilbake til dashboard
+              <FaList />
+              <span className="hidden sm:inline">Liste</span>
+            </Link>
+            <Link
+              href={`/work-orders?${new URLSearchParams({ ...(filter && { filter }), ...(equipmentId && { equipment: equipmentId }), view: 'calendar' }).toString()}`}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                view === 'calendar'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              <FaCalendarAlt />
+              <span className="hidden sm:inline">Kalender</span>
             </Link>
           </div>
         </div>
 
+        {/* Filter Chips */}
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/work-orders"
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              !filter ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            Alle
+          </Link>
+          <Link
+            href="/work-orders?filter=overdue"
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              filter === 'overdue' ? 'bg-red-600 text-white' : 'bg-red-50 text-red-700 hover:bg-red-100'
+            }`}
+          >
+            Forfalt {workOrderStats.overdue > 0 && `(${workOrderStats.overdue})`}
+          </Link>
+          <Link
+            href="/work-orders?filter=thisweek"
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              filter === 'thisweek' ? 'bg-orange-600 text-white' : 'bg-orange-50 text-orange-700 hover:bg-orange-100'
+            }`}
+          >
+            Denne uken {workOrderStats.thisWeek > 0 && `(${workOrderStats.thisWeek})`}
+          </Link>
+          <Link
+            href="/work-orders?filter=faults"
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              filter === 'faults' ? 'bg-yellow-600 text-white' : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
+            }`}
+          >
+            Åpne feil {workOrderStats.openFaults > 0 && `(${workOrderStats.openFaults})`}
+          </Link>
+          <Link
+            href="/work-orders?filter=scheduled"
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              filter === 'scheduled' ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+            }`}
+          >
+            Planlagt {workOrderStats.scheduled > 0 && `(${workOrderStats.scheduled})`}
+          </Link>
+          <Link
+            href="/work-orders?filter=in_progress"
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              filter === 'in_progress' ? 'bg-purple-600 text-white' : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
+            }`}
+          >
+            Pågår
+          </Link>
+          <Link
+            href="/work-orders?filter=completed"
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+              filter === 'completed' ? 'bg-green-600 text-white' : 'bg-green-50 text-green-700 hover:bg-green-100'
+            }`}
+          >
+            Fullført
+          </Link>
+        </div>
+
+        {/* Content */}
         {workOrders && workOrders.length > 0 ? (
-          <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-lg border border-gray-100">
-            <WorkOrderListWrapper
-              workOrders={workOrders as any[]}
-              showEquipmentName={true}
-            />
-          </div>
+          view === 'calendar' ? (
+            <WorkOrderCalendar workOrders={workOrders as any[]} />
+          ) : (
+            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+              <WorkOrderListWrapper
+                workOrders={workOrders as any[]}
+                showEquipmentName={true}
+              />
+            </div>
+          )
         ) : (
-          <div className="bg-white rounded-2xl p-12 text-center shadow-lg border border-gray-100">
-            <div className="text-6xl mb-4">📋</div>
-            <h3 className="text-xl font-bold text-gray-900 mb-2">
-              Ingen arbeidsordre funnet
+          <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-100">
+            <div className="text-5xl mb-4">📋</div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">
+              Ingen arbeidsordrer funnet
             </h3>
-            <p className="text-gray-600 mb-6">
+            <p className="text-gray-600 mb-6 text-sm">
               {filter
-                ? 'Prøv å endre filteret eller opprett nye arbeidsordre'
+                ? 'Prøv å endre filteret eller opprett nye arbeidsordrer'
                 : 'Opprett din første arbeidsordre for å komme i gang'}
             </p>
             <Link
               href="/"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all font-semibold"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
             >
               Gå til utstyrsoversikt
             </Link>
           </div>
         )}
-      </main>
-
-      {/* Footer */}
-      <footer className="mt-16 bg-white/50 backdrop-blur-sm border-t border-gray-200 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-sm text-gray-600">© 2025 Gamletun. Alle rettigheter reservert.</p>
-          <p className="text-xs text-gray-500 mt-1">www.gamletun.no</p>
-        </div>
-      </footer>
-    </div>
+      </div>
+    </AppLayout>
   );
 }

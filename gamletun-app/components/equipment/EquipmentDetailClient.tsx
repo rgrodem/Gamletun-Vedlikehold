@@ -135,175 +135,159 @@ export default function EquipmentDetailClient({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors mb-4"
-          >
-            <FaArrowLeft />
-            <span>Tilbake til oversikt</span>
-          </Link>
+    <div className="space-y-6">
+      {/* Breadcrumb */}
+      <Link
+        href="/"
+        className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+      >
+        <FaArrowLeft className="text-xs" />
+        <span>Tilbake til oversikt</span>
+      </Link>
 
-          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-            <div className="flex gap-4">
-              {/* Equipment Image or Icon */}
-              {equipment.image_url ? (
-                <div className="relative w-20 h-20 sm:w-24 sm:h-24 rounded-2xl shadow-lg overflow-hidden flex-shrink-0">
-                  <Image
-                    src={equipment.image_url}
-                    alt={equipment.name}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 640px) 80px, 96px"
-                  />
+      {/* Header Card */}
+      <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+          <div className="flex gap-4">
+            {/* Equipment Image or Icon */}
+            {equipment.image_url ? (
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-xl shadow-md overflow-hidden flex-shrink-0">
+                <Image
+                  src={equipment.image_url}
+                  alt={equipment.name}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 640px) 64px, 80px"
+                />
+              </div>
+            ) : (
+              equipment.category && (
+                <div
+                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl shadow-md flex items-center justify-center text-3xl sm:text-4xl flex-shrink-0"
+                  style={{
+                    background: `linear-gradient(to bottom right, ${equipment.category.color}, ${equipment.category.color}dd)`
+                  }}
+                >
+                  {equipment.category.icon}
                 </div>
-              ) : (
-                equipment.category && (
-                  <div
-                    className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl shadow-lg flex items-center justify-center text-4xl sm:text-5xl flex-shrink-0"
-                    style={{
-                      background: `linear-gradient(to bottom right, ${equipment.category.color}, ${equipment.category.color}dd)`
-                    }}
-                  >
-                    {equipment.category.icon}
-                  </div>
-                )
+              )
+            )}
+            <div>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{equipment.name}</h1>
+              {equipment.model && (
+                <p className="text-sm text-gray-600 mb-2">Modell: {equipment.model}</p>
               )}
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">{equipment.name}</h1>
-                {equipment.model && (
-                  <p className="text-sm sm:text-base text-gray-600 mb-2">Modell: {equipment.model}</p>
-                )}
-                <div className="flex flex-wrap items-center gap-3">
-                  <span
-                    className={`px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(equipment.status)}`}
-                  >
-                    {getStatusText(equipment.status)}
+              <div className="flex flex-wrap items-center gap-2">
+                <span
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getStatusColor(equipment.status)}`}
+                >
+                  {getStatusText(equipment.status)}
+                </span>
+                {equipment.category && (
+                  <span className="text-xs text-gray-500">
+                    {equipment.category.name}
                   </span>
-                  {equipment.category && (
-                    <span className="text-sm text-gray-500">
-                      {equipment.category.name}
-                    </span>
-                  )}
-                </div>
+                )}
               </div>
             </div>
+          </div>
 
-            {/* Mobile: Stacked buttons, Desktop: Side-by-side */}
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full lg:w-auto">
-              {!activeReservation && equipment.status !== 'maintenance' && (
-                <button
-                  onClick={() => setShowReservationModal(true)}
-                  disabled={loadingReservation}
-                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white px-4 py-3 rounded-xl hover:shadow-lg active:scale-[0.98] transition-all duration-200 font-medium touch-manipulation min-h-[44px] disabled:opacity-50"
-                  aria-label="Reserver utstyr"
-                >
-                  <FaHandPaper className="text-lg" />
-                  <span>Reserver</span>
-                </button>
-              )}
+          {/* Action Buttons */}
+          <div className="flex flex-wrap gap-2">
+            {!activeReservation && equipment.status !== 'maintenance' && (
               <button
-                onClick={() => setShowEditModal(true)}
-                className="flex items-center justify-center gap-2 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 text-gray-700 px-4 py-3 rounded-xl transition-all duration-200 font-medium touch-manipulation min-h-[44px]"
-                aria-label="Rediger utstyr"
+                onClick={() => setShowReservationModal(true)}
+                disabled={loadingReservation}
+                className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg transition-colors text-sm font-medium disabled:opacity-50"
               >
-                <FaEdit className="text-lg" />
-                <span>Rediger</span>
+                <FaHandPaper className="text-xs" />
+                <span>Reserver</span>
               </button>
-              <button
-                onClick={() => setShowLogModal(true)}
-                className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-xl hover:shadow-lg active:scale-[0.98] transition-all duration-200 font-medium touch-manipulation min-h-[44px]"
-                aria-label="Logg vedlikehold"
-              >
-                <FaTools className="text-lg" />
-                <span>Logg Vedlikehold</span>
-              </button>
-              <button
-                onClick={exportToCSV}
-                className="flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white px-4 py-3 rounded-xl hover:shadow-lg active:scale-[0.98] transition-all duration-200 font-medium touch-manipulation min-h-[44px]"
-                aria-label="Eksporter til CSV"
-              >
-                <FaFileExport className="text-lg" />
-                <span>Eksporter</span>
-              </button>
+            )}
+            <button
+              onClick={() => setShowEditModal(true)}
+              className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg transition-colors text-sm font-medium"
+            >
+              <FaEdit className="text-xs" />
+              <span>Rediger</span>
+            </button>
+            <button
+              onClick={() => setShowLogModal(true)}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors text-sm font-medium"
+            >
+              <FaTools className="text-xs" />
+              <span>Logg Vedlikehold</span>
+            </button>
+            <button
+              onClick={exportToCSV}
+              className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg transition-colors text-sm font-medium"
+            >
+              <FaFileExport className="text-xs" />
+              <span>CSV</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Active Reservation Badge */}
+      {activeReservation && (
+        <ActiveReservationBadge reservation={activeReservation} onUpdate={handleSuccess} />
+      )}
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-blue-100 rounded-lg">
+              <HiClock className="text-xl text-blue-600" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-600">Totalt vedlikehold</p>
+              <p className="text-xl font-bold text-gray-900">{maintenanceLogs.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-green-100 rounded-lg">
+              <FaTools className="text-xl text-green-600" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-600">Siste vedlikehold</p>
+              <p className="text-base font-bold text-gray-900">
+                {maintenanceLogs.length > 0
+                  ? new Date(maintenanceLogs[0].performed_date).toLocaleDateString('nb-NO')
+                  : 'Aldri'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-purple-100 rounded-lg">
+              <FaEdit className="text-xl text-purple-600" />
+            </div>
+            <div>
+              <p className="text-xs text-gray-600">Opprettet</p>
+              <p className="text-base font-bold text-gray-900">
+                {new Date(equipment.created_at).toLocaleDateString('nb-NO')}
+              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Active Reservation Badge */}
-          {activeReservation && (
-            <div className="lg:col-span-3">
-              <ActiveReservationBadge reservation={activeReservation} onUpdate={handleSuccess} />
-            </div>
-          )}
+      {/* Work Orders */}
+      <WorkOrderSection equipment={{ id: equipment.id, name: equipment.name }} onUpdate={handleSuccess} />
 
-          {/* Stats */}
-          <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl">
-                  <HiClock className="text-2xl text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Totalt vedlikehold</p>
-                  <p className="text-2xl font-bold text-gray-900">{maintenanceLogs.length}</p>
-                </div>
-              </div>
-            </div>
+      {/* Documents */}
+      <DocumentSection equipmentId={equipment.id} onUpdate={handleSuccess} />
 
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl">
-                  <FaTools className="text-2xl text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Siste vedlikehold</p>
-                  <p className="text-lg font-bold text-gray-900">
-                    {maintenanceLogs.length > 0
-                      ? new Date(maintenanceLogs[0].performed_date).toLocaleDateString('nb-NO')
-                      : 'Aldri'}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-              <div className="flex items-center gap-4">
-                <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl">
-                  <FaEdit className="text-2xl text-white" />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Opprettet</p>
-                  <p className="text-lg font-bold text-gray-900">
-                    {new Date(equipment.created_at).toLocaleDateString('nb-NO')}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Work Orders */}
-          <div className="lg:col-span-3">
-            <WorkOrderSection equipment={{ id: equipment.id, name: equipment.name }} onUpdate={handleSuccess} />
-          </div>
-
-          {/* Documents */}
-          <div className="lg:col-span-3">
-            <DocumentSection equipmentId={equipment.id} onUpdate={handleSuccess} />
-          </div>
-
-          {/* Maintenance History */}
-          <div className="lg:col-span-3 bg-white rounded-2xl p-6 shadow-sm border border-gray-200">
-            <MaintenanceHistory logs={maintenanceLogs} equipmentName={equipment.name} onUpdate={handleSuccess} />
-          </div>
-        </div>
+      {/* Maintenance History */}
+      <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
+        <MaintenanceHistory logs={maintenanceLogs} equipmentName={equipment.name} onUpdate={handleSuccess} />
       </div>
 
       {/* Modals */}
