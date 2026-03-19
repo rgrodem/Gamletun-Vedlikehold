@@ -137,6 +137,9 @@ export async function createReservation(data: CreateReservationData): Promise<Re
 export async function completeReservation(reservationId: string): Promise<void> {
   const supabase = createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Must be logged in');
+
   const { error } = await supabase
     .from('equipment_reservations')
     .update({
@@ -144,7 +147,8 @@ export async function completeReservation(reservationId: string): Promise<void> 
       end_time: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     })
-    .eq('id', reservationId);
+    .eq('id', reservationId)
+    .eq('user_id', user.id);
 
   if (error) {
     console.error('Error completing reservation:', error);
@@ -158,13 +162,17 @@ export async function completeReservation(reservationId: string): Promise<void> 
 export async function cancelReservation(reservationId: string): Promise<void> {
   const supabase = createClient();
 
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Must be logged in');
+
   const { error } = await supabase
     .from('equipment_reservations')
     .update({
       status: 'cancelled',
       updated_at: new Date().toISOString(),
     })
-    .eq('id', reservationId);
+    .eq('id', reservationId)
+    .eq('user_id', user.id);
 
   if (error) {
     console.error('Error cancelling reservation:', error);

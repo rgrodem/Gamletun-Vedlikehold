@@ -1,12 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FaTruckMoving, FaTools, FaPlus, FaTractor, FaEdit, FaSearch } from 'react-icons/fa';
-import { MdConstruction, MdOutlineSpeed } from 'react-icons/md';
-import { HiDocumentReport, HiClock } from 'react-icons/hi';
+import { FaTools, FaPlus, FaSearch } from 'react-icons/fa';
+import { MdConstruction } from 'react-icons/md';
 import { BsCalendar3 } from 'react-icons/bs';
 import AddEquipmentModal from './AddEquipmentModal';
 import LogMaintenanceModal from '../maintenance/LogMaintenanceModal';
@@ -53,6 +52,7 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [showMaintenanceOnly, setShowMaintenanceOnly] = useState(false);
+  const categorySelectRef = useRef<HTMLSelectElement>(null);
   const router = useRouter();
 
   const handleSuccess = () => {
@@ -62,8 +62,6 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
   const totalEquipment = equipment.length;
   const maintenanceLast30Days = recentMaintenance.length;
 
-  // Filter equipment
-  // Filter equipment
   const filteredEquipment = equipment.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.model?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -109,8 +107,7 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
         <div
           onClick={() => {
             setShowMaintenanceOnly(false);
-            const select = document.querySelector('select');
-            if (select) (select as HTMLElement).focus();
+            categorySelectRef.current?.focus();
           }}
           className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100 flex items-center gap-3 sm:gap-4 hover:shadow-md transition-all cursor-pointer active:scale-[0.98]"
         >
@@ -156,6 +153,7 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
           </div>
 
           <select
+            ref={categorySelectRef}
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
             className="w-full sm:w-auto px-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none shadow-sm cursor-pointer"
@@ -207,10 +205,10 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
 
                   {/* Status Badge */}
                   <div className="absolute top-4 right-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm backdrop-blur-md ${item.status === 'active' ? 'bg-green-500/90 text-white' :
-                      item.status === 'in_use' ? 'bg-blue-500/90 text-white' :
-                        item.status === 'maintenance' ? 'bg-yellow-500/90 text-white' :
-                          'bg-gray-500/90 text-white'
+                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider shadow-sm backdrop-blur-md ${item.status === 'active' ? 'bg-green-600 text-white' :
+                      item.status === 'in_use' ? 'bg-blue-600 text-white' :
+                        item.status === 'maintenance' ? 'bg-amber-600 text-white' :
+                          'bg-gray-600 text-white'
                       }`}>
                       {item.status === 'active' ? 'Aktiv' :
                         item.status === 'in_use' ? 'I bruk' :
@@ -221,7 +219,7 @@ export default function EquipmentDashboard({ categories, equipment, recentMainte
 
                   {/* Work Order Badge */}
                   {openWorkOrders > 0 && (
-                    <div className="absolute top-4 left-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse flex items-center gap-1">
+                    <div className="absolute top-4 left-4 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse motion-reduce:animate-none flex items-center gap-1" aria-label={`${openWorkOrders} åpne arbeidsordre`}>
                       <FaTools className="text-[10px]" />
                       {openWorkOrders}
                     </div>
