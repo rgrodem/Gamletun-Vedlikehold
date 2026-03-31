@@ -12,4 +12,4 @@ CREATE POLICY "Authenticated users can view work orders"
 CREATE POLICY "Authenticated users can view work order comments"
   ON public.work_order_comments FOR SELECT
   TO authenticated
-  USING (true);
+  USING (tr

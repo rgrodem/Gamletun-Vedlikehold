@@ -1,7 +1,13 @@
 import LoginForm from '@/components/auth/LoginForm';
 import Image from 'next/image';
 
-export default function LoginPage() {
+interface LoginPageProps {
+  searchParams: Promise<{ error?: string }>;
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const { error } = await searchParams;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -24,10 +30,8 @@ export default function LoginPage() {
           <p className="text-gray-600">Logg inn for å fortsette</p>
         </div>
 
-        {/* Login Form */}
-        <LoginForm />
+        <LoginForm error={error} />
 
-        {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-sm text-gray-500">© 2025 Gamletun. Alle rettigheter reservert.</p>
           <p className="text-xs text-gray-400 mt-1">www.gamletun.no</p>

@@ -1,129 +1,72 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
-import { FaEnvelope, FaEye, FaEyeSlash, FaLock, FaSignInAlt } from 'react-icons/fa';
 
-export default function LoginForm() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
+interface LoginFormProps {
+  error?: string;
+}
+
+const ERROR_MESSAGES: Record<string, string> = {
+  unauthorized: 'Denne Google-kontoen har ikke tilgang. Kontakt administrator.',
+  auth_error: 'Pålogging feilet. Prøv igjen.',
+  oauth_cancelled: 'Pålogging ble avbrutt.',
+};
+
+export default function LoginForm({ error }: LoginFormProps) {
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleGoogleLogin = async () => {
     setLoading(true);
-    setError(null);
-
     const supabase = createClient();
-
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
     });
-
-    if (signInError) {
-      setError('Feil brukernavn eller passord');
-      setLoading(false);
-      return;
-    }
-
-    // Redirect to home page after successful login
-    router.push('/');
-    router.refresh();
   };
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-8">
-      <form onSubmit={handleLogin} className="space-y-6">
-        {/* Email */}
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-            E-post
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FaEnvelope className="text-gray-400" />
-            </div>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="din@epost.no"
-            />
-          </div>
+      {error && ERROR_MESSAGES[error] && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm mb-6">
+          {ERROR_MESSAGES[error]}
         </div>
+      )}
 
-        {/* Password */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Passord
-            </label>
-            <Link
-              href="/forgot-password"
-              className="text-sm text-blue-600 hover:text-blue-700 hover:underline transition-colors"
-            >
-              Glemt passord?
-            </Link>
-          </div>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <FaLock className="text-gray-400" />
-            </div>
-            <input
-              id="password"
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="block w-full pl-10 pr-10 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              placeholder="••••••••"
+      <button
+        onClick={handleGoogleLogin}
+        disabled={loading}
+        className="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 text-gray-700 py-3 px-4 rounded-lg hover:border-gray-300 hover:shadow-md transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {loading ? (
+          <div className="w-5 h-5 border-2 border-gray-300 border-t-blue-600 rounded-full animate-spin" />
+        ) : (
+          <svg className="w-5 h-5" viewBox="0 0 24 24">
+            <path
+              fill="#4285F4"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(v => !v)}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-              aria-label={showPassword ? 'Skjul passord' : 'Vis passord'}
-            >
-              {showPassword ? <FaEyeSlash /> : <FaEye />}
-            </button>
-          </div>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
-            {error}
-          </div>
+            <path
+              fill="#34A853"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            />
+          </svg>
         )}
+        {loading ? 'Omdirigerer...' : 'Logg inn med Google'}
+      </button>
 
-        {/* Submit Button */}
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 px-4 rounded-lg hover:shadow-lg hover:scale-105 transition-all duration-200 font-medium disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-        >
-          <FaSignInAlt />
-          {loading ? 'Logger inn...' : 'Logg inn'}
-        </button>
-      </form>
-
-      {/* Help Text */}
       <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600">
-          Kun inviterte brukere har tilgang.
-        </p>
-        <p className="text-xs text-gray-500 mt-1">
-          Kontakt administrator for å få tilgang.
-        </p>
+        <p className="text-sm text-gray-600">Kun godkjente brukere har tilgang.</p>
       </div>
     </div>
   );
