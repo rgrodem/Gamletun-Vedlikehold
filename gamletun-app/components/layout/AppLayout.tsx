@@ -19,19 +19,19 @@ export default function AppLayout({ children, email, workOrderStats }: AppLayout
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       <div className="flex">
-        {/* Sidebar */}
+        {/* Sidebar — desktop only */}
         <Sidebar workOrderStats={workOrderStats} />
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col min-h-screen lg:ml-0">
+        <div className="flex-1 flex flex-col min-h-screen lg:ml-64">
           {/* Top Header */}
           <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-40 shadow-sm">
             <div className="px-4 sm:px-6 lg:px-8">
-              <div className="flex justify-between items-center h-16 sm:h-18">
-                {/* Mobile: Show logo */}
+              <div className="flex justify-between items-center h-16">
+                {/* Mobile: logo */}
                 <div className="lg:hidden">
                   <Link href="/" className="flex items-center gap-2">
-                    <div className="relative h-12 w-32 sm:h-14 sm:w-36">
+                    <div className="relative h-10 w-28">
                       <Image
                         src="/logo.png"
                         alt="Gamletun Gaard"
@@ -40,13 +40,10 @@ export default function AppLayout({ children, email, workOrderStats }: AppLayout
                         priority
                       />
                     </div>
-                    <span className="text-sm font-medium text-gray-600 hidden xs:inline">Vedlikehold</span>
                   </Link>
                 </div>
-                {/* Desktop: Empty or breadcrumb */}
-                <div className="hidden lg:block">
-                  {/* Breadcrumb or page title could go here */}
-                </div>
+                {/* Desktop: spacer */}
+                <div className="hidden lg:block" />
                 <div className="flex items-center gap-4 ml-auto">
                   {email && <UserMenu email={email} />}
                 </div>
@@ -59,9 +56,9 @@ export default function AppLayout({ children, email, workOrderStats }: AppLayout
             {children}
           </main>
 
-          {/* Footer */}
-          <footer className="bg-white/50 backdrop-blur-sm border-t border-gray-200 py-4 mt-auto">
-            <div className="px-4 sm:px-6 lg:px-8 text-center">
+          {/* Footer — desktop only */}
+          <footer className="hidden lg:block bg-white/50 backdrop-blur-sm border-t border-gray-200 py-4 mt-auto">
+            <div className="px-8 text-center">
               <p className="text-xs text-gray-500">
                 © 2025 Gamletun. Alle rettigheter reservert. • www.gamletun.no
               </p>

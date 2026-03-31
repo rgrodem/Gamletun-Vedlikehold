@@ -4,7 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FaTools, FaPlus, FaSearch, FaCalendarCheck, FaClock, FaExclamationTriangle } from 'react-icons/fa';
+import { FaTools, FaPlus, FaSearch, FaCalendarCheck, FaClock, FaExclamationTriangle, FaChevronRight } from 'react-icons/fa';
+import ReportFaultModal from '../work-orders/ReportFaultModal';
 import { MdConstruction } from 'react-icons/md';
 import { BsCalendar3 } from 'react-icons/bs';
 import AddEquipmentModal from './AddEquipmentModal';
@@ -64,6 +65,7 @@ export default function EquipmentDashboard({
   const [showAddModal, setShowAddModal] = useState(false);
   const [maintenanceEquipment, setMaintenanceEquipment] = useState<Equipment | null>(null);
   const [editEquipment, setEditEquipment] = useState<Equipment | null>(null);
+  const [faultEquipment, setFaultEquipment] = useState<Equipment | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -332,12 +334,20 @@ export default function EquipmentDashboard({
                   </div>
 
                   {/* Quick Actions */}
-                  <div className="mt-auto pt-3 flex gap-2">
+                  <div className="mt-auto pt-3 border-t border-gray-100 flex gap-2">
+                    <button
+                      onClick={(e) => { e.preventDefault(); setFaultEquipment(item); }}
+                      className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 active:bg-red-100 py-2.5 rounded-lg transition-colors border border-red-100 touch-manipulation"
+                    >
+                      <FaExclamationTriangle className="text-[10px]" />
+                      Meld feil
+                    </button>
                     <Link
                       href={`/equipment/${item.id}`}
-                      className="flex-1 text-center text-xs font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 py-2 rounded-lg transition-colors"
+                      className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 active:bg-blue-100 py-2.5 rounded-lg transition-colors border border-blue-100"
                     >
-                      Detaljer →
+                      Detaljer
+                      <FaChevronRight className="text-[9px]" />
                     </Link>
                   </div>
                 </div>
@@ -393,6 +403,14 @@ export default function EquipmentDashboard({
           categories={categories}
           onClose={() => setEditEquipment(null)}
           onSuccess={handleSuccess}
+        />
+      )}
+
+      {faultEquipment && (
+        <ReportFaultModal
+          equipment={faultEquipment}
+          onClose={() => setFaultEquipment(null)}
+          onSuccess={() => { setFaultEquipment(null); handleSuccess(); }}
         />
       )}
     </div>

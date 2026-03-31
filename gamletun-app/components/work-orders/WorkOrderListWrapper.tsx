@@ -7,9 +7,10 @@ import { WorkOrder } from '@/lib/work-orders';
 interface WorkOrderListWrapperProps {
   workOrders: WorkOrder[];
   showEquipmentName: boolean;
+  showFilters?: boolean;
 }
 
-export default function WorkOrderListWrapper({ workOrders, showEquipmentName }: WorkOrderListWrapperProps) {
+export default function WorkOrderListWrapper({ workOrders, showEquipmentName, showFilters }: WorkOrderListWrapperProps) {
   const router = useRouter();
 
   const handleStatusChange = () => {
@@ -21,6 +22,7 @@ export default function WorkOrderListWrapper({ workOrders, showEquipmentName }: 
       workOrders={workOrders}
       showEquipmentName={showEquipmentName}
       onStatusChange={handleStatusChange}
+      showFilters={showFilters}
     />
   );
 }

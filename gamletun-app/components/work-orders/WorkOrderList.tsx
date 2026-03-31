@@ -21,6 +21,7 @@ interface WorkOrderListProps {
   workOrders: WorkOrder[];
   showEquipmentName?: boolean;
   onStatusChange?: () => void;
+  showFilters?: boolean;
 }
 
 type FilterTab = 'all' | 'overdue' | 'faults' | 'scheduled' | 'in_progress' | 'completed';
@@ -28,7 +29,8 @@ type FilterTab = 'all' | 'overdue' | 'faults' | 'scheduled' | 'in_progress' | 'c
 export default function WorkOrderList({
   workOrders,
   showEquipmentName = true,
-  onStatusChange
+  onStatusChange,
+  showFilters = true,
 }: WorkOrderListProps) {
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const [workOrderToComplete, setWorkOrderToComplete] = useState<WorkOrder | null>(null);
@@ -95,8 +97,8 @@ export default function WorkOrderList({
           <p className="text-red-800 text-sm">{startError}</p>
         </div>
       )}
-      {/* Filter Tabs */}
-      <div className="flex flex-wrap gap-2 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
+      {/* Filter Tabs — only shown when used standalone */}
+      {showFilters && <div className="flex flex-wrap gap-2 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
         {([
           { key: 'all', label: 'Alle' },
           { key: 'overdue', label: 'Forfalt' },
@@ -117,7 +119,7 @@ export default function WorkOrderList({
             {tab.label} ({counts[tab.key]})
           </button>
         ))}
-      </div>
+      </div>}
 
       {/* Work Orders List */}
       {filteredWorkOrders.length === 0 ? (
