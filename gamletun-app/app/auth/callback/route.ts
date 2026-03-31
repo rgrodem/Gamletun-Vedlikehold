@@ -2,8 +2,6 @@ import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
-const ALLOWED_EMAILS = ['rgrodem@gmail.com'];
-
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
@@ -44,12 +42,19 @@ export async function GET(request: NextRequest) {
 
   const email = data.user.email?.toLowerCase() ?? '';
 
-  if (!ALLOWED_EMAILS.includes(email)) {
+  // Sjekk allowlist i Supabase-tabellen
+  const { data: allowed } = await supabase
+    .from('allowed_users')
+    .select('email')
+    .eq('email', email)
+    .maybeSingle();
+
+  if (!allowed) {
     await supabase.auth.signOut();
     return NextResponse.redirect(`${origin}/login?error=unauthorized`);
   }
 
-  // Ensure profile exists for this user
+  // Opprett eller oppdater profil
   await supabase.from('profiles').upsert(
     {
       id: data.user.id,
