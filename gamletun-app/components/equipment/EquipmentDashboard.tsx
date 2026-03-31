@@ -232,9 +232,9 @@ export default function EquipmentDashboard({
         )}
       </div>
 
-      {/* Equipment Grid - Enhanced Cards */}
+      {/* Equipment List (mobile) / Grid (desktop) */}
       {filteredEquipment.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {filteredEquipment.map((item) => {
             const categoryColor = item.category?.color || '#6b7280';
             const categoryIcon = item.category?.icon || '⚙️';
@@ -242,113 +242,144 @@ export default function EquipmentDashboard({
             const lastMaintenance = lastMaintenanceDates[item.id];
             const nextWorkOrder = nextWorkOrderByEquipment[item.id];
 
+            const statusClass =
+              item.status === 'active' ? 'bg-green-500 text-white' :
+              item.status === 'in_use' ? 'bg-blue-500 text-white' :
+              item.status === 'maintenance' ? 'bg-amber-600 text-white' :
+              'bg-gray-500 text-white';
+
+            const statusLabel =
+              item.status === 'active' ? 'Aktiv' :
+              item.status === 'in_use' ? 'I bruk' :
+              item.status === 'maintenance' ? 'Vedl.' :
+              'Inaktiv';
+
             return (
               <div
                 key={item.id}
-                className="group bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100 overflow-hidden flex flex-col h-full"
+                className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow border border-gray-100 overflow-hidden"
               >
-                {/* Image Section */}
-                <Link href={`/equipment/${item.id}`} className="relative h-36 bg-gray-50 overflow-hidden block">
-                  {item.image_url ? (
-                    <Image
-                      src={item.image_url}
-                      alt={item.name}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-5xl opacity-20" style={{ color: categoryColor }}>
-                      {categoryIcon}
+                {/* Mobile: horizontal row. Desktop: vertical card */}
+                <div className="flex flex-row sm:flex-col">
+
+                  {/* Image — small square on mobile, full width on desktop */}
+                  <Link
+                    href={`/equipment/${item.id}`}
+                    className="relative w-[88px] h-[88px] sm:w-full sm:h-36 bg-gray-50 flex-shrink-0 overflow-hidden block"
+                  >
+                    {item.image_url ? (
+                      <Image
+                        src={item.image_url}
+                        alt={item.name}
+                        fill
+                        className="object-cover sm:group-hover:scale-105 sm:transition-transform sm:duration-500"
+                        sizes="(max-width: 640px) 88px, (max-width: 1024px) 50vw, 25vw"
+                      />
+                    ) : (
+                      <div
+                        className="w-full h-full flex items-center justify-center opacity-20"
+                        style={{ color: categoryColor }}
+                      >
+                        <span className="text-3xl sm:text-5xl">{categoryIcon}</span>
+                      </div>
+                    )}
+                    {/* Desktop: status + WO badges on image */}
+                    <div className="hidden sm:block absolute top-3 right-3">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm backdrop-blur-md ${statusClass}`}>
+                        {item.status === 'active' ? 'Aktiv' : item.status === 'in_use' ? 'I bruk' : item.status === 'maintenance' ? 'Vedlikehold' : 'Inaktiv'}
+                      </span>
                     </div>
-                  )}
-
-                  {/* Status Badge */}
-                  <div className="absolute top-3 right-3">
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm backdrop-blur-md ${
-                      item.status === 'active' ? 'bg-green-500/90 text-white' :
-                      item.status === 'in_use' ? 'bg-blue-500/90 text-white' :
-                      item.status === 'maintenance' ? 'bg-amber-600 text-white' :
-                      'bg-gray-500/90 text-white'
-                    }`}>
-                      {item.status === 'active' ? 'Aktiv' :
-                       item.status === 'in_use' ? 'I bruk' :
-                       item.status === 'maintenance' ? 'Vedlikehold' :
-                       'Inaktiv'}
-                    </span>
-                  </div>
-
-                  {/* Work Order Badge - Clickable */}
-                  {openWorkOrders > 0 && (
-                    <Link
-                      href={`/work-orders?equipment=${item.id}`}
-                      onClick={(e) => e.stopPropagation()}
-                      className="absolute top-3 left-3 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg animate-pulse motion-reduce:animate-none flex items-center gap-1 transition-colors"
-                      aria-label={`${openWorkOrders} åpne arbeidsordre`}
-                    >
-                      <FaTools className="text-[8px]" />
-                      {openWorkOrders}
-                    </Link>
-                  )}
-                </Link>
-
-                {/* Content Section */}
-                <div className="p-4 flex-1 flex flex-col">
-                  <Link href={`/equipment/${item.id}`} className="block">
-                    <p className="text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5">
-                      {item.category?.name || 'Ukategorisert'}
-                    </p>
-                    <h3 className="text-base font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">
-                      {item.name}
-                    </h3>
-                    {item.model && (
-                      <p className="text-xs text-gray-500 line-clamp-1 mt-0.5">{item.model}</p>
+                    {openWorkOrders > 0 && (
+                      <Link
+                        href={`/work-orders?equipment=${item.id}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="hidden sm:flex absolute top-3 left-3 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg animate-pulse motion-reduce:animate-none items-center gap-1 transition-colors"
+                      >
+                        <FaTools className="text-[8px]" />
+                        {openWorkOrders}
+                      </Link>
                     )}
                   </Link>
 
-                  {/* Maintenance Info - NEW */}
-                  <div className="mt-3 pt-3 border-t border-gray-100 space-y-1.5">
-                    {/* Last Maintenance */}
-                    <div className="flex items-center gap-2 text-xs">
-                      <FaClock className="text-gray-400 flex-shrink-0" />
-                      <span className="text-gray-500">Siste:</span>
-                      <span className={`font-medium ${lastMaintenance ? 'text-gray-700' : 'text-orange-600'}`}>
-                        {lastMaintenance ? formatRelativeDate(lastMaintenance) : 'Aldri'}
+                  {/* Content */}
+                  <div className="flex-1 p-3 sm:p-4 flex flex-col min-w-0">
+
+                    {/* Name row */}
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div className="min-w-0 flex-1">
+                        <p className="hidden sm:block text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5">
+                          {item.category?.name || 'Ukategorisert'}
+                        </p>
+                        <h3 className="text-sm sm:text-base font-bold text-gray-900 sm:group-hover:text-blue-600 transition-colors line-clamp-1 leading-snug">
+                          {item.name}
+                        </h3>
+                        {item.model && (
+                          <p className="text-[11px] sm:text-xs text-gray-400 sm:text-gray-500 line-clamp-1 mt-0.5">
+                            {item.model}
+                          </p>
+                        )}
+                      </div>
+                      {/* Mobile: inline status badge */}
+                      <span className={`sm:hidden flex-shrink-0 mt-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase ${statusClass}`}>
+                        {statusLabel}
                       </span>
                     </div>
 
-                    {/* Next Work Order */}
-                    <div className="flex items-center gap-2 text-xs">
-                      <FaCalendarCheck className="text-gray-400 flex-shrink-0" />
-                      <span className="text-gray-500">Neste:</span>
-                      {nextWorkOrder ? (
-                        <span className={`font-medium truncate ${
-                          new Date(nextWorkOrder.due_date) < new Date() ? 'text-red-600' : 'text-blue-600'
-                        }`}>
-                          {formatFutureDate(nextWorkOrder.due_date)}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">Ingen planlagt</span>
+                    {/* Mobile: work order count + last maintenance */}
+                    <div className="flex sm:hidden items-center gap-1.5 mb-2 flex-wrap">
+                      {openWorkOrders > 0 && (
+                        <Link
+                          href={`/work-orders?equipment=${item.id}`}
+                          className="inline-flex items-center gap-1 bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full"
+                        >
+                          <FaTools className="text-[8px]" />
+                          {openWorkOrders} ordre
+                        </Link>
                       )}
+                      <span className="text-[11px] text-gray-400">
+                        {lastMaintenance ? formatRelativeDate(lastMaintenance) : 'Aldri vedlikeholdt'}
+                      </span>
                     </div>
-                  </div>
 
-                  {/* Quick Actions */}
-                  <div className="mt-auto pt-3 border-t border-gray-100 flex gap-2">
-                    <button
-                      onClick={(e) => { e.preventDefault(); setFaultEquipment(item); }}
-                      className="flex-1 flex items-center justify-center gap-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 active:bg-red-100 py-2.5 rounded-lg transition-colors border border-red-100 touch-manipulation"
-                    >
-                      <FaExclamationTriangle className="text-[10px]" />
-                      Meld feil
-                    </button>
-                    <Link
-                      href={`/equipment/${item.id}`}
-                      className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 active:bg-blue-100 py-2.5 rounded-lg transition-colors border border-blue-100"
-                    >
-                      Detaljer
-                      <FaChevronRight className="text-[9px]" />
-                    </Link>
+                    {/* Desktop: maintenance info */}
+                    <div className="hidden sm:block mt-3 pt-3 border-t border-gray-100 space-y-1.5">
+                      <div className="flex items-center gap-2 text-xs">
+                        <FaClock className="text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-500">Siste:</span>
+                        <span className={`font-medium ${lastMaintenance ? 'text-gray-700' : 'text-orange-600'}`}>
+                          {lastMaintenance ? formatRelativeDate(lastMaintenance) : 'Aldri'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs">
+                        <FaCalendarCheck className="text-gray-400 flex-shrink-0" />
+                        <span className="text-gray-500">Neste:</span>
+                        {nextWorkOrder ? (
+                          <span className={`font-medium truncate ${new Date(nextWorkOrder.due_date) < new Date() ? 'text-red-600' : 'text-blue-600'}`}>
+                            {formatFutureDate(nextWorkOrder.due_date)}
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">Ingen planlagt</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Action buttons */}
+                    <div className="mt-auto pt-2 sm:pt-3 border-t border-gray-100 flex gap-1.5">
+                      <button
+                        onClick={(e) => { e.preventDefault(); setFaultEquipment(item); }}
+                        className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-red-600 hover:bg-red-50 active:bg-red-100 py-2 sm:py-2.5 rounded-lg transition-colors border border-red-100 touch-manipulation min-h-[36px]"
+                      >
+                        <FaExclamationTriangle className="text-[10px]" />
+                        <span>Meld feil</span>
+                      </button>
+                      <Link
+                        href={`/equipment/${item.id}`}
+                        className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 active:bg-blue-100 py-2 sm:py-2.5 rounded-lg transition-colors border border-blue-100 min-h-[36px]"
+                      >
+                        <span>Detaljer</span>
+                        <FaChevronRight className="text-[9px]" />
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
