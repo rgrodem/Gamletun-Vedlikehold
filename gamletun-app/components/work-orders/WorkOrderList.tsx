@@ -1,19 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import Link from 'next/link';
 import {
   WorkOrder,
-  WorkOrderStatus,
-  statusLabels,
-  statusColors,
-  priorityColors,
   priorityLabels,
-  typeIcons,
   updateWorkOrder,
   isWorkOrderOverdue,
 } from '@/lib/work-orders';
-import { FaExternalLinkAlt, FaPlay, FaCheckCircle } from 'react-icons/fa';
+import { FaPlay, FaCheckCircle, FaRegClock } from 'react-icons/fa';
 import CompleteWorkOrderModal from './CompleteWorkOrderModal';
 import WorkOrderDetailModal from './WorkOrderDetailModal';
 
@@ -26,6 +20,35 @@ interface WorkOrderListProps {
 
 type FilterTab = 'all' | 'overdue' | 'faults' | 'scheduled' | 'in_progress' | 'completed';
 
+type TagKey = 'forfalt' | 'feil' | 'pagar' | 'planlagt' | 'ferdig' | 'apen';
+
+const TAG_STYLE: Record<TagKey, { bg: string; fg: string; label: string }> = {
+  forfalt:  { bg: 'bg-rustBg',  fg: 'text-rust',  label: 'Forfalt' },
+  feil:     { bg: 'bg-rustBg',  fg: 'text-rust',  label: 'Åpen feil' },
+  pagar:    { bg: 'bg-skyBg',   fg: 'text-sky',   label: 'Pågår' },
+  planlagt: { bg: 'bg-mossBg',  fg: 'text-moss',  label: 'Planlagt' },
+  ferdig:   { bg: 'bg-line2',   fg: 'text-ink3',  label: 'Fullført' },
+  apen:     { bg: 'bg-amberBg', fg: 'text-amber', label: 'Åpen' },
+};
+
+function statusToTag(wo: WorkOrder): TagKey {
+  if (isWorkOrderOverdue(wo.due_date, wo.status)) return 'forfalt';
+  if (wo.status === 'in_progress') return 'pagar';
+  if (wo.status === 'completed' || wo.status === 'closed') return 'ferdig';
+  if (wo.type === 'corrective' && !['completed', 'closed'].includes(wo.status)) return 'feil';
+  if (wo.status === 'scheduled') return 'planlagt';
+  return 'apen';
+}
+
+function typeLabel(type: WorkOrder['type']): string {
+  switch (type) {
+    case 'scheduled': return 'Forebyggende';
+    case 'corrective': return 'Korrektiv';
+    case 'inspection': return 'Inspeksjon';
+    default: return 'Arbeid';
+  }
+}
+
 export default function WorkOrderList({
   workOrders,
   showEquipmentName = true,
@@ -37,25 +60,17 @@ export default function WorkOrderList({
   const [workOrderToView, setWorkOrderToView] = useState<WorkOrder | null>(null);
   const [startError, setStartError] = useState<string | null>(null);
 
-  // Filter work orders based on active tab
   const filteredWorkOrders = workOrders.filter(wo => {
     switch (activeTab) {
-      case 'overdue':
-        return isWorkOrderOverdue(wo.due_date, wo.status);
-      case 'faults':
-        return wo.type === 'corrective' && !['completed', 'closed'].includes(wo.status);
-      case 'scheduled':
-        return wo.status === 'scheduled';
-      case 'in_progress':
-        return wo.status === 'in_progress';
-      case 'completed':
-        return wo.status === 'completed';
-      default:
-        return true;
+      case 'overdue': return isWorkOrderOverdue(wo.due_date, wo.status);
+      case 'faults': return wo.type === 'corrective' && !['completed', 'closed'].includes(wo.status);
+      case 'scheduled': return wo.status === 'scheduled';
+      case 'in_progress': return wo.status === 'in_progress';
+      case 'completed': return wo.status === 'completed';
+      default: return true;
     }
   });
 
-  // Calculate counts for tabs
   const counts = {
     all: workOrders.length,
     overdue: workOrders.filter(wo => isWorkOrderOverdue(wo.due_date, wo.status)).length,
@@ -65,22 +80,28 @@ export default function WorkOrderList({
     completed: workOrders.filter(wo => wo.status === 'completed').length,
   };
 
-  const formatDate = (dateString: string | null) => {
+  const formatDue = (dateString: string | null, overdueFlag: boolean) => {
     if (!dateString) return null;
-    return new Date(dateString).toLocaleDateString('nb-NO', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric'
-    });
+    const d = new Date(dateString);
+    const now = new Date();
+    const diffDays = Math.floor((d.getTime() - now.getTime()) / 86400000);
+    if (overdueFlag) {
+      const dayDiff = Math.abs(diffDays) || 0;
+      return `Forfalt · ${dayDiff} ${dayDiff === 1 ? 'dag' : 'dager'}`;
+    }
+    if (diffDays === 0) return 'I dag';
+    if (diffDays === 1) return 'I morgen';
+    if (diffDays > 0 && diffDays < 7) return `Om ${diffDays} dager`;
+    return d.toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' });
   };
 
-  const handleStartWorkOrder = async (workOrder: WorkOrder) => {
+  const handleStart = async (wo: WorkOrder) => {
     setStartError(null);
     try {
-      await updateWorkOrder(workOrder.id, { status: 'in_progress' });
+      await updateWorkOrder(wo.id, { status: 'in_progress' });
       onStatusChange?.();
-    } catch (error) {
-      console.error('Error starting work order:', error);
+    } catch (err) {
+      console.error(err);
       setStartError('Kunne ikke starte arbeidsordre. Prøv igjen.');
     }
   };
@@ -91,146 +112,117 @@ export default function WorkOrderList({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {startError && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-          <p className="text-red-800 text-sm">{startError}</p>
+        <div className="bg-rustBg border border-rust/30 rounded-[14px] p-3">
+          <p className="text-rust text-sm">{startError}</p>
         </div>
       )}
-      {/* Filter Tabs — only shown when used standalone */}
-      {showFilters && <div className="flex flex-wrap gap-2 bg-white p-2 rounded-xl shadow-sm border border-gray-200">
-        {([
-          { key: 'all', label: 'Alle' },
-          { key: 'overdue', label: 'Forfalt' },
-          { key: 'faults', label: 'Feil' },
-          { key: 'scheduled', label: 'Planlagt' },
-          { key: 'in_progress', label: 'Pågår' },
-          { key: 'completed', label: 'Fullført' },
-        ] as { key: FilterTab; label: string }[]).map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`px-4 py-2 rounded-lg font-medium transition-all touch-manipulation min-h-[40px] ${
-              activeTab === tab.key
-                ? 'bg-blue-600 text-white shadow-md'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            {tab.label} ({counts[tab.key]})
-          </button>
-        ))}
-      </div>}
 
-      {/* Work Orders List */}
-      {filteredWorkOrders.length === 0 ? (
-        <div className="bg-white rounded-xl p-8 text-center border border-gray-200">
-          <p className="text-gray-500">Ingen arbeidsordre funnet</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {filteredWorkOrders.map(wo => {
-            const overdueFlag = isWorkOrderOverdue(wo.due_date, wo.status);
-
+      {showFilters && (
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+          {(
+            [
+              { key: 'all',         label: `Alle · ${counts.all}` },
+              { key: 'overdue',     label: `Forfalt · ${counts.overdue}` },
+              { key: 'faults',      label: `Feil · ${counts.faults}` },
+              { key: 'scheduled',   label: `Planlagt · ${counts.scheduled}` },
+              { key: 'in_progress', label: `Pågår · ${counts.in_progress}` },
+              { key: 'completed',   label: `Fullført · ${counts.completed}` },
+            ] as { key: FilterTab; label: string }[]
+          ).map(tab => {
+            const on = activeTab === tab.key;
             return (
-              <div
-                key={wo.id}
-                className={`bg-white rounded-xl p-4 shadow-sm border transition-all hover:shadow-md ${
-                  overdueFlag ? 'border-red-300 bg-red-50' : 'border-gray-200'
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex-shrink-0 px-3.5 py-2 rounded-full text-[13px] font-medium ${
+                  on ? 'bg-ink text-paper' : 'bg-paper text-ink border border-line'
                 }`}
               >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
-                  {/* Left: Info */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-start gap-3 mb-2">
-                      {/* Type Icon */}
-                      <span className="text-2xl flex-shrink-0" aria-hidden="true">{typeIcons[wo.type]}</span>
-
-                      {/* Title and Equipment */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {showEquipmentName && wo.equipment?.name && (
-                            <span className="font-semibold text-gray-900">{wo.equipment.name}</span>
-                          )}
-                          {showEquipmentName && wo.equipment?.name && <span className="text-gray-400">•</span>}
-                          <h3 className="font-medium text-gray-900">{wo.title}</h3>
-                        </div>
-
-                        {/* Status, Priority, Due Date */}
-                        <div className="flex items-center gap-2 mt-2 flex-wrap">
-                          {/* Status Badge */}
-                          <span className={`px-3 py-1 rounded-lg text-xs font-medium border ${statusColors[wo.status]}`}>
-                            {statusLabels[wo.status]}
-                          </span>
-
-                          {/* Priority Badge */}
-                          <span className={`px-3 py-1 rounded-lg text-xs font-medium border bg-white ${priorityColors[wo.priority]}`}>
-                            {priorityLabels[wo.priority]}
-                          </span>
-
-                          {/* Due Date */}
-                          {wo.due_date && (
-                            <span className={`text-xs ${overdueFlag ? 'text-red-700 font-semibold' : 'text-gray-600'}`}>
-                              Frist: {formatDate(wo.due_date)}
-                              {overdueFlag && ' (forfalt!)'}
-                            </span>
-                          )}
-
-                          {/* Recurring indicator */}
-                          {wo.is_recurring && (
-                            <span className="text-xs text-blue-600 font-medium"><span aria-hidden="true">🔄</span> Gjentas</span>
-                          )}
-                        </div>
-
-                        {/* Description */}
-                        {wo.description && (
-                          <p className="text-sm text-gray-600 mt-2 line-clamp-2">{wo.description}</p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Right: Actions */}
-                  <div className="flex gap-2 flex-shrink-0">
-                    {wo.status === 'open' && (
-                      <button
-                        onClick={() => handleStartWorkOrder(wo)}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors font-medium touch-manipulation min-h-[44px] min-w-[44px]"
-                        title="Start"
-                      >
-                        <FaPlay className="text-sm" />
-                        <span className="hidden sm:inline">Start</span>
-                      </button>
-                    )}
-
-                    {['in_progress', 'waiting_parts'].includes(wo.status) && (
-                      <button
-                        onClick={() => setWorkOrderToComplete(wo)}
-                        className="flex items-center justify-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors font-medium touch-manipulation min-h-[44px] min-w-[44px]"
-                        title="Fullfør"
-                      >
-                        <FaCheckCircle className="text-sm" />
-                        <span className="hidden sm:inline">Fullfør</span>
-                      </button>
-                    )}
-
-                    {/* View Details */}
-                    <button
-                      onClick={() => setWorkOrderToView(wo)}
-                      className="flex items-center justify-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium touch-manipulation min-h-[44px] min-w-[44px]"
-                      title="Åpne"
-                    >
-                      <FaExternalLinkAlt className="text-sm" />
-                      <span className="hidden sm:inline">Åpne</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
+                {tab.label}
+              </button>
             );
           })}
         </div>
       )}
 
-      {/* Complete Work Order Modal */}
+      {filteredWorkOrders.length === 0 ? (
+        <div className="bg-paper rounded-[18px] p-8 text-center border border-line">
+          <p className="text-ink2 text-sm">Ingen arbeidsordre funnet</p>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          {filteredWorkOrders.map(wo => {
+            const overdueFlag = isWorkOrderOverdue(wo.due_date, wo.status);
+            const tagKey = statusToTag(wo);
+            const tag = TAG_STYLE[tagKey];
+            return (
+              <button
+                key={wo.id}
+                type="button"
+                onClick={() => setWorkOrderToView(wo)}
+                className={`text-left w-full bg-paper border rounded-[16px] px-4 py-3.5 ${
+                  overdueFlag ? 'border-l-[3px] border-l-rust border-line' : 'border-line'
+                }`}
+              >
+                <div className="flex justify-between items-start gap-2.5">
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[11px] font-semibold text-ink3 uppercase tracking-[0.08em]">
+                      {typeLabel(wo.type)}
+                    </div>
+                    <div className="text-[15px] font-semibold text-ink tracking-tightish mt-1">
+                      {wo.title}
+                    </div>
+                    {showEquipmentName && wo.equipment?.name && (
+                      <div className="text-[13px] text-ink2 mt-0.5">{wo.equipment.name}</div>
+                    )}
+                  </div>
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap ${tag.bg} ${tag.fg}`}
+                  >
+                    {tag.label}
+                  </span>
+                </div>
+
+                <div
+                  className="mt-2.5 pt-2.5 flex justify-between items-center text-[12px] text-ink3"
+                  style={{ borderTop: '1px dashed var(--line)' }}
+                >
+                  <span className="inline-flex items-center gap-1.5">
+                    <FaRegClock className="text-[12px]" />
+                    {formatDue(wo.due_date, overdueFlag) || priorityLabels[wo.priority]}
+                  </span>
+
+                  <span className="inline-flex items-center gap-2">
+                    {wo.status === 'open' && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); handleStart(wo); }}
+                        className="inline-flex items-center gap-1 text-ink font-medium"
+                      >
+                        <FaPlay className="text-[10px]" /> Start
+                      </button>
+                    )}
+                    {['in_progress', 'waiting_parts'].includes(wo.status) && (
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setWorkOrderToComplete(wo); }}
+                        className="inline-flex items-center gap-1 text-moss font-semibold"
+                      >
+                        <FaCheckCircle className="text-[10px]" /> Fullfør
+                      </button>
+                    )}
+                    <span className="text-ink font-medium">Åpne →</span>
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {workOrderToComplete && (
         <CompleteWorkOrderModal
           workOrder={workOrderToComplete}
@@ -239,7 +231,6 @@ export default function WorkOrderList({
         />
       )}
 
-      {/* Work Order Detail Modal */}
       {workOrderToView && (
         <WorkOrderDetailModal
           workOrder={workOrderToView}

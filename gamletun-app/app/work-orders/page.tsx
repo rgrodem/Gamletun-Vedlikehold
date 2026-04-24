@@ -4,9 +4,8 @@ import AppLayout from '@/components/layout/AppLayout';
 import WorkOrderListWrapper from '@/components/work-orders/WorkOrderListWrapper';
 import WorkOrderCalendar from '@/components/work-orders/WorkOrderCalendar';
 import { getWorkOrdersDashboard } from '@/lib/work-orders';
-import { FaList, FaCalendarAlt, FaFilter } from 'react-icons/fa';
+import { FaList, FaCalendarAlt } from 'react-icons/fa';
 
-// Revalidate every 60 seconds
 export const revalidate = 60;
 
 export default async function WorkOrdersPage({
@@ -17,15 +16,12 @@ export default async function WorkOrdersPage({
   const supabase = await createClient();
   const params = await searchParams;
 
-  // Get current user
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Get work order stats for sidebar
   const workOrderStats = await getWorkOrdersDashboard();
 
-  // Build query based on filter
   let query = supabase
     .from('work_orders')
     .select(`
@@ -34,15 +30,12 @@ export default async function WorkOrdersPage({
     `)
     .order('due_date', { ascending: true, nullsFirst: false });
 
-  // Apply filters from URL
   const filter = params.filter;
   const equipmentId = params.equipment;
   const today = new Date().toISOString();
   const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
-  if (equipmentId) {
-    query = query.eq('equipment_id', equipmentId);
-  }
+  if (equipmentId) query = query.eq('equipment_id', equipmentId);
 
   if (filter === 'overdue') {
     query = query
@@ -58,10 +51,7 @@ export default async function WorkOrdersPage({
       .eq('type', 'corrective')
       .in('status', ['open', 'in_progress', 'waiting_parts']);
   } else if (filter === 'scheduled') {
-    // Include both status='scheduled' AND any work order with future due_date
-    query = query
-      .in('status', ['open', 'scheduled'])
-      .gte('due_date', today);
+    query = query.in('status', ['open', 'scheduled']).gte('due_date', today);
   } else if (filter === 'in_progress') {
     query = query.eq('status', 'in_progress');
   } else if (filter === 'completed') {
@@ -72,7 +62,6 @@ export default async function WorkOrdersPage({
 
   const { data: workOrders } = await query;
 
-  // Get equipment name if filtering by equipment
   let equipmentName = '';
   if (equipmentId) {
     const { data: equipment } = await supabase
@@ -84,116 +73,78 @@ export default async function WorkOrdersPage({
   }
 
   const view = params.view || 'list';
+  const openCount = workOrderStats.overdue + workOrderStats.openFaults + workOrderStats.scheduled + workOrderStats.thisWeek;
 
-  const filterLabels: Record<string, string> = {
-    overdue: 'Forfalt',
-    thisweek: 'Denne uken',
-    faults: 'Åpne feil',
-    scheduled: 'Planlagt',
-    in_progress: 'Pågår',
-    completed: 'Fullført',
-    all_open: 'Alle åpne',
+  const chips = [
+    { key: undefined, label: `Alle · ${workOrders?.length ?? 0}` },
+    { key: 'overdue', label: `Forfalt · ${workOrderStats.overdue}` },
+    { key: 'thisweek', label: `Denne uken · ${workOrderStats.thisWeek}` },
+    { key: 'faults', label: `Åpne feil · ${workOrderStats.openFaults}` },
+    { key: 'scheduled', label: `Planlagt · ${workOrderStats.scheduled}` },
+    { key: 'in_progress', label: 'Pågår' },
+    { key: 'completed', label: 'Fullført' },
+  ];
+
+  const queryBase = (k?: string) => {
+    const sp = new URLSearchParams();
+    if (k) sp.set('filter', k);
+    if (equipmentId) sp.set('equipment', equipmentId);
+    return sp.toString() ? `?${sp.toString()}` : '';
   };
 
   return (
     <AppLayout email={user?.email} workOrderStats={workOrderStats}>
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Arbeidsordrer</h1>
-            <p className="text-sm text-gray-600 mt-1">
-              {workOrders?.length || 0} {workOrders?.length === 1 ? 'ordre' : 'ordrer'}
-              {filter && ` - ${filterLabels[filter] || filter}`}
-              {equipmentName && ` for ${equipmentName}`}
+            <h1 className="font-serif text-[28px] font-medium text-ink tracking-tight2 m-0 leading-tight">
+              Arbeidsordrer
+            </h1>
+            <p className="text-[14px] text-ink2 m-0 mt-0.5">
+              {openCount} åpne · {workOrderStats.overdue} forfalt
+              {equipmentName && ` · ${equipmentName}`}
             </p>
           </div>
 
-          {/* View Toggle */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Link
               href={`/work-orders?${new URLSearchParams({ ...(filter && { filter }), ...(equipmentId && { equipment: equipmentId }), view: 'list' }).toString()}`}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                view === 'list'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              className={`flex items-center gap-2 px-3 py-2 rounded-[12px] text-sm font-medium transition-colors ${
+                view === 'list' ? 'bg-ink text-paper' : 'bg-paper text-ink border border-line'
               }`}
+              aria-label="Listevisning"
             >
               <FaList />
-              <span className="hidden sm:inline">Liste</span>
             </Link>
             <Link
               href={`/work-orders?${new URLSearchParams({ ...(filter && { filter }), ...(equipmentId && { equipment: equipmentId }), view: 'calendar' }).toString()}`}
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                view === 'calendar'
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              className={`flex items-center gap-2 px-3 py-2 rounded-[12px] text-sm font-medium transition-colors ${
+                view === 'calendar' ? 'bg-ink text-paper' : 'bg-paper text-ink border border-line'
               }`}
+              aria-label="Kalendervisning"
             >
               <FaCalendarAlt />
-              <span className="hidden sm:inline">Kalender</span>
             </Link>
           </div>
         </div>
 
-        {/* Filter Chips — horizontally scrollable on mobile */}
-        <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 sm:flex-wrap sm:overflow-visible sm:pb-0 scrollbar-hide">
-          <Link
-            href="/work-orders"
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              !filter ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            Alle
-          </Link>
-          <Link
-            href="/work-orders?filter=overdue"
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              filter === 'overdue' ? 'bg-red-600 text-white' : 'bg-red-50 text-red-700 hover:bg-red-100'
-            }`}
-          >
-            Forfalt {workOrderStats.overdue > 0 && `(${workOrderStats.overdue})`}
-          </Link>
-          <Link
-            href="/work-orders?filter=thisweek"
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              filter === 'thisweek' ? 'bg-orange-600 text-white' : 'bg-orange-50 text-orange-700 hover:bg-orange-100'
-            }`}
-          >
-            Denne uken {workOrderStats.thisWeek > 0 && `(${workOrderStats.thisWeek})`}
-          </Link>
-          <Link
-            href="/work-orders?filter=faults"
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              filter === 'faults' ? 'bg-yellow-600 text-white' : 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100'
-            }`}
-          >
-            Åpne feil {workOrderStats.openFaults > 0 && `(${workOrderStats.openFaults})`}
-          </Link>
-          <Link
-            href="/work-orders?filter=scheduled"
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              filter === 'scheduled' ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-            }`}
-          >
-            Planlagt {workOrderStats.scheduled > 0 && `(${workOrderStats.scheduled})`}
-          </Link>
-          <Link
-            href="/work-orders?filter=in_progress"
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              filter === 'in_progress' ? 'bg-purple-600 text-white' : 'bg-purple-50 text-purple-700 hover:bg-purple-100'
-            }`}
-          >
-            Pågår
-          </Link>
-          <Link
-            href="/work-orders?filter=completed"
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              filter === 'completed' ? 'bg-green-600 text-white' : 'bg-green-50 text-green-700 hover:bg-green-100'
-            }`}
-          >
-            Fullført
-          </Link>
+        {/* Filter chips */}
+        <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 py-0.5">
+          {chips.map((c) => {
+            const active = (c.key ?? '') === (filter ?? '');
+            return (
+              <Link
+                key={c.label}
+                href={`/work-orders${queryBase(c.key)}`}
+                className={`flex-shrink-0 rounded-full px-3.5 py-2 text-[13px] font-medium ${
+                  active ? 'bg-ink text-paper' : 'bg-paper text-ink border border-line'
+                }`}
+              >
+                {c.label}
+              </Link>
+            );
+          })}
         </div>
 
         {/* Content */}
@@ -201,28 +152,23 @@ export default async function WorkOrdersPage({
           view === 'calendar' ? (
             <WorkOrderCalendar workOrders={workOrders as any[]} />
           ) : (
-            <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100">
-              <WorkOrderListWrapper
-                workOrders={workOrders as any[]}
-                showEquipmentName={true}
-                showFilters={false}
-              />
-            </div>
+            <WorkOrderListWrapper
+              workOrders={workOrders as any[]}
+              showEquipmentName={true}
+              showFilters={false}
+            />
           )
         ) : (
-          <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-100">
-            <div className="text-5xl mb-4">📋</div>
-            <h3 className="text-lg font-bold text-gray-900 mb-2">
-              Ingen arbeidsordrer funnet
+          <div className="bg-paper border border-line rounded-[18px] p-10 text-center">
+            <h3 className="font-serif text-[20px] font-medium text-ink mb-2">
+              Ingen arbeidsordrer
             </h3>
-            <p className="text-gray-600 mb-6 text-sm">
-              {filter
-                ? 'Prøv å endre filteret eller opprett nye arbeidsordrer'
-                : 'Opprett din første arbeidsordre for å komme i gang'}
+            <p className="text-ink2 mb-5 text-sm">
+              {filter ? 'Prøv å endre filteret.' : 'Opprett din første arbeidsordre for å komme i gang.'}
             </p>
             <Link
               href="/"
-              className="inline-flex items-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm"
+              className="inline-flex items-center gap-2 bg-ink text-paper px-4 py-2.5 rounded-[14px] font-medium text-sm"
             >
               Gå til utstyrsoversikt
             </Link>

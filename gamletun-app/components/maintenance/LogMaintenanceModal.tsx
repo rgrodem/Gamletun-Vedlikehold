@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FaTools, FaTimes, FaImage, FaFileAlt, FaTrash } from 'react-icons/fa';
+import { FaTimes, FaImage, FaFileAlt, FaTrash, FaCamera } from 'react-icons/fa';
 import { createClient } from '@/lib/supabase/client';
 import { uploadFile, formatFileSize } from '@/lib/storage';
 
@@ -17,32 +17,34 @@ interface LogMaintenanceModalProps {
   onSuccess: () => void;
 }
 
+const PRESET_TYPES = ['Oljeskift', 'Filterbytte', 'Rengjøring', 'Inspeksjon', 'Reparasjon', 'Annet'];
+
 export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: LogMaintenanceModalProps) {
   const [typeValue, setTypeValue] = useState('');
+  const [customType, setCustomType] = useState('');
   const [description, setDescription] = useState('');
   const [performedDate, setPerformedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [hours, setHours] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const newFiles = Array.from(e.target.files);
-
-      // Check file sizes (max 40MB each)
-      const invalidFiles = newFiles.filter(file => file.size > 40 * 1024 * 1024);
-      if (invalidFiles.length > 0) {
-        alert(`Noen filer er for store. Maksimal størrelse er 40 MB per fil.`);
-        return;
-      }
-
-      setAttachments([...attachments, ...newFiles]);
+    if (!e.target.files) return;
+    const newFiles = Array.from(e.target.files);
+    const invalid = newFiles.filter(f => f.size > 40 * 1024 * 1024);
+    if (invalid.length > 0) {
+      alert('Noen filer er for store. Maks 40 MB per fil.');
+      return;
     }
+    setAttachments([...attachments, ...newFiles]);
   };
 
   const removeAttachment = (index: number) => {
     setAttachments(attachments.filter((_, i) => i !== index));
   };
+
+  const effectiveType = typeValue === 'Annet' ? customType : typeValue;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,67 +53,54 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
 
     try {
       const supabase = createClient();
-
-      // Get current user (but don't require it)
       const { data: { user } } = await supabase.auth.getUser();
 
-      // First, create or get maintenance type
       let maintenanceTypeId = null;
-
-      if (typeValue) {
-        // Check if this type exists for this equipment
+      if (effectiveType) {
         const { data: existingType } = await supabase
           .from('maintenance_types')
           .select('id')
           .eq('equipment_id', equipment.id)
-          .eq('type_name', typeValue)
+          .eq('type_name', effectiveType)
           .single();
 
         if (existingType) {
           maintenanceTypeId = existingType.id;
         } else {
-          // Create new maintenance type
           const { data: newType, error: typeError } = await supabase
             .from('maintenance_types')
-            .insert({
-              equipment_id: equipment.id,
-              type_name: typeValue,
-            })
+            .insert({ equipment_id: equipment.id, type_name: effectiveType })
             .select()
             .single();
-
           if (typeError) throw typeError;
           maintenanceTypeId = newType.id;
         }
       }
 
-      // Create maintenance log (performed_by is optional)
+      const descriptionWithHours = hours
+        ? `${description ? description + '\n\n' : ''}Timer brukt: ${hours}`
+        : description;
+
       const { data: newLog, error: logError } = await supabase
         .from('maintenance_logs')
         .insert({
           equipment_id: equipment.id,
           maintenance_type_id: maintenanceTypeId,
-          description: description || null,
+          description: descriptionWithHours || null,
           performed_date: performedDate,
-          performed_by: user?.id || null, // Allow null if user doesn't exist
+          performed_by: user?.id || null,
         })
         .select()
         .single();
 
       if (logError) throw logError;
 
-      // Upload attachments if any
       if (attachments.length > 0 && newLog) {
         for (const file of attachments) {
           try {
-            // Upload file to storage
             const result = await uploadFile('maintenance-attachments', file, newLog.id);
-
-            // Determine attachment type
             const attachmentType = file.type.startsWith('image/') ? 'image' :
                                    file.type === 'application/pdf' ? 'document' : 'form';
-
-            // Save attachment record to database
             await supabase
               .from('maintenance_attachments')
               .insert({
@@ -125,7 +114,6 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
               });
           } catch (uploadError) {
             console.error('Error uploading attachment:', uploadError);
-            // Continue with other files even if one fails
           }
         }
       }
@@ -141,157 +129,183 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full my-8 max-h-[90vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 flex flex-col justify-end"
+      style={{ background: 'rgba(0,0,0,0.35)' }}
+      onClick={onClose}
+    >
+      <div
+        className="bg-bg rounded-t-[24px] px-5 pt-2.5 pb-6 max-h-[92%] overflow-y-auto noscroll"
+        style={{ boxShadow: '0 -10px 40px rgba(0,0,0,0.15)' }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Drag handle */}
+        <div className="w-11 h-1 rounded-full bg-line mx-auto mt-1 mb-3.5" />
+
         {/* Header */}
-        <div className="sticky top-0 bg-white flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 rounded-t-2xl z-10">
+        <div className="flex justify-between items-start">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Logg Vedlikehold</h2>
-            <p className="text-xs sm:text-sm text-gray-600 mt-1">{equipment.name}</p>
+            <div className="text-[12px] font-semibold text-moss uppercase tracking-[0.08em]">
+              Logg vedlikehold
+            </div>
+            <h2 className="font-serif text-[24px] font-medium text-ink tracking-tight2 mt-1">
+              {equipment.name}
+            </h2>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="p-2 hover:bg-gray-100 active:bg-gray-200 rounded-lg transition-colors touch-manipulation min-w-[44px] min-h-[44px] flex items-center justify-center"
-            aria-label="Lukk modal"
+            aria-label="Lukk"
+            className="w-[34px] h-[34px] rounded-full bg-paper border border-line text-ink flex items-center justify-center"
           >
-            <FaTimes className="text-lg sm:text-xl text-gray-500" />
+            <FaTimes className="text-[14px]" />
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-5 flex flex-col gap-3.5">
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p className="text-red-800 text-sm">{error}</p>
+            <div className="bg-rustBg border border-rust/30 rounded-[14px] p-3.5 text-rust text-sm">
+              {error}
             </div>
           )}
 
-          {/* Type */}
+          {/* Type chips */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Type arbeid <span className="text-red-500">*</span>
+            <label className="text-[12px] font-semibold text-ink2 uppercase tracking-[0.06em]">
+              Type arbeid
             </label>
-            <input
-              type="text"
-              value={typeValue}
-              onChange={(e) => setTypeValue(e.target.value)}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-              placeholder="F.eks. Smøring, Oljeskift, Rust-inspeksjon"
-            />
-            <p className="text-xs text-gray-500 mt-1">
-              Tips: Oljeskift, Smøring, Rust-inspeksjon, Dekktrykk, Filterskift
-            </p>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              {PRESET_TYPES.map(t => {
+                const active = typeValue === t;
+                return (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => setTypeValue(t)}
+                    className={`px-3.5 py-3 rounded-[12px] text-[14px] font-medium text-center ${
+                      active
+                        ? 'bg-ink text-paper border-0'
+                        : 'bg-paper text-ink border border-line'
+                    }`}
+                  >
+                    {t}
+                  </button>
+                );
+              })}
+            </div>
+            {typeValue === 'Annet' && (
+              <input
+                type="text"
+                value={customType}
+                onChange={(e) => setCustomType(e.target.value)}
+                placeholder="Beskriv arbeidet…"
+                className="mt-2 w-full bg-paper border border-line rounded-[12px] px-3.5 py-3 text-[15px] text-ink outline-none focus:border-ink3"
+              />
+            )}
           </div>
 
-          {/* Description */}
+          {/* Notat */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Beskrivelse
+            <label className="text-[12px] font-semibold text-ink2 uppercase tracking-[0.06em]">
+              Notat
             </label>
             <textarea
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
-              placeholder="Beskriv hva som ble gjort..."
+              placeholder="Beskriv hva som ble gjort…"
+              className="mt-2 w-full bg-paper border border-line rounded-[14px] px-3.5 py-3.5 text-[15px] text-ink placeholder:text-ink3 outline-none focus:border-ink3 resize-none leading-[1.5]"
+              style={{ minHeight: 80 }}
             />
           </div>
 
-          {/* Date */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Dato utført <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              value={performedDate}
-              onChange={(e) => setPerformedDate(e.target.value)}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-            />
-          </div>
-
-          {/* File Attachments */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Vedlegg (bilder/dokumenter)
-            </label>
-            <div className="space-y-3">
-              {/* File input */}
-              <div className="relative">
-                <input
-                  type="file"
-                  onChange={handleFileSelect}
-                  accept="image/*,.pdf"
-                  multiple
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                />
-              </div>
-              <p className="text-xs text-gray-500">
-                Last opp bilder av utført arbeid, vedlikeholdsskjema eller annen dokumentasjon (maks 40 MB per fil)
-              </p>
-
-              {/* Selected files list */}
-              {attachments.length > 0 && (
-                <div className="space-y-2">
-                  {attachments.map((file, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
-                    >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        {file.type.startsWith('image/') ? (
-                          <FaImage className="text-blue-500 flex-shrink-0" />
-                        ) : (
-                          <FaFileAlt className="text-red-500 flex-shrink-0" />
-                        )}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{file.name}</p>
-                          <p className="text-xs text-gray-500">{formatFileSize(file.size)}</p>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeAttachment(index)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0 touch-manipulation min-w-[40px] min-h-[40px]"
-                        aria-label="Fjern fil"
-                      >
-                        <FaTrash />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+          {/* Dato + Timer */}
+          <div className="grid grid-cols-2 gap-2.5">
+            <div>
+              <label className="text-[12px] font-semibold text-ink2 uppercase tracking-[0.06em]">
+                Dato
+              </label>
+              <input
+                type="date"
+                value={performedDate}
+                onChange={(e) => setPerformedDate(e.target.value)}
+                required
+                className="mt-2 w-full bg-paper border border-line rounded-[12px] px-3.5 py-3.5 text-[15px] text-ink outline-none focus:border-ink3"
+              />
+            </div>
+            <div>
+              <label className="text-[12px] font-semibold text-ink2 uppercase tracking-[0.06em]">
+                Timer brukt
+              </label>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={hours}
+                onChange={(e) => setHours(e.target.value)}
+                placeholder="0,5 t"
+                className="mt-2 w-full bg-paper border border-line rounded-[12px] px-3.5 py-3.5 text-[15px] text-ink placeholder:text-ink3 outline-none focus:border-ink3"
+              />
             </div>
           </div>
 
-          {/* Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 font-semibold rounded-xl hover:bg-gray-50 active:bg-gray-100 transition-colors touch-manipulation min-h-[44px]"
-              aria-label="Avbryt og lukk"
-            >
-              Avbryt
-            </button>
-            <button
-              type="submit"
-              disabled={loading || !typeValue}
-              className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-xl hover:shadow-lg active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 touch-manipulation min-h-[44px]"
-              aria-label="Logg vedlikehold"
-            >
-              {loading ? (
-                <span>Lagrer...</span>
-              ) : (
-                <>
-                  <FaTools />
-                  <span>Logg</span>
-                </>
-              )}
-            </button>
+          {/* Foto */}
+          <div>
+            <label className="text-[12px] font-semibold text-ink2 uppercase tracking-[0.06em]">
+              Foto (valgfritt)
+            </label>
+            <label className="mt-2 block cursor-pointer bg-paper border border-dashed border-line rounded-[14px] px-5 py-[22px] text-center text-ink3">
+              <span className="inline-flex items-center gap-2">
+                <FaCamera className="text-[16px]" />
+                <span className="text-[14px] font-medium">Ta bilde eller last opp</span>
+              </span>
+              <input
+                type="file"
+                onChange={handleFileSelect}
+                accept="image/*,.pdf"
+                multiple
+                className="hidden"
+              />
+            </label>
+            {attachments.length > 0 && (
+              <div className="mt-2.5 space-y-2">
+                {attachments.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between bg-paper border border-line rounded-[12px] px-3 py-2.5"
+                  >
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      {file.type.startsWith('image/')
+                        ? <FaImage className="text-sky flex-shrink-0" />
+                        : <FaFileAlt className="text-rust flex-shrink-0" />}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium text-ink truncate">{file.name}</p>
+                        <p className="text-[11px] text-ink3">{formatFileSize(file.size)}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(index)}
+                      className="p-2 text-rust rounded-lg"
+                      aria-label="Fjern fil"
+                    >
+                      <FaTrash className="text-[12px]" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={loading || !effectiveType}
+            className="mt-2 bg-ink text-paper rounded-[14px] px-4 py-4.5 text-[16px] font-semibold disabled:opacity-50"
+            style={{ padding: '18px 16px' }}
+            aria-label="Lagre vedlikehold"
+          >
+            {loading ? 'Lagrer…' : 'Lagre vedlikehold'}
+          </button>
         </form>
       </div>
     </div>

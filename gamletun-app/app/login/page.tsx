@@ -9,33 +9,35 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const { error } = await searchParams;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo and Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center bg-white p-6 rounded-2xl shadow-xl mb-4">
-            <div className="relative h-20 w-48">
-              <Image
-                src="/logo.png"
-                alt="Gamletun Gaard"
-                fill
-                className="object-contain"
-                priority
-              />
-            </div>
+    <div className="min-h-screen bg-bg flex flex-col">
+      <div className="flex-1 flex flex-col px-7 pt-5 pb-5 max-w-md w-full mx-auto">
+        {/* Logo card */}
+        <div
+          className="self-center mt-2 w-[300px] max-w-full h-[180px] rounded-[20px] border border-line p-3.5 flex items-center justify-center"
+          style={{
+            background:
+              'radial-gradient(ellipse at 60% 85%, rgba(28,27,24,0.08) 0%, transparent 60%), #fffdf8',
+          }}
+        >
+          <div className="relative w-full h-full">
+            <Image
+              src="/logo.png"
+              alt="Gamletun Gaard"
+              fill
+              className="object-contain"
+              priority
+            />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Vedlikeholdssystem
-          </h1>
-          <p className="text-gray-600">Logg inn for å fortsette</p>
         </div>
+
+        <h1 className="font-serif text-[32px] font-medium text-ink mt-7 mb-2 tracking-tight2 text-center leading-[1.05]">
+          Velkommen tilbake.
+        </h1>
+        <p className="text-ink2 text-[15px] text-center leading-[1.5] m-0">
+          Logg inn for å se utstyr, ordrer og vedlikeholdslogg.
+        </p>
 
         <LoginForm error={error} />
-
-        <div className="mt-8 text-center">
-          <p className="text-sm text-gray-500">© 2025 Gamletun. Alle rettigheter reservert.</p>
-          <p className="text-xs text-gray-400 mt-1">www.gamletun.no</p>
-        </div>
       </div>
     </div>
   );

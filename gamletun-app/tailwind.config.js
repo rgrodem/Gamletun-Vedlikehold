@@ -8,24 +8,35 @@ module.exports = {
   theme: {
     extend: {
       screens: {
-        'xs': '475px', // Extra small devices
+        'xs': '475px',
       },
       colors: {
-        primary: {
-          50: '#f0f9ff',
-          100: '#e0f2fe',
-          200: '#bae6fd',
-          300: '#7dd3fc',
-          400: '#38bdf8',
-          500: '#0ea5e9',
-          600: '#0284c7',
-          700: '#0369a1',
-          800: '#075985',
-          900: '#0c4a6e',
-        },
+        // Støvle palette
+        bg:       '#f7f3ec',
+        paper:    '#fffdf8',
+        ink:      '#1c1b18',
+        ink2:     '#57544c',
+        ink3:     '#8b8679',
+        line:     '#e6dfd1',
+        line2:    '#efe9dc',
+        moss:     '#4a6140',
+        mossBg:   '#e4ebd9',
+        rust:     '#b5532a',
+        rustBg:   '#f6e3d6',
+        amber:    '#a06b16',
+        amberBg:  '#f3e3c0',
+        sky:      '#3c5c7a',
+        skyBg:    '#dae4ee',
+      },
+      fontFamily: {
+        sans:  ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        serif: ['var(--font-fraunces)', 'Georgia', 'serif'],
+      },
+      letterSpacing: {
+        tightish: '-0.01em',
+        tight2:   '-0.02em',
       },
     },
   },
   plugins: [],
 }
-

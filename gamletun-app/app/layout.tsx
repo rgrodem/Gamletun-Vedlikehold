@@ -1,9 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Fraunces } from "next/font/google";
 import "./globals.css";
 import MobileBottomNav from "@/components/MobileBottomNav";
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
+
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  weight: ["400", "500", "600"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Gamletun Vedlikehold",
@@ -24,7 +35,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   userScalable: true,
-  themeColor: "#4f46e5", // Primary color
+  themeColor: "#f7f3ec",
 };
 
 export default function RootLayout({
@@ -33,8 +44,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="no">
-      <body className={`${inter.className} antialiased bg-background text-foreground pb-16 sm:pb-0`}>
+    <html lang="no" className={`${inter.variable} ${fraunces.variable}`}>
+      <body className="antialiased bg-bg text-ink pb-16 sm:pb-0">
         {children}
         <MobileBottomNav />
       </body>

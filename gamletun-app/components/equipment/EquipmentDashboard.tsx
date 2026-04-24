@@ -1,17 +1,14 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FaTools, FaPlus, FaSearch, FaCalendarCheck, FaClock, FaExclamationTriangle, FaChevronRight } from 'react-icons/fa';
+import { FaSearch, FaPlus, FaChevronRight } from 'react-icons/fa';
 import ReportFaultModal from '../work-orders/ReportFaultModal';
-import { MdConstruction } from 'react-icons/md';
-import { BsCalendar3 } from 'react-icons/bs';
 import AddEquipmentModal from './AddEquipmentModal';
 import LogMaintenanceModal from '../maintenance/LogMaintenanceModal';
 import EditEquipmentModal from './EditEquipmentModal';
-import QuickStatsBar from './QuickStatsBar';
 
 interface Category {
   id: string;
@@ -54,13 +51,51 @@ interface Props {
   nextWorkOrders?: NextWorkOrder[];
 }
 
+type StatusKey = 'in_use' | 'active' | 'maintenance' | 'inactive';
+
+const STATUS_PILL: Record<StatusKey, { bg: string; fg: string; dot: string; label: string }> = {
+  in_use:      { bg: 'bg-skyBg',   fg: 'text-sky',   dot: 'bg-sky',   label: 'I bruk' },
+  active:      { bg: 'bg-mossBg',  fg: 'text-moss',  dot: 'bg-moss',  label: 'Klar' },
+  maintenance: { bg: 'bg-amberBg', fg: 'text-amber', dot: 'bg-amber', label: 'Vedlikehold' },
+  inactive:    { bg: 'bg-line2',   fg: 'text-ink3',  dot: 'bg-ink3',  label: 'Inaktiv' },
+};
+
+function StatusPill({ status, small }: { status: string; small?: boolean }) {
+  const s = (STATUS_PILL[status as StatusKey] ?? STATUS_PILL.inactive);
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 rounded-full font-semibold tracking-tightish ${s.bg} ${s.fg} ${
+        small ? 'px-2 py-[2px] text-[11px]' : 'px-2.5 py-1 text-xs'
+      }`}
+    >
+      <span className={`w-1.5 h-1.5 rounded-full ${s.dot}`} />
+      {s.label}
+    </span>
+  );
+}
+
+function greeting(): string {
+  const h = new Date().getHours();
+  if (h < 10) return 'God morgen';
+  if (h < 17) return 'God dag';
+  return 'God kveld';
+}
+
+function dateLabel(): string {
+  return new Date().toLocaleDateString('nb-NO', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+}
+
 export default function EquipmentDashboard({
   categories,
   equipment,
   recentMaintenance,
   workOrderCounts,
   lastMaintenanceDates = {},
-  nextWorkOrders = []
+  nextWorkOrders = [],
 }: Props) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [maintenanceEquipment, setMaintenanceEquipment] = useState<Equipment | null>(null);
@@ -68,348 +103,188 @@ export default function EquipmentDashboard({
   const [faultEquipment, setFaultEquipment] = useState<Equipment | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
   const router = useRouter();
 
-  const handleSuccess = () => {
-    router.refresh();
-  };
+  const handleSuccess = () => router.refresh();
 
-  // Calculate stats
-  const totalEquipment = equipment.length;
-  const maintenanceLast30Days = recentMaintenance.length;
-  const inUseCount = equipment.filter(e => e.status === 'in_use').length;
-  const maintenanceCount = equipment.filter(e => e.status === 'maintenance').length;
-  const totalOpenWorkOrders = Object.values(workOrderCounts).reduce((a, b) => a + b, 0);
+  // Attention-card stats
+  const today = new Date();
+  const weekEnd = new Date(Date.now() + 7 * 86400000);
+  const overdueCount = nextWorkOrders.filter(w => new Date(w.due_date) < today).length;
+  const openFaultsCount = Object.values(workOrderCounts).reduce((a, b) => a + b, 0);
+  const thisWeekCount = nextWorkOrders.filter(w => {
+    const d = new Date(w.due_date);
+    return d >= today && d <= weekEnd;
+  }).length;
+  const attentionTotal = overdueCount + openFaultsCount + thisWeekCount;
 
-  // Create lookup for next work order by equipment
-  const nextWorkOrderByEquipment: Record<string, NextWorkOrder> = {};
-  nextWorkOrders.forEach(wo => {
-    if (!nextWorkOrderByEquipment[wo.equipment_id] ||
-        new Date(wo.due_date) < new Date(nextWorkOrderByEquipment[wo.equipment_id].due_date)) {
-      nextWorkOrderByEquipment[wo.equipment_id] = wo;
-    }
+  // Category chip counts
+  const categoryChips = useMemo(() => {
+    const chips: Array<{ id: string; label: string }> = [
+      { id: 'all', label: `Alt · ${equipment.length}` },
+    ];
+    categories.forEach(c => {
+      const count = equipment.filter(e => e.category_id === c.id).length;
+      if (count > 0) chips.push({ id: c.id, label: `${c.name} · ${count}` });
+    });
+    return chips;
+  }, [categories, equipment]);
+
+  const filtered = equipment.filter(e => {
+    const matchSearch =
+      !searchTerm ||
+      e.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      e.model?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchCat = selectedCategory === 'all' || e.category_id === selectedCategory;
+    return matchSearch && matchCat;
   });
-
-  // Filter equipment
-  const filteredEquipment = equipment.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.model?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || item.category_id === selectedCategory;
-    const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
-
-  // Format relative date
-  const formatRelativeDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) return 'I dag';
-    if (diffDays === 1) return 'I går';
-    if (diffDays < 7) return `${diffDays} dager siden`;
-    if (diffDays < 30) return `${Math.floor(diffDays / 7)} uker siden`;
-    return date.toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' });
-  };
-
-  const formatFutureDate = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const now = new Date();
-    const diffDays = Math.floor((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-
-    if (diffDays < 0) return 'Forfalt';
-    if (diffDays === 0) return 'I dag';
-    if (diffDays === 1) return 'I morgen';
-    if (diffDays < 7) return `Om ${diffDays} dager`;
-    return date.toLocaleDateString('nb-NO', { day: 'numeric', month: 'short' });
-  };
 
   return (
-    <div className="space-y-6">
-      {/* Compact Quick Stats Bar */}
-      <QuickStatsBar
-        totalEquipment={totalEquipment}
-        inUseCount={inUseCount}
-        maintenanceCount={maintenanceCount}
-        openWorkOrders={totalOpenWorkOrders}
-        maintenanceLast30Days={maintenanceLast30Days}
-        onFilterChange={(filter) => {
-          if (filter === 'in_use') setStatusFilter('in_use');
-          else if (filter === 'maintenance') setStatusFilter('maintenance');
-          else setStatusFilter('all');
-        }}
-        activeFilter={statusFilter}
-      />
-
-      {/* Actions & Filters - More Compact */}
-      <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
-        <div className="flex flex-col gap-3">
-          {/* Search */}
-          <div className="relative group">
-            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-            <input
-              type="text"
-              placeholder="Søk etter utstyr..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent focus:bg-white transition-all outline-none text-base"
-            />
-          </div>
-
-          {/* Filters Row */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {/* Category Filter */}
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none cursor-pointer text-base font-medium text-gray-700"
-            >
-              <option value="all">Alle kategorier</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.icon} {cat.name}</option>
-              ))}
-            </select>
-
-            {/* Status Filter */}
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-4 py-3 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all outline-none cursor-pointer text-base font-medium text-gray-700"
-            >
-              <option value="all">Alle statuser</option>
-              <option value="active">Aktiv</option>
-              <option value="in_use">I bruk</option>
-              <option value="maintenance">Vedlikehold</option>
-              <option value="inactive">Inaktiv</option>
-            </select>
-
-            {/* Add Button */}
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="col-span-2 sm:col-span-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg shadow-sm hover:shadow-md active:scale-95 transition-all font-semibold text-base whitespace-nowrap"
-            >
-              <FaPlus className="text-sm" />
-              <span>Nytt Utstyr</span>
-            </button>
-          </div>
+    <div className="space-y-4">
+      {/* Greeting + date */}
+      <div className="flex justify-between items-center">
+        <div>
+          <div className="text-[13px] text-ink3">{dateLabel()}</div>
+          <h1 className="font-serif text-[28px] font-medium text-ink tracking-tight2 mt-0.5 leading-tight">
+            {greeting()}
+          </h1>
         </div>
-
-        {/* Active filters indicator */}
-        {(searchTerm || selectedCategory !== 'all' || statusFilter !== 'all') && (
-          <div className="flex items-center gap-2 mt-3 pt-3 border-t border-gray-100">
-            <span className="text-xs text-gray-500">Aktive filter:</span>
-            {searchTerm && (
-              <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
-                Søk: {searchTerm}
-                <button onClick={() => setSearchTerm('')} className="hover:text-blue-900">×</button>
-              </span>
-            )}
-            {selectedCategory !== 'all' && (
-              <span className="inline-flex items-center gap-1 bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full">
-                {categories.find(c => c.id === selectedCategory)?.name}
-                <button onClick={() => setSelectedCategory('all')} className="hover:text-green-900">×</button>
-              </span>
-            )}
-            {statusFilter !== 'all' && (
-              <span className="inline-flex items-center gap-1 bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded-full">
-                {statusFilter === 'active' ? 'Aktiv' : statusFilter === 'in_use' ? 'I bruk' : statusFilter === 'maintenance' ? 'Vedlikehold' : 'Inaktiv'}
-                <button onClick={() => setStatusFilter('all')} className="hover:text-purple-900">×</button>
-              </span>
-            )}
-            <button
-              onClick={() => {
-                setSearchTerm('');
-                setSelectedCategory('all');
-                setStatusFilter('all');
-              }}
-              className="text-xs text-gray-500 hover:text-gray-700 ml-auto"
-            >
-              Nullstill alle
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Equipment List (mobile) / Grid (desktop) */}
-      {filteredEquipment.length > 0 ? (
-        <div className="flex flex-col sm:grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-          {filteredEquipment.map((item) => {
-            const categoryColor = item.category?.color || '#6b7280';
-            const categoryIcon = item.category?.icon || '⚙️';
-            const openWorkOrders = workOrderCounts[item.id] || 0;
-            const lastMaintenance = lastMaintenanceDates[item.id];
-            const nextWorkOrder = nextWorkOrderByEquipment[item.id];
+      {/* Attention card */}
+      <Link
+        href="/work-orders?filter=all_open"
+        className="block rounded-[20px] bg-ink text-paper p-[18px] pb-4 overflow-hidden relative"
+      >
+        <div className="text-[11px] font-semibold uppercase tracking-[0.12em] opacity-60">
+          Krever oppmerksomhet
+        </div>
+        <div className="font-serif text-[34px] font-medium tracking-tight2 leading-none mt-1">
+          {attentionTotal} {attentionTotal === 1 ? 'sak' : 'saker'}
+        </div>
+        <div className="flex gap-2.5 mt-4">
+          <AttentionTile count={overdueCount} label="Forfalt" tone="rust" />
+          <AttentionTile count={openFaultsCount} label="Åpne ordrer" tone="rust" />
+          <AttentionTile count={thisWeekCount} label="Denne uken" tone="moss" />
+        </div>
+      </Link>
 
-            const statusClass =
-              item.status === 'active' ? 'bg-green-500 text-white' :
-              item.status === 'in_use' ? 'bg-blue-500 text-white' :
-              item.status === 'maintenance' ? 'bg-amber-600 text-white' :
-              'bg-gray-500 text-white';
+      {/* Search */}
+      <div className="flex items-center gap-2.5 bg-paper border border-line rounded-[14px] px-3.5 py-3.5 text-ink3">
+        <FaSearch className="text-[16px] flex-shrink-0" />
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Søk etter utstyr, kategori…"
+          className="flex-1 bg-transparent text-[15px] text-ink placeholder:text-ink3 outline-none"
+        />
+      </div>
 
-            const statusLabel =
-              item.status === 'active' ? 'Aktiv' :
-              item.status === 'in_use' ? 'I bruk' :
-              item.status === 'maintenance' ? 'Vedl.' :
-              'Inaktiv';
+      {/* Category chips */}
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 py-0.5">
+        {categoryChips.map((c) => {
+          const active = c.id === selectedCategory;
+          return (
+            <button
+              key={c.id}
+              type="button"
+              onClick={() => setSelectedCategory(c.id)}
+              className={`flex-shrink-0 rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors ${
+                active
+                  ? 'bg-ink text-paper'
+                  : 'bg-paper text-ink border border-line'
+              }`}
+            >
+              {c.label}
+            </button>
+          );
+        })}
+      </div>
 
+      {/* Section header */}
+      <div className="flex items-baseline justify-between pt-1">
+        <h2 className="font-serif text-[20px] font-medium text-ink tracking-tightish m-0">
+          Alt utstyr
+        </h2>
+        <button
+          type="button"
+          onClick={() => setShowAddModal(true)}
+          className="inline-flex items-center gap-1.5 text-[13px] text-ink font-medium"
+        >
+          <FaPlus className="text-[11px]" /> Legg til
+        </button>
+      </div>
+
+      {/* Equipment list */}
+      {filtered.length > 0 ? (
+        <div className="flex flex-col gap-2.5">
+          {filtered.map((e) => {
+            const wo = workOrderCounts[e.id] || 0;
+            const tint = e.category?.color || '#4c6a3a';
+            const icon = e.category?.icon || '⚙️';
             return (
-              <div
-                key={item.id}
-                className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow border border-gray-100 overflow-hidden"
+              <Link
+                key={e.id}
+                href={`/equipment/${e.id}`}
+                className="flex items-center gap-3.5 bg-paper border border-line rounded-[18px] p-3.5"
               >
-                {/* Mobile: horizontal row. Desktop: vertical card */}
-                <div className="flex flex-row sm:flex-col">
+                <div
+                  className="relative w-16 h-16 rounded-[14px] flex-shrink-0 flex items-center justify-center text-[28px] border border-line overflow-hidden"
+                  style={{
+                    background: `repeating-linear-gradient(135deg, ${tint}22 0 6px, ${tint}11 6px 12px)`,
+                  }}
+                >
+                  {e.image_url ? (
+                    <Image src={e.image_url} alt={e.name} fill className="object-cover" sizes="64px" />
+                  ) : (
+                    <span>{icon}</span>
+                  )}
+                  {wo > 0 && (
+                    <span
+                      className="absolute -top-1.5 -right-1.5 bg-rust text-white text-[11px] font-bold rounded-full flex items-center justify-center border-[2px] border-paper"
+                      style={{ minWidth: 20, height: 20, padding: '0 4px' }}
+                    >
+                      {wo}
+                    </span>
+                  )}
+                </div>
 
-                  {/* Image — small square on mobile, full width on desktop */}
-                  <Link
-                    href={`/equipment/${item.id}`}
-                    className="relative w-[88px] h-[88px] sm:w-full sm:h-36 bg-gray-50 flex-shrink-0 overflow-hidden block"
-                  >
-                    {item.image_url ? (
-                      <Image
-                        src={item.image_url}
-                        alt={item.name}
-                        fill
-                        className="object-cover sm:group-hover:scale-105 sm:transition-transform sm:duration-500"
-                        sizes="(max-width: 640px) 88px, (max-width: 1024px) 50vw, 25vw"
-                      />
-                    ) : (
-                      <div
-                        className="w-full h-full flex items-center justify-center opacity-20"
-                        style={{ color: categoryColor }}
-                      >
-                        <span className="text-3xl sm:text-5xl">{categoryIcon}</span>
-                      </div>
-                    )}
-                    {/* Desktop: status + WO badges on image */}
-                    <div className="hidden sm:block absolute top-3 right-3">
-                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shadow-sm backdrop-blur-md ${statusClass}`}>
-                        {item.status === 'active' ? 'Aktiv' : item.status === 'in_use' ? 'I bruk' : item.status === 'maintenance' ? 'Vedlikehold' : 'Inaktiv'}
-                      </span>
-                    </div>
-                    {openWorkOrders > 0 && (
-                      <Link
-                        href={`/work-orders?equipment=${item.id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="hidden sm:flex absolute top-3 left-3 bg-red-500 hover:bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg animate-pulse motion-reduce:animate-none items-center gap-1 transition-colors"
-                      >
-                        <FaTools className="text-[8px]" />
-                        {openWorkOrders}
-                      </Link>
-                    )}
-                  </Link>
-
-                  {/* Content */}
-                  <div className="flex-1 p-3 sm:p-4 flex flex-col min-w-0">
-
-                    {/* Name row */}
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <div className="min-w-0 flex-1">
-                        <p className="hidden sm:block text-[10px] font-bold text-blue-600 uppercase tracking-wider mb-0.5">
-                          {item.category?.name || 'Ukategorisert'}
-                        </p>
-                        <h3 className="text-sm sm:text-base font-bold text-gray-900 sm:group-hover:text-blue-600 transition-colors line-clamp-1 leading-snug">
-                          {item.name}
-                        </h3>
-                        {item.model && (
-                          <p className="text-[11px] sm:text-xs text-gray-400 sm:text-gray-500 line-clamp-1 mt-0.5">
-                            {item.model}
-                          </p>
-                        )}
-                      </div>
-                      {/* Mobile: inline status badge */}
-                      <span className={`sm:hidden flex-shrink-0 mt-0.5 px-1.5 py-0.5 rounded-full text-[9px] font-bold uppercase ${statusClass}`}>
-                        {statusLabel}
-                      </span>
-                    </div>
-
-                    {/* Mobile: work order count + last maintenance */}
-                    <div className="flex sm:hidden items-center gap-1.5 mb-2 flex-wrap">
-                      {openWorkOrders > 0 && (
-                        <Link
-                          href={`/work-orders?equipment=${item.id}`}
-                          className="inline-flex items-center gap-1 bg-red-100 text-red-700 text-[10px] font-bold px-2 py-0.5 rounded-full"
-                        >
-                          <FaTools className="text-[8px]" />
-                          {openWorkOrders} ordre
-                        </Link>
-                      )}
-                      <span className="text-[11px] text-gray-400">
-                        {lastMaintenance ? formatRelativeDate(lastMaintenance) : 'Aldri vedlikeholdt'}
-                      </span>
-                    </div>
-
-                    {/* Desktop: maintenance info */}
-                    <div className="hidden sm:block mt-3 pt-3 border-t border-gray-100 space-y-1.5">
-                      <div className="flex items-center gap-2 text-xs">
-                        <FaClock className="text-gray-400 flex-shrink-0" />
-                        <span className="text-gray-500">Siste:</span>
-                        <span className={`font-medium ${lastMaintenance ? 'text-gray-700' : 'text-orange-600'}`}>
-                          {lastMaintenance ? formatRelativeDate(lastMaintenance) : 'Aldri'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-xs">
-                        <FaCalendarCheck className="text-gray-400 flex-shrink-0" />
-                        <span className="text-gray-500">Neste:</span>
-                        {nextWorkOrder ? (
-                          <span className={`font-medium truncate ${new Date(nextWorkOrder.due_date) < new Date() ? 'text-red-600' : 'text-blue-600'}`}>
-                            {formatFutureDate(nextWorkOrder.due_date)}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">Ingen planlagt</span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Action buttons */}
-                    <div className="mt-auto pt-2 sm:pt-3 border-t border-gray-100 flex gap-1.5">
-                      <button
-                        onClick={(e) => { e.preventDefault(); setFaultEquipment(item); }}
-                        className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-red-600 hover:bg-red-50 active:bg-red-100 py-2 sm:py-2.5 rounded-lg transition-colors border border-red-100 touch-manipulation min-h-[36px]"
-                      >
-                        <FaExclamationTriangle className="text-[10px]" />
-                        <span>Meld feil</span>
-                      </button>
-                      <Link
-                        href={`/equipment/${item.id}`}
-                        className="flex-1 flex items-center justify-center gap-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 active:bg-blue-100 py-2 sm:py-2.5 rounded-lg transition-colors border border-blue-100 min-h-[36px]"
-                      >
-                        <span>Detaljer</span>
-                        <FaChevronRight className="text-[9px]" />
-                      </Link>
-                    </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[16px] font-semibold text-ink tracking-tightish truncate">
+                    {e.name}
+                  </div>
+                  {e.model && (
+                    <div className="text-[13px] text-ink3 mt-[2px] truncate">{e.model}</div>
+                  )}
+                  <div className="mt-2">
+                    <StatusPill status={e.status} small />
                   </div>
                 </div>
-              </div>
+
+                <FaChevronRight className="text-ink3 flex-shrink-0" />
+              </Link>
             );
           })}
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl p-8 text-center shadow-sm">
-          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-500">
-            <FaSearch className="text-2xl" />
-          </div>
-          <h3 className="text-lg font-bold text-gray-900 mb-2">Ingen utstyr funnet</h3>
-          <p className="text-gray-500 mb-6 max-w-md mx-auto text-sm">
-            {searchTerm || selectedCategory !== 'all' || statusFilter !== 'all'
-              ? 'Prøv å justere filtrene for å finne det du leter etter.'
-              : 'Kom i gang ved å legge til ditt første utstyr.'}
-          </p>
+        <div className="bg-paper border border-line rounded-[18px] p-8 text-center">
+          <p className="text-ink2 mb-4 text-sm">Ingen utstyr funnet.</p>
           <button
+            type="button"
             onClick={() => {
               setSearchTerm('');
               setSelectedCategory('all');
-              setStatusFilter('all');
-              if (!searchTerm && selectedCategory === 'all' && statusFilter === 'all') setShowAddModal(true);
+              if (!searchTerm && selectedCategory === 'all') setShowAddModal(true);
             }}
-            className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium transition-colors text-sm"
+            className="inline-flex items-center gap-2 bg-ink text-paper px-4 py-2.5 rounded-[14px] font-medium text-sm"
           >
-            {searchTerm || selectedCategory !== 'all' || statusFilter !== 'all' ? 'Nullstill filter' : 'Legg til utstyr'}
+            {searchTerm || selectedCategory !== 'all' ? 'Nullstill' : 'Legg til utstyr'}
           </button>
         </div>
       )}
+
+      <div className="h-6" />
 
       {/* Modals */}
       {showAddModal && (
@@ -419,7 +294,6 @@ export default function EquipmentDashboard({
           onSuccess={handleSuccess}
         />
       )}
-
       {maintenanceEquipment && (
         <LogMaintenanceModal
           equipment={maintenanceEquipment}
@@ -427,7 +301,6 @@ export default function EquipmentDashboard({
           onSuccess={handleSuccess}
         />
       )}
-
       {editEquipment && (
         <EditEquipmentModal
           equipment={editEquipment}
@@ -436,7 +309,6 @@ export default function EquipmentDashboard({
           onSuccess={handleSuccess}
         />
       )}
-
       {faultEquipment && (
         <ReportFaultModal
           equipment={faultEquipment}
@@ -444,6 +316,26 @@ export default function EquipmentDashboard({
           onSuccess={() => { setFaultEquipment(null); handleSuccess(); }}
         />
       )}
+    </div>
+  );
+}
+
+function AttentionTile({
+  count,
+  label,
+  tone,
+}: {
+  count: number;
+  label: string;
+  tone: 'rust' | 'moss';
+}) {
+  const color = tone === 'rust' ? '#e9c0a5' : '#d5deb0';
+  return (
+    <div className="flex-1 rounded-xl px-3 py-2.5" style={{ background: 'rgba(255,255,255,0.08)' }}>
+      <div className="text-[22px] font-semibold leading-none" style={{ color }}>
+        {count}
+      </div>
+      <div className="text-[11px] opacity-75 mt-0.5">{label}</div>
     </div>
   );
 }
