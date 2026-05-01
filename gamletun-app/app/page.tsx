@@ -9,63 +9,65 @@ export const revalidate = 60;
 export default async function Home() {
   const supabase = await createClient();
 
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Fetch categories from database
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('*')
-    .order('name');
-
-  // Fetch equipment with their categories
-  const { data: equipment } = await supabase
-    .from('equipment')
-    .select(`
-      *,
-      category:categories(*)
-    `)
-    .order('name');
-
-  // Fetch maintenance logs from last 30 days
+  // Compute date ranges once before kicking off the parallel queries.
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const thirtyDaysAgoISO = thirtyDaysAgo.toISOString().split('T')[0];
 
-  const { data: recentMaintenance } = await supabase
-    .from('maintenance_logs')
-    .select('id, equipment_id, performed_date')
-    .gte('performed_date', thirtyDaysAgo.toISOString().split('T')[0]);
-
-  // Fetch last maintenance date per equipment
-  const { data: lastMaintenanceData } = await supabase
-    .from('maintenance_logs')
-    .select('equipment_id, performed_date')
-    .order('performed_date', { ascending: false });
-
-  // Create lookup for last maintenance date
-  const lastMaintenanceDates: Record<string, string> = {};
-  lastMaintenanceData?.forEach(log => {
-    if (!lastMaintenanceDates[log.equipment_id]) {
-      lastMaintenanceDates[log.equipment_id] = log.performed_date;
-    }
-  });
-
-  // Fetch next scheduled work orders per equipment
-  const today = new Date().toISOString();
-  const { data: nextWorkOrdersData } = await supabase
-    .from('work_orders')
-    .select('equipment_id, due_date, title')
-    .in('status', ['open', 'scheduled', 'in_progress', 'waiting_parts'])
-    .not('due_date', 'is', null)
-    .order('due_date', { ascending: true });
-
-  // Fetch open work order counts and dashboard stats
-  const [workOrderCounts, workOrderStats] = await Promise.all([
+  // Run every independent fetch in parallel — they all hit the same Supabase
+  // project so they share a single TCP/TLS connection and finish in roughly
+  // the slowest query's time instead of summing.
+  //
+  // The "last maintenance per equipment" lookup is served by the
+  // equipment_last_maintenance view (migration 008) which uses DISTINCT ON,
+  // so we get one row per machine instead of every log row.
+  const [
+    userResult,
+    categoriesResult,
+    equipmentResult,
+    recentMaintenanceResult,
+    lastMaintenanceResult,
+    nextWorkOrdersResult,
+    workOrderCounts,
+    workOrderStats,
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    supabase.from('categories').select('*').order('name'),
+    supabase
+      .from('equipment')
+      .select(`
+        *,
+        category:categories(*)
+      `)
+      .order('name'),
+    supabase
+      .from('maintenance_logs')
+      .select('id, equipment_id, performed_date')
+      .gte('performed_date', thirtyDaysAgoISO),
+    supabase
+      .from('equipment_last_maintenance')
+      .select('equipment_id, performed_date'),
+    supabase
+      .from('work_orders')
+      .select('equipment_id, due_date, title')
+      .in('status', ['open', 'scheduled', 'in_progress', 'waiting_parts'])
+      .not('due_date', 'is', null)
+      .order('due_date', { ascending: true }),
     getOpenWorkOrderCountsByEquipment(),
     getWorkOrdersDashboard(),
   ]);
+
+  const user = userResult.data.user;
+  const categories = categoriesResult.data;
+  const equipment = equipmentResult.data;
+  const recentMaintenance = recentMaintenanceResult.data;
+  const nextWorkOrdersData = nextWorkOrdersResult.data;
+
+  // The view returns at most one row per equipment, so this is a simple map.
+  const lastMaintenanceDates: Record<string, string> = {};
+  lastMaintenanceResult.data?.forEach((log: { equipment_id: string; performed_date: string }) => {
+    lastMaintenanceDates[log.equipment_id] = log.performed_date;
+  });
 
   return (
     <AppLayout

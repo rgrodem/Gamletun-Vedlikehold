@@ -10,7 +10,8 @@ const nextConfig = {
     ],
   },
   experimental: {
-    optimizePackageImports: ['lucide-react'],
+    // Tree-shake icon barrel imports so only the icons we actually use are bundled.
+    optimizePackageImports: ['lucide-react', 'react-icons'],
   },
   async headers() {
     return [

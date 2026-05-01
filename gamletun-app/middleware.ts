@@ -4,12 +4,16 @@ import { createServerClient } from '@supabase/ssr';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow login page, OAuth callback, and static files
+  // Allow login page, OAuth callback, public assets and PWA-files
   if (
     pathname === '/login' ||
     pathname.startsWith('/auth/') ||
     pathname.startsWith('/_next') ||
-    pathname.startsWith('/favicon')
+    pathname.startsWith('/favicon') ||
+    pathname.startsWith('/icon-') ||
+    pathname.startsWith('/logo') ||
+    pathname === '/manifest.json' ||
+    pathname === '/sw.js'
   ) {
     return NextResponse.next();
   }
@@ -39,16 +43,30 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Check if user is authenticated
+  // Use getSession() instead of getUser() — reads from cookie locally,
+  // no roundtrip to Supabase auth server. The actual user identity is
+  // re-verified by getUser() inside server components / RLS that need it.
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    data: { session },
+  } = await supabase.auth.getSession();
 
   // If not authenticated, redirect to login
-  if (!user) {
+  if (!session) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = '/login';
     return NextResponse.redirect(redirectUrl);
+  }
+
+  // Lazy refresh: if the access token is within 5 minutes of expiry,
+  // force a getUser() which will refresh the session via the auth server.
+  // This keeps tokens fresh without paying the roundtrip on every request.
+  const expiresAt = session.expires_at;
+  if (expiresAt) {
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    const fiveMinutes = 5 * 60;
+    if (expiresAt - nowSeconds < fiveMinutes) {
+      await supabase.auth.getUser();
+    }
   }
 
   return supabaseResponse;

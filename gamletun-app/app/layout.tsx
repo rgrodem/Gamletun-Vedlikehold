@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Fraunces } from "next/font/google";
 import "./globals.css";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import ServiceWorkerRegister from "@/components/layout/ServiceWorkerRegister";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -48,6 +49,7 @@ export default function RootLayout({
       <body className="antialiased bg-bg text-ink pb-16 sm:pb-0">
         {children}
         <MobileBottomNav />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
