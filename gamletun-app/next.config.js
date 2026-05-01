@@ -1,5 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    webpackBuildWorker: false,
+    workerThreads: false,
+  },
   images: {
     remotePatterns: [
       {
@@ -9,9 +13,12 @@ const nextConfig = {
       },
     ],
   },
-  experimental: {
-    // Tree-shake icon barrel imports so only the icons we actually use are bundled.
-    optimizePackageImports: ['lucide-react', 'react-icons'],
+  webpack: (config) => {
+    // OneDrive-backed Windows folders can produce intermittent readlink/read
+    // failures in Webpack's filesystem cache. Builds are slower without it,
+    // but deterministic and much easier to trust for this app.
+    config.cache = false;
+    return config;
   },
   async headers() {
     return [

@@ -9,6 +9,8 @@ export async function GET(request: NextRequest) {
   const origin = requestUrl.origin;
 
   if (error) {
+    const errorDescription = requestUrl.searchParams.get('error_description') ?? '';
+    console.error('OAuth error:', error, errorDescription);
     return NextResponse.redirect(`${origin}/login?error=oauth_cancelled`);
   }
 

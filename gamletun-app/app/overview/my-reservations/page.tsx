@@ -5,6 +5,7 @@ import MyReservationsClient from '@/components/reservations/MyReservationsClient
 export const metadata = {
   title: 'Mine Reservasjoner',
 };
+export const dynamic = 'force-dynamic';
 
 export default async function MyReservationsPage() {
   const supabase = await createClient();

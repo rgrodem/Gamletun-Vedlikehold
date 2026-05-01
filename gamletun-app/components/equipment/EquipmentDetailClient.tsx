@@ -51,9 +51,10 @@ interface EquipmentDetailClientProps {
   categories: Category[];
 }
 
-type StatusKey = 'in_use' | 'active' | 'maintenance' | 'inactive';
+type StatusKey = 'in_use' | 'reserved' | 'active' | 'maintenance' | 'inactive';
 const PILL: Record<StatusKey, { bg: string; fg: string; dot: string; label: string }> = {
   in_use:      { bg: 'bg-skyBg',   fg: 'text-sky',   dot: 'bg-sky',   label: 'I bruk' },
+  reserved:    { bg: 'bg-rustBg',  fg: 'text-rust',  dot: 'bg-rust',  label: 'Reservert' },
   active:      { bg: 'bg-mossBg',  fg: 'text-moss',  dot: 'bg-moss',  label: 'Klar' },
   maintenance: { bg: 'bg-amberBg', fg: 'text-amber', dot: 'bg-amber', label: 'Vedlikehold' },
   inactive:    { bg: 'bg-line2',   fg: 'text-ink3',  dot: 'bg-ink3',  label: 'Inaktiv' },
@@ -134,6 +135,13 @@ export default function EquipmentDetailClient({
   const tint = equipment.category?.color || '#4c6a3a';
   const icon = equipment.category?.icon || '⚙️';
   const lastDate = maintenanceLogs[0]?.performed_date;
+  const reservationStarted = activeReservation ? new Date(activeReservation.start_time) <= new Date() : false;
+  const displayStatus =
+    equipment.status === 'maintenance' || equipment.status === 'inactive'
+      ? equipment.status
+      : activeReservation
+        ? reservationStarted ? 'in_use' : 'reserved'
+        : equipment.status === 'in_use' ? 'active' : equipment.status;
 
   return (
     <div className="-mx-5 sm:-mx-6 lg:-mx-8 -mt-5 overflow-x-clip max-w-[100vw]">
@@ -220,7 +228,7 @@ export default function EquipmentDetailClient({
           {equipment.model || '—'}
           {equipment.serial_number && ` · Serienr. ${equipment.serial_number}`}
         </div>
-        <StatusPill status={equipment.status} />
+        <StatusPill status={displayStatus} />
       </div>
 
       {activeReservation && (
@@ -246,7 +254,17 @@ export default function EquipmentDetailClient({
       </div>
 
       {/* Action row */}
-      <div className="px-5 pt-4 sm:px-6 lg:px-8 grid grid-cols-2 gap-2.5">
+      <div className="px-5 pt-4 sm:px-6 lg:px-8 grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-3 gap-2.5">
+        {!activeReservation && equipment.status !== 'maintenance' && (
+          <button
+            type="button"
+            onClick={() => setShowReservationModal(true)}
+            disabled={loadingReservation}
+            className="bg-sky text-white rounded-[14px] px-4 py-4 text-[15px] font-semibold flex items-center justify-center gap-2 disabled:opacity-60"
+          >
+            <FaHandPaper className="text-[14px]" /> Reserver
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setShowLogModal(true)}

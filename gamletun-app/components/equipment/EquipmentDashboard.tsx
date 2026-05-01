@@ -42,9 +42,24 @@ interface NextWorkOrder {
   title: string;
 }
 
+interface ReservationSummary {
+  id: string;
+  equipment_id: string;
+  user_id: string;
+  start_time: string;
+  end_time: string | null;
+  status: string;
+  notes: string | null;
+  user_profile?: {
+    id: string;
+    full_name: string;
+  } | null;
+}
+
 interface Props {
   categories: Category[];
   equipment: Equipment[];
+  reservations: ReservationSummary[];
   recentMaintenance: MaintenanceLog[];
   workOrderCounts: Record<string, number>;
   lastMaintenanceDates?: Record<string, string>;
@@ -52,16 +67,18 @@ interface Props {
 }
 
 type StatusKey = 'in_use' | 'active' | 'maintenance' | 'inactive';
+type DisplayStatusKey = StatusKey | 'reserved';
 
-const STATUS_PILL: Record<StatusKey, { bg: string; fg: string; dot: string; label: string }> = {
+const STATUS_PILL: Record<DisplayStatusKey, { bg: string; fg: string; dot: string; label: string }> = {
   in_use:      { bg: 'bg-skyBg',   fg: 'text-sky',   dot: 'bg-sky',   label: 'I bruk' },
+  reserved:    { bg: 'bg-rustBg',  fg: 'text-rust',  dot: 'bg-rust',  label: 'Reservert' },
   active:      { bg: 'bg-mossBg',  fg: 'text-moss',  dot: 'bg-moss',  label: 'Klar' },
   maintenance: { bg: 'bg-amberBg', fg: 'text-amber', dot: 'bg-amber', label: 'Vedlikehold' },
   inactive:    { bg: 'bg-line2',   fg: 'text-ink3',  dot: 'bg-ink3',  label: 'Inaktiv' },
 };
 
 function StatusPill({ status, small }: { status: string; small?: boolean }) {
-  const s = (STATUS_PILL[status as StatusKey] ?? STATUS_PILL.inactive);
+  const s = (STATUS_PILL[status as DisplayStatusKey] ?? STATUS_PILL.inactive);
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full font-semibold tracking-tightish ${s.bg} ${s.fg} ${
@@ -92,6 +109,7 @@ function dateLabel(): string {
 export default function EquipmentDashboard({
   categories,
   equipment,
+  reservations,
   recentMaintenance,
   workOrderCounts,
   lastMaintenanceDates = {},
@@ -106,9 +124,21 @@ export default function EquipmentDashboard({
   const router = useRouter();
 
   const handleSuccess = () => router.refresh();
+  const now = new Date();
+
+  const reservationsByEquipment = useMemo(() => {
+    const map = new Map<string, ReservationSummary>();
+    reservations.forEach((reservation) => {
+      const existing = map.get(reservation.equipment_id);
+      if (!existing || new Date(reservation.start_time) < new Date(existing.start_time)) {
+        map.set(reservation.equipment_id, reservation);
+      }
+    });
+    return map;
+  }, [reservations]);
 
   // Attention-card stats
-  const today = new Date();
+  const today = now;
   const weekEnd = new Date(Date.now() + 7 * 86400000);
   const overdueCount = nextWorkOrders.filter(w => new Date(w.due_date) < today).length;
   const openFaultsCount = Object.values(workOrderCounts).reduce((a, b) => a + b, 0);
@@ -223,6 +253,22 @@ export default function EquipmentDashboard({
             const wo = workOrderCounts[e.id] || 0;
             const tint = e.category?.color || '#4c6a3a';
             const icon = e.category?.icon || '⚙️';
+            const reservation = reservationsByEquipment.get(e.id);
+            const reservationStarted = reservation ? new Date(reservation.start_time) <= now : false;
+            const displayStatus =
+              e.status === 'maintenance' || e.status === 'inactive'
+                ? e.status
+                : reservation
+                  ? reservationStarted ? 'in_use' : 'reserved'
+                  : e.status === 'in_use' ? 'active' : e.status;
+            const reservationTime = reservation
+              ? new Date(reservation.start_time).toLocaleString('nb-NO', {
+                  day: '2-digit',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })
+              : null;
             return (
               <Link
                 key={e.id}
@@ -258,8 +304,14 @@ export default function EquipmentDashboard({
                     <div className="text-[13px] text-ink3 mt-[2px] truncate">{e.model}</div>
                   )}
                   <div className="mt-2">
-                    <StatusPill status={e.status} small />
+                    <StatusPill status={displayStatus} small />
                   </div>
+                  {reservation && (
+                    <div className="text-[12px] text-ink3 mt-1 truncate">
+                      {reservationStarted ? 'Brukes av' : 'Reservert av'} {reservation.user_profile?.full_name || 'ukjent bruker'}
+                      {reservationTime ? ` fra ${reservationTime}` : ''}
+                    </div>
+                  )}
                 </div>
 
                 <FaChevronRight className="text-ink3 flex-shrink-0" />

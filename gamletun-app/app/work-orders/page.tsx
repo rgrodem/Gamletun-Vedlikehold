@@ -3,10 +3,11 @@ import Link from 'next/link';
 import AppLayout from '@/components/layout/AppLayout';
 import WorkOrderListWrapper from '@/components/work-orders/WorkOrderListWrapper';
 import WorkOrderCalendar from '@/components/work-orders/WorkOrderCalendar';
-import { getWorkOrdersDashboard } from '@/lib/work-orders';
+import { getWorkOrdersDashboard, type WorkOrder } from '@/lib/work-orders';
 import { FaList, FaCalendarAlt } from 'react-icons/fa';
 
 export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function WorkOrdersPage({
   searchParams,
@@ -61,6 +62,7 @@ export default async function WorkOrdersPage({
   }
 
   const { data: workOrders } = await query;
+  const typedWorkOrders = (workOrders || []) as WorkOrder[];
 
   let equipmentName = '';
   if (equipmentId) {
@@ -76,7 +78,7 @@ export default async function WorkOrdersPage({
   const openCount = workOrderStats.overdue + workOrderStats.openFaults + workOrderStats.scheduled + workOrderStats.thisWeek;
 
   const chips = [
-    { key: undefined, label: `Alle · ${workOrders?.length ?? 0}` },
+    { key: undefined, label: `Alle · ${typedWorkOrders.length}` },
     { key: 'overdue', label: `Forfalt · ${workOrderStats.overdue}` },
     { key: 'thisweek', label: `Denne uken · ${workOrderStats.thisWeek}` },
     { key: 'faults', label: `Åpne feil · ${workOrderStats.openFaults}` },
@@ -148,12 +150,12 @@ export default async function WorkOrdersPage({
         </div>
 
         {/* Content */}
-        {workOrders && workOrders.length > 0 ? (
+        {typedWorkOrders.length > 0 ? (
           view === 'calendar' ? (
-            <WorkOrderCalendar workOrders={workOrders as any[]} />
+            <WorkOrderCalendar workOrders={typedWorkOrders} />
           ) : (
             <WorkOrderListWrapper
-              workOrders={workOrders as any[]}
+              workOrders={typedWorkOrders}
               showEquipmentName={true}
               showFilters={false}
             />

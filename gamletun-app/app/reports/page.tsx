@@ -5,6 +5,18 @@ import { getWorkOrdersDashboard } from '@/lib/work-orders';
 
 // Revalidate every 30 seconds
 export const revalidate = 30;
+export const dynamic = 'force-dynamic';
+
+type EquipmentReportRow = {
+  id: string;
+  name: string;
+  categories: { name: string } | { name: string }[] | null;
+};
+
+function firstRelation<T>(relation: T | T[] | null | undefined): T | null {
+  if (Array.isArray(relation)) return relation[0] || null;
+  return relation || null;
+}
 
 export default async function ReportsPage() {
   const supabase = await createClient();
@@ -24,10 +36,10 @@ export default async function ReportsPage() {
     .order('name');
 
   // Transform equipment data to match the expected structure
-  const equipment = equipmentData?.map(item => ({
+  const equipment = (equipmentData as EquipmentReportRow[] | null)?.map(item => ({
     id: item.id,
     name: item.name,
-    category: item.categories ? { name: (item.categories as any).name } : null
+    category: firstRelation(item.categories),
   }));
 
   // Fetch all maintenance types

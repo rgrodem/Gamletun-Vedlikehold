@@ -3,6 +3,8 @@ import ReservationsClient from '@/components/reservations/ReservationsClient';
 import AppLayout from '@/components/layout/AppLayout';
 import { getWorkOrdersDashboard } from '@/lib/work-orders';
 
+export const dynamic = 'force-dynamic';
+
 export default async function ReservationsPage() {
   const supabase = await createClient();
 
@@ -13,6 +15,14 @@ export default async function ReservationsPage() {
 
   // Get work order stats for sidebar
   const workOrderStats = await getWorkOrdersDashboard();
+  const now = new Date().toISOString();
+
+  await supabase
+    .from('equipment_reservations')
+    .update({ status: 'completed', updated_at: now })
+    .eq('status', 'active')
+    .not('end_time', 'is', null)
+    .lte('end_time', now);
 
   // Fetch all reservations with equipment details
   const { data: rawReservations } = await supabase

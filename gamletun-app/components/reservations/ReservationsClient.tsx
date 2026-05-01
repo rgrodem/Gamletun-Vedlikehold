@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { FaCalendarAlt, FaClock, FaUser, FaSearch } from 'react-icons/fa';
 
 interface Reservation {
@@ -39,7 +40,11 @@ export default function ReservationsClient({ initialReservations }: Props) {
 
         // Filter by status/time
         if (filterType === 'active') {
-            filtered = filtered.filter(r => r.status === 'active');
+            filtered = filtered.filter(r => {
+                const start = new Date(r.start_time);
+                const end = r.end_time ? new Date(r.end_time) : null;
+                return r.status === 'active' && start <= now && (!end || end > now);
+            });
         } else if (filterType === 'completed') {
             filtered = filtered.filter(r => r.status === 'completed' || r.status === 'cancelled');
         } else if (filterType === 'upcoming') {
@@ -96,7 +101,12 @@ export default function ReservationsClient({ initialReservations }: Props) {
         return <span className="px-2.5 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">Fullført</span>;
     };
 
-    const activeCount = initialReservations.filter(r => r.status === 'active').length;
+    const activeCount = initialReservations.filter(r => {
+        const start = new Date(r.start_time);
+        const end = r.end_time ? new Date(r.end_time) : null;
+        return r.status === 'active' && start <= now && (!end || end > now);
+    }).length;
+    const upcomingCount = initialReservations.filter(r => r.status === 'active' && new Date(r.start_time) > now).length;
     const completedCount = initialReservations.filter(r => r.status === 'completed' || r.status === 'cancelled').length;
 
     return (
@@ -127,7 +137,15 @@ export default function ReservationsClient({ initialReservations }: Props) {
                         filterType === 'active' ? 'bg-green-600 text-white' : 'bg-green-50 text-green-700 hover:bg-green-100'
                     }`}
                 >
-                    Aktive ({activeCount})
+                    Aktive nå ({activeCount})
+                </button>
+                <button
+                    onClick={() => setFilterType('upcoming')}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                        filterType === 'upcoming' ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                    }`}
+                >
+                    Kommende ({upcomingCount})
                 </button>
                 <button
                     onClick={() => setFilterType('completed')}
@@ -157,7 +175,7 @@ export default function ReservationsClient({ initialReservations }: Props) {
                     {/* Sort */}
                     <select
                         value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value as any)}
+                        onChange={(e) => setSortBy(e.target.value as 'date' | 'equipment')}
                         className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none cursor-pointer text-sm"
                     >
                         <option value="date">Nyeste først</option>
@@ -175,8 +193,23 @@ export default function ReservationsClient({ initialReservations }: Props) {
                             href={`/equipment/${reservation.equipment_id}`}
                             className="block bg-white rounded-xl p-4 shadow-sm border border-gray-100 hover:shadow-md transition-all hover:border-blue-200"
                         >
-                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                                <div className="flex-1">
+                            <div className="flex items-start gap-3">
+                                <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-100">
+                                    {reservation.equipment.image_url ? (
+                                        <Image
+                                            src={reservation.equipment.image_url}
+                                            alt={reservation.equipment.name}
+                                            fill
+                                            className="object-cover"
+                                            sizes="56px"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                                            <FaCalendarAlt />
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap mb-2">
                                         <h3 className="text-base font-bold text-gray-900">{reservation.equipment.name}</h3>
                                         {getStatusBadge(reservation)}

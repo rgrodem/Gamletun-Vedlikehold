@@ -5,6 +5,7 @@ import { getOpenWorkOrderCountsByEquipment, getWorkOrdersDashboard } from '@/lib
 
 // Revalidate every 60 seconds instead of on every request
 export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const supabase = await createClient();
@@ -13,6 +14,14 @@ export default async function Home() {
   const thirtyDaysAgo = new Date();
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const thirtyDaysAgoISO = thirtyDaysAgo.toISOString().split('T')[0];
+  const nowISO = new Date().toISOString();
+
+  await supabase
+    .from('equipment_reservations')
+    .update({ status: 'completed', updated_at: nowISO })
+    .eq('status', 'active')
+    .not('end_time', 'is', null)
+    .lte('end_time', nowISO);
 
   // Run every independent fetch in parallel — they all hit the same Supabase
   // project so they share a single TCP/TLS connection and finish in roughly
@@ -25,6 +34,7 @@ export default async function Home() {
     userResult,
     categoriesResult,
     equipmentResult,
+    reservationsResult,
     recentMaintenanceResult,
     lastMaintenanceResult,
     nextWorkOrdersResult,
@@ -40,6 +50,21 @@ export default async function Home() {
         category:categories(*)
       `)
       .order('name'),
+    supabase
+      .from('equipment_reservations')
+      .select(`
+        id,
+        equipment_id,
+        user_id,
+        start_time,
+        end_time,
+        status,
+        notes,
+        user_profile:user_id(id, full_name)
+      `)
+      .eq('status', 'active')
+      .or(`end_time.is.null,end_time.gt.${nowISO}`)
+      .order('start_time', { ascending: true }),
     supabase
       .from('maintenance_logs')
       .select('id, equipment_id, performed_date')
@@ -60,6 +85,12 @@ export default async function Home() {
   const user = userResult.data.user;
   const categories = categoriesResult.data;
   const equipment = equipmentResult.data;
+  const reservations = (reservationsResult.data || []).map((reservation) => ({
+    ...reservation,
+    user_profile: Array.isArray(reservation.user_profile)
+      ? reservation.user_profile[0] || null
+      : reservation.user_profile,
+  }));
   const recentMaintenance = recentMaintenanceResult.data;
   const nextWorkOrdersData = nextWorkOrdersResult.data;
 
@@ -79,6 +110,7 @@ export default async function Home() {
         equipment={equipment || []}
         recentMaintenance={recentMaintenance || []}
         workOrderCounts={workOrderCounts}
+        reservations={reservations}
         lastMaintenanceDates={lastMaintenanceDates}
         nextWorkOrders={nextWorkOrdersData || []}
       />

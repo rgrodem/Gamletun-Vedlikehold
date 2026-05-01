@@ -6,6 +6,7 @@ import { getWorkOrdersDashboard } from '@/lib/work-orders';
 
 // Revalidate every 30 seconds
 export const revalidate = 30;
+export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: Promise<{

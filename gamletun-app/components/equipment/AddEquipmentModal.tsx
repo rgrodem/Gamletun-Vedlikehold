@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { FaPlus, FaTimes } from 'react-icons/fa';
 import { createClient } from '@/lib/supabase/client';
+import ImageUpload from '../uploads/ImageUpload';
 
 interface Category {
   id: string;
@@ -21,9 +22,17 @@ export default function AddEquipmentModal({ categories, onClose, onSuccess }: Ad
   const [name, setName] = useState('');
   const [model, setModel] = useState('');
   const [categoryId, setCategoryId] = useState('');
-  const [imageUrl, setImageUrl] = useState('');
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const handleImageUploaded = (url: string) => {
+    setImageUrl(url);
+  };
+
+  const handleImageRemoved = () => {
+    setImageUrl(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,7 +48,7 @@ export default function AddEquipmentModal({ categories, onClose, onSuccess }: Ad
           name,
           model: model || null,
           category_id: categoryId || null,
-          image_url: imageUrl || null,
+          image_url: imageUrl,
           status: 'active',
         });
 
@@ -125,19 +134,18 @@ export default function AddEquipmentModal({ categories, onClose, onSuccess }: Ad
             </select>
           </div>
 
-          {/* Image URL */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Bilde URL
-            </label>
-            <input
-              type="url"
-              value={imageUrl}
-              onChange={(e) => setImageUrl(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
-              placeholder="https://eksempel.no/bilde.jpg"
+            <ImageUpload
+              currentImageUrl={imageUrl}
+              onImageUploaded={handleImageUploaded}
+              onImageRemoved={handleImageRemoved}
+              bucket="equipment-images"
+              folder="new"
+              maxSizeMB={40}
+              label="Bilde av utstyr"
+              description="Last opp et bilde. Bildet vises i oversikt, detaljside og rapporter."
+              aspectRatio="landscape"
             />
-            <p className="text-xs text-gray-500 mt-1">Direktelenke til et bilde av utstyret</p>
           </div>
 
           {/* Buttons */}

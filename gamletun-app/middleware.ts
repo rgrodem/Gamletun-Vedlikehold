@@ -7,6 +7,8 @@ export async function middleware(request: NextRequest) {
   // Allow login page, OAuth callback, public assets and PWA-files
   if (
     pathname === '/login' ||
+    pathname === '/forgot-password' ||
+    pathname === '/reset-password' ||
     pathname.startsWith('/auth/') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon') ||

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FaUser, FaClock, FaStopCircle } from 'react-icons/fa';
 import { Reservation, completeReservation, cancelReservation } from '@/lib/reservations';
 import { createClient } from '@/lib/supabase/client';
@@ -14,15 +14,14 @@ export default function ActiveReservationBadge({ reservation, onUpdate }: Active
   const [loading, setLoading] = useState(false);
   const [isCurrentUser, setIsCurrentUser] = useState(false);
 
-  // Check if current user is the one who reserved
-  useState(() => {
+  useEffect(() => {
     const checkUser = async () => {
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
       setIsCurrentUser(user?.id === reservation.user_id);
     };
     checkUser();
-  });
+  }, [reservation.user_id]);
 
   const handleComplete = async () => {
     if (!confirm('Er du sikker på at du er ferdig med utstyret?')) return;
@@ -68,16 +67,16 @@ export default function ActiveReservationBadge({ reservation, onUpdate }: Active
   const isPast = reservation.end_time && new Date(reservation.end_time) < new Date();
 
   return (
-    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-300 rounded-2xl p-5 shadow-md">
+    <div className="bg-paper border border-sky/30 rounded-[16px] p-4 shadow-sm">
       <div className="flex items-start justify-between mb-4">
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <div className="w-3 h-3 bg-blue-600 rounded-full animate-pulse"></div>
-            <h3 className="text-lg font-bold text-gray-900">
-              {isStarted ? 'I Bruk' : 'Reservert'}
+            <div className={`w-2.5 h-2.5 rounded-full ${isStarted ? 'bg-sky animate-pulse' : 'bg-rust'}`} />
+            <h3 className="text-lg font-bold text-ink">
+              {isStarted ? 'I bruk nå' : 'Reservert fremover'}
             </h3>
           </div>
-          <div className="flex items-center gap-2 text-gray-700">
+          <div className="flex items-center gap-2 text-ink2">
             <FaUser className="text-sm" />
             <span className="font-medium">
               {reservation.user_profile?.full_name || 'Ukjent bruker'}
@@ -90,7 +89,7 @@ export default function ActiveReservationBadge({ reservation, onUpdate }: Active
               <button
                 onClick={handleComplete}
                 disabled={loading}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
+                className="px-4 py-2 bg-moss text-white rounded-[12px] active:scale-95 transition-all disabled:opacity-50 flex items-center gap-2 text-sm font-medium"
                 title="Avslutt bruk"
               >
                 <FaStopCircle />
@@ -101,7 +100,7 @@ export default function ActiveReservationBadge({ reservation, onUpdate }: Active
               <button
                 onClick={handleCancel}
                 disabled={loading}
-                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 active:scale-95 transition-all disabled:opacity-50 text-sm font-medium"
+                className="px-4 py-2 bg-rust text-white rounded-[12px] active:scale-95 transition-all disabled:opacity-50 text-sm font-medium"
                 title="Avbryt reservasjon"
               >
                 Avbryt
@@ -112,17 +111,17 @@ export default function ActiveReservationBadge({ reservation, onUpdate }: Active
       </div>
 
       <div className="space-y-2 text-sm">
-        <div className="flex items-center gap-2 text-gray-600">
+        <div className="flex items-center gap-2 text-ink2">
           <FaClock className="text-xs" />
           <span>
-            Fra: <span className="font-medium text-gray-900">{formatDate(reservation.start_time)}</span>
+            Fra: <span className="font-medium text-ink">{formatDate(reservation.start_time)}</span>
           </span>
         </div>
         {reservation.end_time && (
-          <div className="flex items-center gap-2 text-gray-600">
+          <div className="flex items-center gap-2 text-ink2">
             <FaClock className="text-xs" />
             <span>
-              Til: <span className={`font-medium ${isPast ? 'text-red-600' : 'text-gray-900'}`}>
+              Til: <span className={`font-medium ${isPast ? 'text-rust' : 'text-ink'}`}>
                 {formatDate(reservation.end_time)}
                 {isPast && ' (Utgått)'}
               </span>
@@ -130,14 +129,14 @@ export default function ActiveReservationBadge({ reservation, onUpdate }: Active
           </div>
         )}
         {!reservation.end_time && (
-          <div className="flex items-center gap-2 text-gray-600">
+          <div className="flex items-center gap-2 text-ink2">
             <FaClock className="text-xs" />
-            <span>Sluttid: <span className="font-medium text-gray-900">Ikke angitt</span></span>
+            <span>Sluttid: <span className="font-medium text-ink">Ikke angitt</span></span>
           </div>
         )}
         {reservation.notes && (
-          <div className="mt-3 pt-3 border-t border-blue-200">
-            <p className="text-gray-700 italic">&quot;{reservation.notes}&quot;</p>
+          <div className="mt-3 pt-3 border-t border-line">
+            <p className="text-ink2 italic">&quot;{reservation.notes}&quot;</p>
           </div>
         )}
       </div>

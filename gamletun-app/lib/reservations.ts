@@ -1,5 +1,6 @@
 // Equipment Reservations API functions
 import { createClient } from '@/lib/supabase/client';
+import { refreshEquipmentStatus } from '@/lib/equipment-status';
 
 export type ReservationStatus = 'active' | 'completed' | 'cancelled';
 
@@ -60,11 +61,10 @@ export async function checkAvailability(
       `and(start_time.lte.${endTime.toISOString()},or(end_time.is.null,end_time.gte.${startTime.toISOString()}))`
     );
   } else {
-    // No end time: Check if there's any active reservation starting before our start time
-    // that either has no end time or ends after our start time
-    query = query
-      .lte('start_time', startTime.toISOString())
-      .or(`end_time.is.null,end_time.gte.${startTime.toISOString()}`);
+    // No end time means the new reservation is open-ended, so it overlaps any
+    // active reservation that has not ended before our start time, including
+    // future reservations.
+    query = query.or(`end_time.is.null,end_time.gte.${startTime.toISOString()}`);
   }
 
   const { data, error } = await query.limit(1);
@@ -128,6 +128,8 @@ export async function createReservation(data: CreateReservationData): Promise<Re
     throw error;
   }
 
+  await refreshEquipmentStatus(data.equipment_id);
+
   return reservation;
 }
 
@@ -140,7 +142,7 @@ export async function completeReservation(reservationId: string): Promise<void> 
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Must be logged in');
 
-  const { error } = await supabase
+  const { data: updatedReservation, error } = await supabase
     .from('equipment_reservations')
     .update({
       status: 'completed',
@@ -148,11 +150,17 @@ export async function completeReservation(reservationId: string): Promise<void> 
       updated_at: new Date().toISOString(),
     })
     .eq('id', reservationId)
-    .eq('user_id', user.id);
+    .eq('user_id', user.id)
+    .select('equipment_id')
+    .single();
 
   if (error) {
     console.error('Error completing reservation:', error);
     throw error;
+  }
+
+  if (updatedReservation?.equipment_id) {
+    await refreshEquipmentStatus(updatedReservation.equipment_id);
   }
 }
 
@@ -165,18 +173,24 @@ export async function cancelReservation(reservationId: string): Promise<void> {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Must be logged in');
 
-  const { error } = await supabase
+  const { data: updatedReservation, error } = await supabase
     .from('equipment_reservations')
     .update({
       status: 'cancelled',
       updated_at: new Date().toISOString(),
     })
     .eq('id', reservationId)
-    .eq('user_id', user.id);
+    .eq('user_id', user.id)
+    .select('equipment_id')
+    .single();
 
   if (error) {
     console.error('Error cancelling reservation:', error);
     throw error;
+  }
+
+  if (updatedReservation?.equipment_id) {
+    await refreshEquipmentStatus(updatedReservation.equipment_id);
   }
 }
 
@@ -246,6 +260,8 @@ export async function getActiveReservationForEquipment(equipmentId: string): Pro
     `)
     .eq('equipment_id', equipmentId)
     .eq('status', 'active')
+    .or(`end_time.is.null,end_time.gt.${new Date().toISOString()}`)
+    .order('start_time', { ascending: true })
     .limit(1)
     .single();
 
@@ -275,12 +291,15 @@ export async function autoCompleteExpiredReservations(): Promise<number> {
     .eq('status', 'active')
     .not('end_time', 'is', null)
     .lte('end_time', now)
-    .select('id');
+    .select('id, equipment_id');
 
   if (error) {
     console.error('Error auto-completing reservations:', error);
     return 0;
   }
+
+  const equipmentIds = Array.from(new Set((data || []).map((reservation) => reservation.equipment_id)));
+  await Promise.all(equipmentIds.map((equipmentId) => refreshEquipmentStatus(equipmentId)));
 
   return data?.length || 0;
 }

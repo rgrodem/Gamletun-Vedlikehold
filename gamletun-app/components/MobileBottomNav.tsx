@@ -1,33 +1,24 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { FaTractor, FaWrench, FaCalendarAlt, FaChartBar, FaPlus } from 'react-icons/fa';
+import { FaTractor, FaWrench, FaCalendarAlt, FaChartBar } from 'react-icons/fa';
 
 const HIDDEN_PATHS = ['/login', '/forgot-password', '/reset-password', '/auth'];
 
-const items: Array<
-  | { id: 'home'; href: string; Icon: typeof FaTractor; label: string }
-  | { id: 'wo'; href: string; Icon: typeof FaWrench; label: string }
-  | { id: 'spacer'; href: null; Icon: null; label: '' }
-  | { id: 'res'; href: string; Icon: typeof FaCalendarAlt; label: string }
-  | { id: 'rep'; href: string; Icon: typeof FaChartBar; label: string }
-> = [
+const items: Array<{ id: string; href: string; Icon: typeof FaTractor; label: string }> = [
   { id: 'home', href: '/',             Icon: FaTractor,     label: 'Utstyr' },
   { id: 'wo',   href: '/work-orders',  Icon: FaWrench,      label: 'Ordrer' },
-  { id: 'spacer', href: null,          Icon: null,          label: '' },
   { id: 'res',  href: '/reservations', Icon: FaCalendarAlt, label: 'Reserv.' },
   { id: 'rep',  href: '/reports',      Icon: FaChartBar,    label: 'Rapport' },
 ];
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
-  const router = useRouter();
 
   if (HIDDEN_PATHS.some(p => pathname.startsWith(p))) return null;
 
-  const isActive = (id: string, href: string | null) => {
-    if (!href) return false;
+  const isActive = (id: string, href: string) => {
     if (id === 'home') return pathname === '/' || pathname.startsWith('/equipment');
     return pathname.startsWith(href);
   };
@@ -38,12 +29,8 @@ export default function MobileBottomNav() {
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       aria-label="Mobilnavigasjon"
     >
-      <div className="relative">
-        <div className="grid grid-cols-5 h-16">
-          {items.map((it, i) => {
-            if (it.id === 'spacer' || !it.Icon || !it.href) {
-              return <div key={`spacer-${i}`} />;
-            }
+      <div className="grid grid-cols-4 h-16">
+          {items.map((it) => {
             const on = isActive(it.id, it.href);
             const Icon = it.Icon;
             return (
@@ -62,21 +49,6 @@ export default function MobileBottomNav() {
               </Link>
             );
           })}
-        </div>
-
-        {/* Center FAB */}
-        <button
-          type="button"
-          onClick={() => router.push('/work-orders?new=1')}
-          aria-label="Ny handling"
-          className="absolute left-1/2 -top-[22px] -translate-x-1/2 w-14 h-14 rounded-full bg-ink text-paper flex items-center justify-center"
-          style={{
-            border: '4px solid var(--bg)',
-            boxShadow: '0 8px 20px rgba(28,27,24,0.25)',
-          }}
-        >
-          <FaPlus className="text-[18px]" />
-        </button>
       </div>
     </nav>
   );
