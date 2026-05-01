@@ -26,6 +26,22 @@
   --surface:    var(--paper);
 }
 
+/*
+ * Mobile safety net: prevent any rogue child element (a wide grid, a long
+ * unbreakable word, a chip row using negative margins, an iframe) from
+ * triggering document-level horizontal scroll on iPhone. Vertical scroll is
+ * untouched.
+ */
+html, body {
+  overflow-x: hidden;
+  max-width: 100%;
+}
+
+html {
+  /* iOS Safari respects this for the safe area / dark mode UI. */
+  background: var(--bg);
+}
+
 body {
   color: var(--ink);
   background: var(--bg);
@@ -33,6 +49,10 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   letter-spacing: -0.005em;
+  /* Long URLs, long product codes etc. should wrap instead of pushing the
+     viewport sideways. */
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 /* Serif headings */
@@ -62,6 +82,19 @@ input, textarea, select {
   appearance: none;
 }
 
+/* Form fields should never overflow their container on iPhone — and the
+   default iOS font-size of 16px prevents the auto-zoom on focus. */
+input, textarea, select {
+  max-width: 100%;
+  font-size: max(16px, 1rem);
+}
+
+/* Images and media never break out of their container. */
+img, video, canvas, svg, iframe {
+  max-width: 100%;
+  height: auto;
+}
+
 /* Hide scrollbars on horizontally-scrolling chip rows */
 .scrollbar-hide::-webkit-scrollbar,
 .noscroll::-webkit-scrollbar {
@@ -71,4 +104,19 @@ input, textarea, select {
 .noscroll {
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+/*
+ * Reusable mobile-first page wrapper. Use as the outermost element of every
+ * page so that:
+ *   - the body padding is consistent (and lines up with -mx-5 chip rows)
+ *   - content never exceeds the viewport
+ *   - on tablet/desktop we get a sensible max-width and centred layout
+ *
+ * Pair with <PageContainer> in components/layout/PageContainer.tsx.
+ */
+.page-shell {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }

@@ -136,7 +136,7 @@ export default function EquipmentDetailClient({
   const lastDate = maintenanceLogs[0]?.performed_date;
 
   return (
-    <div className="-mx-5 sm:-mx-6 lg:-mx-8 -mt-5">
+    <div className="-mx-5 sm:-mx-6 lg:-mx-8 -mt-5 overflow-x-clip max-w-[100vw]">
       {/* Hero */}
       <div
         className="relative h-[200px] flex items-end p-4 overflow-hidden"
@@ -209,14 +209,14 @@ export default function EquipmentDetailClient({
       </div>
 
       {/* Title slab */}
-      <div className="px-5 pt-5 sm:px-6 lg:px-8">
+      <div className="px-5 pt-5 sm:px-6 lg:px-8 min-w-0">
         <div className="text-[11px] font-semibold text-moss uppercase tracking-[0.1em]">
           {equipment.category?.name || 'Utstyr'}
         </div>
-        <h1 className="font-serif text-[28px] font-medium text-ink tracking-tight2 leading-[1.1] mt-1 mb-1.5">
+        <h1 className="font-serif text-[28px] font-medium text-ink tracking-tight2 leading-[1.1] mt-1 mb-1.5 break-words">
           {equipment.name}
         </h1>
-        <div className="text-[14px] text-ink2 mb-3">
+        <div className="text-[14px] text-ink2 mb-3 break-words">
           {equipment.model || '—'}
           {equipment.serial_number && ` · Serienr. ${equipment.serial_number}`}
         </div>
@@ -263,7 +263,7 @@ export default function EquipmentDetailClient({
       </div>
 
       {/* Content sections */}
-      <div className="px-5 pt-6 sm:px-6 lg:px-8 space-y-5">
+      <div className="px-5 pt-6 sm:px-6 lg:px-8 space-y-5 min-w-0">
         <WorkOrderSection equipment={{ id: equipment.id, name: equipment.name }} onUpdate={handleSuccess} />
         <DocumentSection equipmentId={equipment.id} onUpdate={handleSuccess} />
 
@@ -305,9 +305,9 @@ export default function EquipmentDetailClient({
 
 function MetaTile({ k, v, sub }: { k: string; v: string; sub: string }) {
   return (
-    <div className="bg-paper border border-line rounded-[16px] px-3.5 py-3">
+    <div className="bg-paper border border-line rounded-[16px] px-3.5 py-3 min-w-0">
       <div className="text-[11px] text-ink3 font-medium uppercase tracking-[0.06em]">{k}</div>
-      <div className="font-serif text-[22px] font-medium text-ink tracking-tight2 mt-1 leading-tight">{v}</div>
+      <div className="font-serif text-[22px] font-medium text-ink tracking-tight2 mt-1 leading-tight break-words">{v}</div>
       {sub && <div className="text-[12px] text-ink3 mt-0.5">{sub}</div>}
     </div>
   );
