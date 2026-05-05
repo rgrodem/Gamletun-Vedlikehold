@@ -75,7 +75,7 @@ export default async function WorkOrdersPage({
   }
 
   const view = params.view || 'list';
-  const openCount = workOrderStats.overdue + workOrderStats.openFaults + workOrderStats.scheduled + workOrderStats.thisWeek;
+  const openCount = workOrderStats.openTotal;
 
   const chips = [
     { key: undefined, label: `Alle · ${typedWorkOrders.length}` },

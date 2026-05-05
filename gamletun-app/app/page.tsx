@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import EquipmentDashboard from '@/components/equipment/EquipmentDashboard';
 import AppLayout from '@/components/layout/AppLayout';
+import { refreshEquipmentStatusWithClient } from '@/lib/equipment-status-core';
 import { getOpenWorkOrderCountsByEquipment, getWorkOrdersDashboard } from '@/lib/work-orders';
 
 // Revalidate every 60 seconds instead of on every request
@@ -16,12 +17,20 @@ export default async function Home() {
   const thirtyDaysAgoISO = thirtyDaysAgo.toISOString().split('T')[0];
   const nowISO = new Date().toISOString();
 
-  await supabase
+  const { data: expiredReservations } = await supabase
     .from('equipment_reservations')
     .update({ status: 'completed', updated_at: nowISO })
     .eq('status', 'active')
     .not('end_time', 'is', null)
-    .lte('end_time', nowISO);
+    .lte('end_time', nowISO)
+    .select('equipment_id');
+
+  const expiredEquipmentIds = Array.from(
+    new Set((expiredReservations || []).map((reservation) => reservation.equipment_id))
+  );
+  await Promise.all(
+    expiredEquipmentIds.map((equipmentId) => refreshEquipmentStatusWithClient(supabase, equipmentId))
+  );
 
   // Run every independent fetch in parallel — they all hit the same Supabase
   // project so they share a single TCP/TLS connection and finish in roughly

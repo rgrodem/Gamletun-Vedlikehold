@@ -98,7 +98,13 @@ export interface UpdateWorkOrderData {
 
 export function isWorkOrderOverdue(dueDate: string | null, status: WorkOrderStatus): boolean {
   if (!dueDate || ['completed', 'closed'].includes(status)) return false;
-  return new Date(dueDate) < new Date();
+  const due = /^\d{4}-\d{2}-\d{2}$/.test(dueDate)
+    ? (() => {
+        const [year, month, day] = dueDate.split('-').map(Number);
+        return new Date(year, month - 1, day, 23, 59, 59, 999);
+      })()
+    : new Date(dueDate);
+  return due < new Date();
 }
 
 /**
@@ -155,32 +161,50 @@ export async function getWorkOrders(filters?: {
  */
 export async function getWorkOrdersDashboard() {
   const supabase = createClient();
-  const today = new Date().toISOString();
-  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
   const activeStatuses = ['open', 'scheduled', 'in_progress', 'waiting_parts'];
 
-  const [
-    { data: overdue, error: overdueError },
-    { data: thisWeek, error: thisWeekError },
-    { data: openFaults, error: openFaultsError },
-    { data: scheduled, error: scheduledError },
-  ] = await Promise.all([
-    supabase.from('work_orders').select('id').in('status', activeStatuses).lt('due_date', today),
-    supabase.from('work_orders').select('id').in('status', activeStatuses).gte('due_date', today).lte('due_date', nextWeek),
-    supabase.from('work_orders').select('id').eq('type', 'corrective').in('status', ['open', 'in_progress', 'waiting_parts']),
-    supabase.from('work_orders').select('id').eq('status', 'scheduled'),
-  ]);
+  const { data, error } = await supabase
+    .from('work_orders')
+    .select('id, type, status, due_date')
+    .in('status', activeStatuses);
 
-  if (overdueError) console.error('Error fetching overdue count:', overdueError);
-  if (thisWeekError) console.error('Error fetching this week count:', thisWeekError);
-  if (openFaultsError) console.error('Error fetching open faults count:', openFaultsError);
-  if (scheduledError) console.error('Error fetching scheduled count:', scheduledError);
+  if (error) {
+    console.error('Error fetching work order dashboard:', error);
+    return {
+      overdue: 0,
+      thisWeek: 0,
+      openFaults: 0,
+      scheduled: 0,
+      openTotal: 0,
+    };
+  }
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const nextWeekEnd = new Date(todayStart);
+  nextWeekEnd.setDate(nextWeekEnd.getDate() + 7);
+  nextWeekEnd.setHours(23, 59, 59, 999);
+
+  const dueDate = (value: string) => {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [year, month, day] = value.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
+    return new Date(value);
+  };
+
+  const activeWorkOrders = data || [];
 
   return {
-    overdue: overdue?.length || 0,
-    thisWeek: thisWeek?.length || 0,
-    openFaults: openFaults?.length || 0,
-    scheduled: scheduled?.length || 0,
+    overdue: activeWorkOrders.filter((wo) => wo.due_date && dueDate(wo.due_date) < todayStart).length,
+    thisWeek: activeWorkOrders.filter((wo) => {
+      if (!wo.due_date) return false;
+      const due = dueDate(wo.due_date);
+      return due >= todayStart && due <= nextWeekEnd;
+    }).length,
+    openFaults: activeWorkOrders.filter((wo) => wo.type === 'corrective').length,
+    scheduled: activeWorkOrders.filter((wo) => wo.status === 'scheduled').length,
+    openTotal: activeWorkOrders.length,
   };
 }
 
@@ -258,6 +282,43 @@ export async function updateWorkOrder(
     .select('equipment_id, status')
     .eq('id', id)
     .single();
+
+  if (
+    currentWorkOrder &&
+    updates.status === 'in_progress' &&
+    currentWorkOrder.status !== 'in_progress'
+  ) {
+    const now = new Date().toISOString();
+    const { data: blockingReservation, error: reservationError } = await supabase
+      .from('equipment_reservations')
+      .select('id, start_time, end_time, user_profile:user_id(full_name)')
+      .eq('equipment_id', currentWorkOrder.equipment_id)
+      .eq('status', 'active')
+      .or(`end_time.is.null,end_time.gt.${now}`)
+      .order('start_time', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (reservationError) {
+      console.error('Error checking reservations before starting work order:', reservationError);
+      throw reservationError;
+    }
+
+    if (blockingReservation) {
+      const profile = Array.isArray(blockingReservation.user_profile)
+        ? blockingReservation.user_profile[0]
+        : blockingReservation.user_profile;
+      const reservedBy = profile?.full_name || 'ukjent bruker';
+      const startsAt = new Date(blockingReservation.start_time).toLocaleString('nb-NO', {
+        day: '2-digit',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+
+      throw new Error(`Kan ikke starte arbeidsordre: utstyret er reservert av ${reservedBy} fra ${startsAt}.`);
+    }
+  }
 
   // Update the work order
   const { data, error } = await supabase

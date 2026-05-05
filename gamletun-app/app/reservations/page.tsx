@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import ReservationsClient from '@/components/reservations/ReservationsClient';
 import AppLayout from '@/components/layout/AppLayout';
+import { refreshEquipmentStatusWithClient } from '@/lib/equipment-status-core';
 import { getWorkOrdersDashboard } from '@/lib/work-orders';
 
 export const dynamic = 'force-dynamic';
@@ -17,12 +18,20 @@ export default async function ReservationsPage() {
   const workOrderStats = await getWorkOrdersDashboard();
   const now = new Date().toISOString();
 
-  await supabase
+  const { data: expiredReservations } = await supabase
     .from('equipment_reservations')
     .update({ status: 'completed', updated_at: now })
     .eq('status', 'active')
     .not('end_time', 'is', null)
-    .lte('end_time', now);
+    .lte('end_time', now)
+    .select('equipment_id');
+
+  const expiredEquipmentIds = Array.from(
+    new Set((expiredReservations || []).map((reservation) => reservation.equipment_id))
+  );
+  await Promise.all(
+    expiredEquipmentIds.map((equipmentId) => refreshEquipmentStatusWithClient(supabase, equipmentId))
+  );
 
   // Fetch all reservations with equipment details
   const { data: rawReservations } = await supabase

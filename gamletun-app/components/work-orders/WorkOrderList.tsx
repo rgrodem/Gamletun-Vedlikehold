@@ -102,7 +102,7 @@ export default function WorkOrderList({
       onStatusChange?.();
     } catch (err) {
       console.error(err);
-      setStartError('Kunne ikke starte arbeidsordre. Prøv igjen.');
+      setStartError(err instanceof Error ? err.message : 'Kunne ikke starte arbeidsordre. Prøv igjen.');
     }
   };
 

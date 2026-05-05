@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState, useMemo } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { FaSearch, FaPlus, FaChevronRight } from 'react-icons/fa';
@@ -122,9 +122,19 @@ export default function EquipmentDashboard({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const addFromNav = searchParams.get('add') === 'equipment';
 
   const handleSuccess = () => router.refresh();
+  const handleCloseAddModal = () => {
+    setShowAddModal(false);
+    if (addFromNav) router.replace('/', { scroll: false });
+  };
   const now = new Date();
+
+  useEffect(() => {
+    if (addFromNav) setShowAddModal(true);
+  }, [addFromNav]);
 
   const reservationsByEquipment = useMemo(() => {
     const map = new Map<string, ReservationSummary>();
@@ -138,15 +148,25 @@ export default function EquipmentDashboard({
   }, [reservations]);
 
   // Attention-card stats
-  const today = now;
-  const weekEnd = new Date(Date.now() + 7 * 86400000);
-  const overdueCount = nextWorkOrders.filter(w => new Date(w.due_date) < today).length;
-  const openFaultsCount = Object.values(workOrderCounts).reduce((a, b) => a + b, 0);
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const weekEnd = new Date(todayStart);
+  weekEnd.setDate(weekEnd.getDate() + 7);
+  weekEnd.setHours(23, 59, 59, 999);
+  const toDueDate = (value: string) => {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+      const [year, month, day] = value.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    }
+    return new Date(value);
+  };
+  const overdueCount = nextWorkOrders.filter(w => toDueDate(w.due_date) < todayStart).length;
+  const openOrdersCount = Object.values(workOrderCounts).reduce((a, b) => a + b, 0);
   const thisWeekCount = nextWorkOrders.filter(w => {
-    const d = new Date(w.due_date);
-    return d >= today && d <= weekEnd;
+    const d = toDueDate(w.due_date);
+    return d >= todayStart && d <= weekEnd;
   }).length;
-  const attentionTotal = overdueCount + openFaultsCount + thisWeekCount;
+  const attentionTotal = openOrdersCount;
 
   // Category chip counts
   const categoryChips = useMemo(() => {
@@ -194,7 +214,7 @@ export default function EquipmentDashboard({
         </div>
         <div className="flex gap-2.5 mt-4">
           <AttentionTile count={overdueCount} label="Forfalt" tone="rust" />
-          <AttentionTile count={openFaultsCount} label="Åpne ordrer" tone="rust" />
+          <AttentionTile count={openOrdersCount} label="Åpne ordrer" tone="rust" />
           <AttentionTile count={thisWeekCount} label="Denne uken" tone="moss" />
         </div>
       </Link>
@@ -342,7 +362,7 @@ export default function EquipmentDashboard({
       {showAddModal && (
         <AddEquipmentModal
           categories={categories}
-          onClose={() => setShowAddModal(false)}
+          onClose={handleCloseAddModal}
           onSuccess={handleSuccess}
         />
       )}

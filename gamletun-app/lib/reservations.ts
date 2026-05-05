@@ -38,6 +38,13 @@ export interface CreateReservationData {
   notes?: string;
 }
 
+export interface AvailabilityResult {
+  available: boolean;
+  reason?: 'reservation_conflict' | 'maintenance' | 'inactive';
+  message?: string;
+  conflictingReservation?: Reservation;
+}
+
 /**
  * Check if equipment is available for a time period
  */
@@ -45,8 +52,35 @@ export async function checkAvailability(
   equipmentId: string,
   startTime: Date,
   endTime?: Date | null
-): Promise<{ available: boolean; conflictingReservation?: Reservation }> {
+): Promise<AvailabilityResult> {
   const supabase = createClient();
+
+  const { data: equipment, error: equipmentError } = await supabase
+    .from('equipment')
+    .select('status')
+    .eq('id', equipmentId)
+    .single();
+
+  if (equipmentError) {
+    console.error('Error checking equipment status:', equipmentError);
+    throw equipmentError;
+  }
+
+  if (equipment?.status === 'maintenance') {
+    return {
+      available: false,
+      reason: 'maintenance',
+      message: 'Utstyret er under vedlikehold og kan ikke reserveres.',
+    };
+  }
+
+  if (equipment?.status === 'inactive') {
+    return {
+      available: false,
+      reason: 'inactive',
+      message: 'Utstyret er inaktivt og kan ikke reserveres.',
+    };
+  }
 
   let query = supabase
     .from('equipment_reservations')
@@ -77,6 +111,8 @@ export async function checkAvailability(
   if (data && data.length > 0) {
     return {
       available: false,
+      reason: 'reservation_conflict',
+      message: 'Utstyret er ikke tilgjengelig i denne perioden.',
       conflictingReservation: data[0],
     };
   }
@@ -100,7 +136,7 @@ export async function createReservation(data: CreateReservationData): Promise<Re
 
   const availability = await checkAvailability(data.equipment_id, startTime, endTime);
   if (!availability.available) {
-    throw new Error('Equipment is not available for this time period');
+    throw new Error(availability.message || 'Utstyret er ikke tilgjengelig i denne perioden');
   }
 
   // Create reservation

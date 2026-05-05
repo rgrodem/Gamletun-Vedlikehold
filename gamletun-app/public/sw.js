@@ -10,7 +10,7 @@
 // Bump CACHE_VERSION when you ship a breaking change to make clients
 // drop their old caches.
 
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const STATIC_CACHE = `gamletun-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `gamletun-runtime-${CACHE_VERSION}`;
 

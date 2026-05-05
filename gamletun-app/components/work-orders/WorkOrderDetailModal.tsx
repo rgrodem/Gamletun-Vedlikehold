@@ -103,7 +103,7 @@ export default function WorkOrderDetailModal({ workOrder, onClose, onUpdate }: W
       onUpdate();
     } catch (error) {
       console.error('Error changing status:', error);
-      alert('Kunne ikke endre status');
+      alert(error instanceof Error ? error.message : 'Kunne ikke endre status');
     }
   };
 

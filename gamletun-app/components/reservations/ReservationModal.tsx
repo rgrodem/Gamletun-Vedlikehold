@@ -58,6 +58,12 @@ export default function ReservationModal({ equipment, onClose, onSuccess }: Rese
       const availability = await checkAvailability(equipment.id, start, end);
 
       if (!availability.available) {
+        if (availability.reason !== 'reservation_conflict') {
+          setError(availability.message || 'Utstyret er ikke tilgjengelig.');
+          setAvailabilityChecked(false);
+          return;
+        }
+
         const conflictUser = availability.conflictingReservation?.user_profile?.full_name || 'Ukjent';
         const conflictStart = availability.conflictingReservation?.start_time
           ? new Date(availability.conflictingReservation.start_time).toLocaleString('nb-NO')
