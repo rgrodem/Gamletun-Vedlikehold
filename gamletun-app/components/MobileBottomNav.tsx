@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { FaTractor, FaWrench, FaCalendarAlt, FaChartBar, FaPlus } from 'react-icons/fa';
 
-const HIDDEN_PATHS = ['/login', '/forgot-password', '/reset-password', '/auth'];
+const HIDDEN_PATHS = ['/login', '/auth'];
 
 const items: Array<{ id: string; href: string; Icon: typeof FaTractor; label: string }> = [
   { id: 'home', href: '/',             Icon: FaTractor,     label: 'Utstyr' },

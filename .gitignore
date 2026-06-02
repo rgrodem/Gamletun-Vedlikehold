@@ -73,3 +73,8 @@ node_modules/
 
 # External repositories
 BMAD-METHOD/
+
+# Lokal BMAD/agent-verktøy (ikke del av appen)
+.bmad/
+.claude/commands/
+BMAD-METHOD/

@@ -1,114 +1,58 @@
-# Brukerhåndtering - Gamletun Vedlikehold
+# Brukerhåndtering – Gamletun Vedlikehold
 
-## Opprette nye brukere
+## Slik logger man inn
 
-Appen er satt opp med **kun inviterte brukere**. Det betyr at bare du kan opprette brukere, og ingen kan registrere seg selv.
+Appen bruker **passordløs innlogging med magic link**:
 
-### Steg-for-steg: Opprett en ny bruker
+1. Brukeren går til appen og skriver inn sin **@gamletun.no**-e-postadresse.
+2. Hun trykker «Send innloggingslenke» og får en e-post med en lenke.
+3. Hun åpner lenken **på samme enhet** og blir logget rett inn. Ingen passord.
 
-1. **Gå til Supabase Dashboard**
-   - Åpne https://supabase.com
-   - Logg inn på din konto
-   - Velg ditt prosjekt (Gamletun Vedlikehold)
+Alle med en `@gamletun.no`-adresse får tilgang automatisk – du trenger ikke opprette
+brukere manuelt. Profilen opprettes første gang de logger inn.
 
-2. **Naviger til Authentication**
-   - Klikk på "Authentication" i venstre sidebar
-   - Klikk på "Users" tab
+## Hvem får tilgang?
 
-3. **Legg til ny bruker**
-   - Klikk på "Add user" knappen (grønn knapp øverst til høyre)
-   - Velg "Create user"
+Tilgang styres av e-postdomenet, ikke en manuell liste:
 
-4. **Fyll inn brukerinfo**
-   - **Email:** Brukerens e-postadresse (f.eks. `ola.nordmann@gamletun.no`)
-   - **Password:** Et sterkt passord (minimum 6 tegn)
-   - **Auto Confirm User:** ✅ Huk av denne (viktig!)
-   - Klikk "Create user"
+- **Alle `@gamletun.no`-adresser** slipper inn.
+- I tillegg kan enkeltadresser utenfor domenet (f.eks. eierens private Gmail) slippes
+  inn via miljøvariabelen **`AUTH_ALLOW_EMAILS`** (komma-separert liste).
 
-5. **Ferdig!**
-   - Brukeren kan nå logge inn på appen med e-post og passord
-   - Gi brukeren innloggingsinformasjonen sikkert (ikke via usikker e-post)
+### Endre unntakslisten (AUTH_ALLOW_EMAILS)
 
-## Viktige sikkerhetstips
+1. Gå til **Vercel → prosjektet → Settings → Environment Variables**.
+2. Legg til / rediger `AUTH_ALLOW_EMAILS`, f.eks. `rgrodem@gmail.com,annen@eksempel.no`.
+3. Redeploy (eller vent på neste deploy) for at endringen skal tre i kraft.
 
-### Passord
-- Bruk sterke passord (minst 12 tegn, blandede tegn)
-- Ikke del passord via e-post eller SMS
-- Be brukeren endre passord ved første innlogging (kan gjøres manuelt)
+## Engangsoppsett i Supabase (gjøres én gang)
 
-### E-post verifisering
-- "Auto Confirm User" må være ✅ for at brukere skal kunne logge inn med en gang
-- Hvis du ikke huker av denne, må brukeren bekrefte e-posten sin først
+For at magic link skal fungere må redirect-URL-ene være tillatt:
 
-## Administrere eksisterende brukere
+1. Gå til **Supabase Dashboard → Authentication → URL Configuration**.
+2. **Site URL:** `https://gamletun-vedlikehold.vercel.app`
+3. **Redirect URLs** (legg til begge):
+   - `https://gamletun-vedlikehold.vercel.app/auth/callback`
+   - `http://localhost:3000/auth/callback` (for lokal utvikling)
+4. E-post-provideren er på som standard. Vil du bruke egen avsender/SMTP senere,
+   settes det opp under **Authentication → Emails**.
 
-### Endre passord for en bruker
-1. Gå til Authentication → Users i Supabase
-2. Klikk på brukeren du vil endre
-3. Scroll ned til "Update Password"
-4. Skriv inn nytt passord
-5. Klikk "Update user"
+## Sperre eller fjerne en bruker
 
-### Deaktivere en bruker (midlertidig)
-1. Gå til Authentication → Users
-2. Klikk på brukeren
-3. Finn "Ban user" seksjonen
-4. Sett duration (f.eks. 7 days eller permanent)
-5. Klikk "Ban user"
-
-### Slette en bruker (permanent)
-1. Gå til Authentication → Users
-2. Klikk på de tre prikkene ved siden av brukeren
-3. Velg "Delete user"
-4. Bekreft slettingen
-
-## Aktivere Row Level Security (RLS)
-
-RLS er nå forberedt, men fortsatt deaktivert for testing. Når du er klar til å aktivere den:
-
-1. Gå til Supabase Dashboard
-2. Klikk på "SQL Editor" i venstre sidebar
-3. Klikk "+ New query"
-4. Kopier innholdet fra filen `supabase/enable-rls.sql`
-5. Lim inn i SQL-editoren
-6. Klikk "Run" (eller trykk Cmd/Ctrl + Enter)
-
-**Hva gjør RLS?**
-- Sikrer at bare innloggede brukere kan se og endre data
-- Hindrer uautorisert tilgang til databasen
-- Gir deg full kontroll over hvem som har tilgang
+1. **Supabase → Authentication → Users**.
+2. Velg brukeren → «Ban user» (midlertidig) eller slett brukeren (permanent).
+   En slettet `@gamletun.no`-bruker kan logge inn igjen så lenge domenet gir tilgang;
+   for å stenge noen helt ute må de fjernes fra domenet eller appens tilgangsregel endres.
 
 ## Feilsøking
 
-### Bruker kan ikke logge inn
-- ✅ Sjekk at "Auto Confirm User" var huket av når du opprettet brukeren
-- ✅ Sjekk at passordet er riktig (minimum 6 tegn)
-- ✅ Sjekk at brukeren ikke er banned
+- **«Denne e-posten har ikke tilgang»** – adressen er ikke `@gamletun.no` og står ikke i
+  `AUTH_ALLOW_EMAILS`.
+- **«Lenken var utløpt eller allerede brukt»** – magic-link-lenker er korttidsgyldige og
+  kan kun brukes én gang. Be om en ny lenke.
+- **Får ingen e-post** – sjekk søppelpost, og at redirect-URL-ene over er satt.
 
-### "Invalid credentials" feilmelding
-- Brukeren skrev feil e-post eller passord
-- Be dem prøve igjen eller tilbakestill passordet
+## Kapasitet
 
-### Bruker fikk bekreftelses-e-post
-- Dette skjer hvis "Auto Confirm User" ikke var huket av
-- Du kan manuelt bekrefte brukeren:
-  1. Gå til Authentication → Users
-  2. Klikk på brukeren
-  3. Under "Email", klikk "Confirm email"
-
-## Hvor mange brukere kan jeg ha?
-
-**Supabase Free tier:**
-- Opptil 50,000 monthly active users (MAU)
-- Ubegrenset totalt antall brukere
-- Dette er MER enn nok for Gamletun! 🎉
-
-## Fremtidig utvidelse
-
-Hvis dere senere vil ha:
-- Automatisk passord-reset via e-post
-- Brukeradministrasjon direkte i appen
-- Roller (Admin vs. vanlig bruker)
-- Flere organisasjoner/kunder
-
-... ta kontakt, så kan vi utvide systemet!
+Supabase Free dekker langt mer enn Gamletuns ~5–6 brukere (titusenvis av månedlige
+brukere). Ingen oppgradering nødvendig.

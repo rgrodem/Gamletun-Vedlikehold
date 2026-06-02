@@ -4,11 +4,9 @@ import { createServerClient } from '@supabase/ssr';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Allow login page, OAuth callback, public assets and PWA-files
+  // Allow login page, auth callback, public assets and PWA-files
   if (
     pathname === '/login' ||
-    pathname === '/forgot-password' ||
-    pathname === '/reset-password' ||
     pathname.startsWith('/auth/') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon') ||

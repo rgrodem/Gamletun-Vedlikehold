@@ -4,8 +4,6 @@ import AppLayout from '@/components/layout/AppLayout';
 import { refreshEquipmentStatusWithClient } from '@/lib/equipment-status-core';
 import { getOpenWorkOrderCountsByEquipment, getWorkOrdersDashboard } from '@/lib/work-orders';
 
-// Revalidate every 60 seconds instead of on every request
-export const revalidate = 60;
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {

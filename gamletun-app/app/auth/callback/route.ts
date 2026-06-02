@@ -39,32 +39,44 @@ export async function GET(request: NextRequest) {
   const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
   if (exchangeError || !data.user) {
-    return NextResponse.redirect(`${origin}/login?error=auth_error`);
+    console.error('Auth exchange failed:', exchangeError?.message);
+    return NextResponse.redirect(`${origin}/login?error=expired`);
   }
 
   const email = data.user.email?.toLowerCase() ?? '';
 
-  // Sjekk allowlist i Supabase-tabellen
-  const { data: allowed } = await supabase
-    .from('allowed_users')
-    .select('email')
-    .eq('email', email)
-    .maybeSingle();
+  // Tilgang: alle med @gamletun.no + en eksplisitt unntaksliste (eier o.l.) fra env.
+  const allowedDomain = '@gamletun.no';
+  const extraAllowed = (process.env.AUTH_ALLOW_EMAILS ?? '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
 
-  if (!allowed) {
+  const hasAccess = email.endsWith(allowedDomain) || extraAllowed.includes(email);
+
+  if (!hasAccess) {
     await supabase.auth.signOut();
     return NextResponse.redirect(`${origin}/login?error=unauthorized`);
   }
 
-  // Opprett eller oppdater profil
-  await supabase.from('profiles').upsert(
-    {
+  // Opprett profil ved første innlogging. Ikke overskriv eksisterende rolle
+  // (ellers degraderes en evt. admin til 'user' ved hver innlogging).
+  const { data: existing } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('id', data.user.id)
+    .maybeSingle();
+
+  if (!existing) {
+    const { error: profileError } = await supabase.from('profiles').insert({
       id: data.user.id,
       full_name: data.user.user_metadata?.full_name ?? data.user.user_metadata?.name ?? email,
-      role: 'admin',
-    },
-    { onConflict: 'id', ignoreDuplicates: false }
-  );
+      role: 'user',
+    });
+    if (profileError) {
+      console.error('Profile creation failed:', profileError.message);
+    }
+  }
 
   return NextResponse.redirect(`${origin}/`);
 }

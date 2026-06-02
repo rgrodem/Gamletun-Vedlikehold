@@ -3,8 +3,6 @@ import ReportClient from '@/components/reports/ReportClient';
 import AppLayout from '@/components/layout/AppLayout';
 import { getWorkOrdersDashboard } from '@/lib/work-orders';
 
-// Revalidate every 30 seconds
-export const revalidate = 30;
 export const dynamic = 'force-dynamic';
 
 type EquipmentReportRow = {

@@ -4,8 +4,6 @@ import EquipmentDetailClient from '@/components/equipment/EquipmentDetailClient'
 import AppLayout from '@/components/layout/AppLayout';
 import { getWorkOrdersDashboard } from '@/lib/work-orders';
 
-// Revalidate every 30 seconds
-export const revalidate = 30;
 export const dynamic = 'force-dynamic';
 
 interface PageProps {

@@ -6,7 +6,6 @@ import WorkOrderCalendar from '@/components/work-orders/WorkOrderCalendar';
 import { getWorkOrdersDashboard, type WorkOrder } from '@/lib/work-orders';
 import { FaList, FaCalendarAlt } from 'react-icons/fa';
 
-export const revalidate = 60;
 export const dynamic = 'force-dynamic';
 
 export default async function WorkOrdersPage({

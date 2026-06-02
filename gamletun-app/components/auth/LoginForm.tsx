@@ -8,71 +8,116 @@ interface LoginFormProps {
 }
 
 const ERROR_MESSAGES: Record<string, string> = {
-  unauthorized: 'Denne Google-kontoen har ikke tilgang. Kontakt administrator.',
-  auth_error: 'Pålogging feilet. Prøv igjen.',
-  oauth_cancelled: 'Pålogging ble avbrutt.',
+  unauthorized: 'Denne e-posten har ikke tilgang. Bruk din @gamletun.no-adresse.',
+  auth_error: 'Innlogging feilet. Be om en ny lenke og prøv igjen.',
+  expired: 'Lenken var utløpt eller allerede brukt. Be om en ny.',
 };
 
 export default function LoginForm({ error }: LoginFormProps) {
+  const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
 
-  const handleGoogleLogin = async () => {
+  const handleMagicLink = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed || !trimmed.includes('@')) {
+      setFormError('Skriv inn en gyldig e-postadresse.');
+      return;
+    }
+
     setLoading(true);
+    setFormError(null);
     const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
+    const { error: otpError } = await supabase.auth.signInWithOtp({
+      email: trimmed,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
     });
+    setLoading(false);
+
+    if (otpError) {
+      setFormError('Kunne ikke sende lenke akkurat nå. Prøv igjen om litt.');
+      return;
+    }
+    setSent(true);
   };
 
+  if (sent) {
+    return (
+      <div className="mt-auto flex flex-col gap-2.5 pb-4">
+        <div className="bg-white border border-line rounded-[14px] px-5 py-6 text-center">
+          <div className="font-serif text-[22px] text-ink mb-2 tracking-tight2">Sjekk e-posten din</div>
+          <p className="text-ink2 text-[15px] leading-[1.5] m-0">
+            Vi sendte en innloggingslenke til<br />
+            <span className="text-ink font-medium">{email.trim().toLowerCase()}</span>
+          </p>
+          <p className="text-ink3 text-[13px] leading-[1.5] mt-3 mb-0">
+            Åpne lenken på denne enheten for å logge inn. Husk å sjekke søppelpost.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => {
+            setSent(false);
+            setFormError(null);
+          }}
+          className="text-ink2 text-sm underline cursor-pointer bg-transparent border-0 py-2"
+        >
+          Bruk en annen e-post
+        </button>
+        <p className="text-[12px] text-ink3 text-center m-0 mt-1 leading-[1.5]">
+          Gamletun Vedlikehold · v2.0
+        </p>
+      </div>
+    );
+  }
+
   return (
-    <div className="mt-auto flex flex-col gap-2.5 pb-4">
+    <form onSubmit={handleMagicLink} className="mt-auto flex flex-col gap-2.5 pb-4">
       {error && ERROR_MESSAGES[error] && (
         <div className="bg-rustBg border border-rust/30 text-rust px-4 py-3 rounded-[14px] text-sm">
           {ERROR_MESSAGES[error]}
         </div>
       )}
+      {formError && (
+        <div className="bg-rustBg border border-rust/30 text-rust px-4 py-3 rounded-[14px] text-sm">
+          {formError}
+        </div>
+      )}
 
-      {/* Google — primary */}
-      <button
-        onClick={handleGoogleLogin}
+      <input
+        type="email"
+        inputMode="email"
+        autoComplete="email"
+        autoCapitalize="none"
+        spellCheck={false}
+        placeholder="din@gamletun.no"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
         disabled={loading}
-        className="flex items-center justify-center gap-3 bg-white text-[#1f1f1f] border border-line rounded-[14px] px-4 py-4 text-base font-semibold tracking-tightish cursor-pointer disabled:opacity-50"
+        className="w-full bg-white text-ink border border-line rounded-[14px] px-4 py-4 text-base outline-none focus:border-ink2 disabled:opacity-50"
         style={{ boxShadow: '0 1px 2px rgba(0,0,0,0.04)' }}
+      />
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="flex items-center justify-center gap-3 bg-ink text-bg rounded-[14px] px-4 py-4 text-base font-semibold tracking-tightish cursor-pointer disabled:opacity-50"
       >
         {loading ? (
-          <span className="w-5 h-5 border-2 border-line border-t-ink rounded-full animate-spin" />
-        ) : (
-          <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
-            <path
-              fill="#FFC107"
-              d="M43.6 20.5H42V20.4H24v7.2h11.3c-1.5 4.2-5.5 7.2-11.3 7.2-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 3l5.1-5.1C33.9 5.5 29.2 3.6 24 3.6 12.7 3.6 3.6 12.7 3.6 24S12.7 44.4 24 44.4c11.5 0 20.1-8.3 20.1-20.4 0-1.2-.1-2.3-.5-3.5z"
-            />
-            <path
-              fill="#FF3D00"
-              d="M5.7 13.3l5.9 4.3C13.2 13.9 18.2 11 24 11c3 0 5.7 1.1 7.8 3l5.1-5.1C33.9 5.5 29.2 3.6 24 3.6 16.4 3.6 9.8 7.6 5.7 13.3z"
-            />
-            <path
-              fill="#4CAF50"
-              d="M24 44.4c5.1 0 9.7-1.9 13.2-5l-6.1-5c-2 1.4-4.5 2.3-7.1 2.3-5.7 0-10.6-3.8-11.3-8.9l-5.9 4.6C9.7 40.3 16.2 44.4 24 44.4z"
-            />
-            <path
-              fill="#1976D2"
-              d="M43.6 20.5H42V20.4H24v7.2h11.3c-.7 2-2.1 3.8-3.9 5l6.1 5c-.4.4 6.6-4.8 6.6-13.1 0-1.2-.1-2.3-.5-3.5z"
-            />
-          </svg>
-        )}
-        {loading ? 'Omdirigerer…' : 'Fortsett med Google'}
+          <span className="w-5 h-5 border-2 border-bg/40 border-t-bg rounded-full animate-spin" />
+        ) : null}
+        {loading ? 'Sender lenke…' : 'Send innloggingslenke'}
       </button>
 
       <p className="text-[12px] text-ink3 text-center m-0 mt-2 leading-[1.5]">
-        Ved å fortsette godtar du{' '}
-        <span className="text-ink2 underline">vilkårene</span>
+        Du får en lenke på e-post — ingen passord.
         <br />
         Gamletun Vedlikehold · v2.0
       </p>
-    </div>
+    </form>
   );
 }
