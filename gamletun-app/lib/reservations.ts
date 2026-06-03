@@ -40,7 +40,7 @@ export interface CreateReservationData {
 
 export interface AvailabilityResult {
   available: boolean;
-  reason?: 'reservation_conflict' | 'maintenance' | 'inactive';
+  reason?: 'reservation_conflict' | 'maintenance' | 'inactive' | 'open_fault';
   message?: string;
   conflictingReservation?: Reservation;
 }
@@ -79,6 +79,26 @@ export async function checkAvailability(
       available: false,
       reason: 'inactive',
       message: 'Utstyret er inaktivt og kan ikke reserveres.',
+    };
+  }
+
+  // Block reservation when there is an open corrective work order (a reported
+  // fault). Broken equipment should not be bookable until the fault is handled.
+  const { data: openFaults, error: faultError } = await supabase
+    .from('work_orders')
+    .select('id, title')
+    .eq('equipment_id', equipmentId)
+    .eq('type', 'corrective')
+    .in('status', ['open', 'in_progress', 'waiting_parts'])
+    .limit(1);
+
+  if (faultError) {
+    console.error('Error checking open faults:', faultError);
+  } else if (openFaults && openFaults.length > 0) {
+    return {
+      available: false,
+      reason: 'open_fault',
+      message: 'Utstyret har en åpen feilmelding og bør utbedres før det reserveres.',
     };
   }
 

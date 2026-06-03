@@ -5,6 +5,7 @@ import { FaTimes, FaSave, FaTrash } from 'react-icons/fa';
 import { createClient } from '@/lib/supabase/client';
 import ImageUpload from '../uploads/ImageUpload';
 import { deleteFile } from '@/lib/storage';
+import { refreshEquipmentStatus } from '@/lib/equipment-status';
 
 interface Category {
   id: string;
@@ -35,7 +36,9 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
   const [model, setModel] = useState(equipment.model || '');
   const [serialNumber, setSerialNumber] = useState(equipment.serial_number || '');
   const [purchaseDate, setPurchaseDate] = useState(equipment.purchase_date || '');
-  const [status, setStatus] = useState(equipment.status);
+  // Only the manual drift-status is editable here. "in_use"/"maintenance" are
+  // derived from reservations/work orders, so map those to "active" (in drift).
+  const [status, setStatus] = useState(equipment.status === 'inactive' ? 'inactive' : 'active');
   const [categoryId, setCategoryId] = useState(equipment.category_id || '');
   const [notes, setNotes] = useState(equipment.notes || '');
   const [imageUrl, setImageUrl] = useState<string | null>(equipment.image_url);
@@ -85,6 +88,10 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
         .eq('id', equipment.id);
 
       if (updateError) throw updateError;
+
+      // Recompute derived status (in_use/maintenance) from reservations/work
+      // orders so the manual change reconciles instead of being overwritten later.
+      await refreshEquipmentStatus(equipment.id);
 
       onSuccess();
       onClose();
@@ -232,7 +239,7 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Status *
+                Driftstatus *
               </label>
               <select
                 value={status}
@@ -240,11 +247,12 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
                 required
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                <option value="active">Aktiv</option>
-                <option value="in_use">I bruk</option>
-                <option value="maintenance">Under vedlikehold</option>
-                <option value="inactive">Inaktiv</option>
+                <option value="active">I drift</option>
+                <option value="inactive">Ute av drift</option>
               </select>
+              <p className="text-xs text-gray-500 mt-1">
+                «I bruk» og «Under vedlikehold» settes automatisk fra reservasjoner og arbeidsordrer.
+              </p>
             </div>
           </div>
 
