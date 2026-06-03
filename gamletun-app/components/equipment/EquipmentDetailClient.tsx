@@ -144,10 +144,10 @@ export default function EquipmentDetailClient({
         : equipment.status === 'in_use' ? 'active' : equipment.status;
 
   return (
-    <div className="-mx-5 sm:-mx-6 lg:-mx-8 -mt-5 overflow-x-clip max-w-[100vw]">
+    <div className="-mx-5 sm:-mx-6 lg:-mx-8 -mt-5 overflow-x-clip max-w-full">
       {/* Hero */}
       <div
-        className="relative h-[200px] flex items-end p-4 overflow-hidden"
+        className="relative h-[240px] sm:h-[320px] overflow-hidden"
         style={{
           background: `
             radial-gradient(ellipse at 40% 70%, ${tint}44 0%, transparent 55%),
@@ -155,6 +155,32 @@ export default function EquipmentDetailClient({
           `,
         }}
       >
+        {/* Full-bleed bilde, ellers kategori-ikon sentrert */}
+        {equipment.image_url ? (
+          <Image
+            src={equipment.image_url}
+            alt={equipment.name}
+            fill
+            priority
+            className="object-cover"
+            sizes="(max-width: 1024px) 100vw, 1024px"
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div
+              className="text-[96px] leading-none"
+              style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }}
+            >
+              {icon}
+            </div>
+          </div>
+        )}
+
+        {/* Topp-gradient så knappene er lesbare over et lyst foto */}
+        <div
+          className="absolute inset-x-0 top-0 h-24 pointer-events-none"
+          style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.18), transparent)' }}
+        />
         <Link
           href="/"
           aria-label="Tilbake"
@@ -199,19 +225,6 @@ export default function EquipmentDetailClient({
                 <FaHandPaper className="text-ink3 text-xs" /> Reserver
               </button>
             )}
-          </div>
-        )}
-
-        {equipment.image_url ? (
-          <div className="relative w-[96px] h-[96px] rounded-[18px] overflow-hidden" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.12)' }}>
-            <Image src={equipment.image_url} alt={equipment.name} fill className="object-cover" sizes="96px" />
-          </div>
-        ) : (
-          <div
-            className="text-[80px] leading-none"
-            style={{ filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.1))' }}
-          >
-            {icon}
           </div>
         )}
       </div>
