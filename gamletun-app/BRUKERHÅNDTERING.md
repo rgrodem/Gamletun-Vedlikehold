@@ -2,57 +2,46 @@
 
 ## Slik logger man inn
 
-Appen bruker **passordløs innlogging med magic link**:
+Appen bruker **innlogging med e-post + passord**:
 
-1. Brukeren går til appen og skriver inn sin **@gamletun.no**-e-postadresse.
-2. Hun trykker «Send innloggingslenke» og får en e-post med en lenke.
-3. Hun åpner lenken **på samme enhet** og blir logget rett inn. Ingen passord.
+1. Gå til appen og skriv inn **e-post** og **passord**.
+2. Trykk **Logg inn**. Du sendes rett til oversikten.
 
-Alle med en `@gamletun.no`-adresse får tilgang automatisk – du trenger ikke opprette
-brukere manuelt. Profilen opprettes første gang de logger inn.
+Innloggingen skjer direkte i appen (ingen e-postlenke), så det fungerer også
+fint som «app» (PWA) på mobil. Innlogget bruker holdes innlogget til de logger ut.
 
-## Hvem får tilgang?
+## Opprette nye brukere
 
-Tilgang styres av e-postdomenet, ikke en manuell liste:
+Brukere opprettes i Supabase (kun inviterte brukere – ingen selvregistrering i appen):
 
-- **Alle `@gamletun.no`-adresser** slipper inn.
-- I tillegg kan enkeltadresser utenfor domenet (f.eks. eierens private Gmail) slippes
-  inn via miljøvariabelen **`AUTH_ALLOW_EMAILS`** (komma-separert liste).
+1. **Supabase Dashboard → Authentication → Users**
+2. **Add user → Create new user**
+3. Fyll inn:
+   - **Email:** brukerens adresse (f.eks. `ola@gamletun.no`)
+   - **Password:** et passord (gi det til brukeren på en trygg måte)
+   - **Auto Confirm User:** ✅ (viktig – ellers må e-posten bekreftes først)
+4. Trykk **Create user**. Brukeren kan nå logge inn med e-post + passord.
 
-### Endre unntakslisten (AUTH_ALLOW_EMAILS)
+Profil (navn) opprettes automatisk første gang brukeren logger inn. Du kan
+sette/endre fullt navn senere i `profiles`-tabellen om ønskelig.
 
-1. Gå til **Vercel → prosjektet → Settings → Environment Variables**.
-2. Legg til / rediger `AUTH_ALLOW_EMAILS`, f.eks. `rgrodem@gmail.com,annen@eksempel.no`.
-3. Redeploy (eller vent på neste deploy) for at endringen skal tre i kraft.
+## Endre passord / sperre bruker
 
-## Engangsoppsett i Supabase (gjøres én gang)
+- **Endre passord:** Authentication → Users → velg bruker → «Reset password» / sett nytt passord.
+- **Sperre midlertidig:** velg bruker → «Ban user».
+- **Slette:** velg bruker → «Delete user».
 
-For at magic link skal fungere må redirect-URL-ene være tillatt:
+## Logge ut
 
-1. Gå til **Supabase Dashboard → Authentication → URL Configuration**.
-2. **Site URL:** `https://gamletun-vedlikehold.vercel.app`
-3. **Redirect URLs** (legg til begge):
-   - `https://gamletun-vedlikehold.vercel.app/auth/callback`
-   - `http://localhost:3000/auth/callback` (for lokal utvikling)
-4. E-post-provideren er på som standard. Vil du bruke egen avsender/SMTP senere,
-   settes det opp under **Authentication → Emails**.
-
-## Sperre eller fjerne en bruker
-
-1. **Supabase → Authentication → Users**.
-2. Velg brukeren → «Ban user» (midlertidig) eller slett brukeren (permanent).
-   En slettet `@gamletun.no`-bruker kan logge inn igjen så lenge domenet gir tilgang;
-   for å stenge noen helt ute må de fjernes fra domenet eller appens tilgangsregel endres.
+Trykk på brukermenyen øverst til høyre i appen → **Logg ut**.
 
 ## Feilsøking
 
-- **«Denne e-posten har ikke tilgang»** – adressen er ikke `@gamletun.no` og står ikke i
-  `AUTH_ALLOW_EMAILS`.
-- **«Lenken var utløpt eller allerede brukt»** – magic-link-lenker er korttidsgyldige og
-  kan kun brukes én gang. Be om en ny lenke.
-- **Får ingen e-post** – sjekk søppelpost, og at redirect-URL-ene over er satt.
+- **«Feil e-post eller passord»** – sjekk at brukeren finnes i Authentication → Users,
+  at passordet er riktig, og at **Auto Confirm User** var huket av da kontoen ble opprettet.
+- **Kommer ikke inn etter opprettelse** – brukeren er sannsynligvis ikke bekreftet:
+  åpne brukeren i Supabase og bruk «Confirm email».
 
 ## Kapasitet
 
-Supabase Free dekker langt mer enn Gamletuns ~5–6 brukere (titusenvis av månedlige
-brukere). Ingen oppgradering nødvendig.
+Supabase Free dekker langt mer enn Gamletuns ~5–6 brukere. Ingen oppgradering nødvendig.
