@@ -245,7 +245,7 @@ export default function EquipmentDashboard({
               key={c.id}
               type="button"
               onClick={() => setSelectedCategory(c.id)}
-              className={`flex-shrink-0 rounded-full px-3.5 py-2 text-[13px] font-medium transition-colors ${
+              className={`flex-shrink-0 rounded-full px-3.5 py-2.5 text-[13px] font-medium transition-colors ${
                 active
                   ? 'bg-ink text-paper'
                   : 'bg-paper text-ink border border-line'
@@ -265,7 +265,7 @@ export default function EquipmentDashboard({
         <button
           type="button"
           onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center gap-1.5 text-[13px] text-ink font-medium"
+          className="inline-flex items-center gap-1.5 -mr-1 px-1 py-2 text-[13px] text-ink font-medium"
         >
           <FaPlus className="text-[11px]" /> Legg til
         </button>
