@@ -147,7 +147,7 @@ export default function EquipmentDetailClient({
     <div className="-mx-5 sm:-mx-6 lg:-mx-8 -mt-5 overflow-x-clip max-w-full">
       {/* Hero */}
       <div
-        className="relative h-[240px] sm:h-[320px] overflow-hidden"
+        className="relative h-[280px] sm:h-[380px] overflow-hidden"
         style={{
           background: `
             radial-gradient(ellipse at 40% 70%, ${tint}44 0%, transparent 55%),
@@ -155,14 +155,14 @@ export default function EquipmentDetailClient({
           `,
         }}
       >
-        {/* Full-bleed bilde, ellers kategori-ikon sentrert */}
+        {/* Fyll hele hero-feltet, sentrert beskjæring. Kategori-ikon som fallback. */}
         {equipment.image_url ? (
           <Image
             src={equipment.image_url}
             alt={equipment.name}
             fill
             priority
-            className="object-contain object-center p-3"
+            className="object-cover object-center"
             sizes="(max-width: 1024px) 100vw, 1024px"
           />
         ) : (
@@ -229,8 +229,8 @@ export default function EquipmentDetailClient({
         )}
       </div>
 
-      {/* Title slab */}
-      <div className="px-5 pt-5 sm:px-6 lg:px-8 min-w-0">
+      {/* Title slab — sentrert på mobil for et balansert toppanker, venstre på desktop */}
+      <div className="px-5 pt-5 sm:px-6 lg:px-8 min-w-0 text-center sm:text-left">
         <div className="text-[11px] font-semibold text-moss uppercase tracking-[0.1em]">
           {equipment.category?.name || 'Utstyr'}
         </div>
@@ -241,7 +241,9 @@ export default function EquipmentDetailClient({
           {equipment.model || '—'}
           {equipment.serial_number && ` · Serienr. ${equipment.serial_number}`}
         </div>
-        <StatusPill status={displayStatus} />
+        <div className="flex justify-center sm:justify-start">
+          <StatusPill status={displayStatus} />
+        </div>
       </div>
 
       {activeReservation && (
