@@ -232,7 +232,7 @@ export default function EquipmentDashboard({
       </div>
 
       {/* Category chips */}
-      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 py-0.5">
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 py-0.5">
         {categoryChips.map((c) => {
           const active = c.id === selectedCategory;
           return (

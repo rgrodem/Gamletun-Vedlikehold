@@ -79,34 +79,38 @@ export default function WorkOrderCalendar({ workOrders }: WorkOrderCalendarProps
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       {/* Header */}
-      <div className="p-4 border-b border-gray-100 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+      <div className="p-4 border-b border-gray-100 flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 min-w-0">
           <button
             onClick={prevMonth}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="Forrige måned"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
           >
             <FaChevronLeft className="text-gray-600" />
           </button>
-          <h2 className="text-lg font-bold text-gray-900 min-w-[160px] text-center">
+          <h2 className="text-lg font-bold text-gray-900 text-center whitespace-nowrap">
             {monthNames[month]} {year}
           </h2>
           <button
             onClick={nextMonth}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="Neste måned"
+            className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-gray-100 rounded-lg transition-colors"
           >
             <FaChevronRight className="text-gray-600" />
           </button>
         </div>
         <button
           onClick={goToToday}
-          className="px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          className="px-3 py-2 min-h-[44px] text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
         >
           I dag
         </button>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="p-4">
+      {/* Calendar Grid — scrolls horizontally within the card on small screens
+          so the 7-column layout stays readable instead of being squeezed/clipped. */}
+      <div className="p-4 overflow-x-auto">
+        <div className="min-w-[600px]">
         {/* Day headers */}
         <div className="grid grid-cols-7 gap-1 mb-2">
           {dayNames.map(day => (
@@ -177,6 +181,7 @@ export default function WorkOrderCalendar({ workOrders }: WorkOrderCalendarProps
               </div>
             );
           })}
+        </div>
         </div>
       </div>
 
