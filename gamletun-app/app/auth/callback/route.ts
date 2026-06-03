@@ -1,20 +1,23 @@
 import { createServerClient } from '@supabase/ssr';
+import type { EmailOtpType } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
+  const tokenHash = requestUrl.searchParams.get('token_hash');
+  const otpType = requestUrl.searchParams.get('type') as EmailOtpType | null;
   const error = requestUrl.searchParams.get('error');
   const origin = requestUrl.origin;
 
   if (error) {
     const errorDescription = requestUrl.searchParams.get('error_description') ?? '';
-    console.error('OAuth error:', error, errorDescription);
+    console.error('Auth error:', error, errorDescription);
     return NextResponse.redirect(`${origin}/login?error=oauth_cancelled`);
   }
 
-  if (!code) {
+  if (!code && !tokenHash) {
     return NextResponse.redirect(`${origin}/login?error=auth_error`);
   }
 
@@ -36,10 +39,16 @@ export async function GET(request: NextRequest) {
     }
   );
 
-  const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+  // Two supported magic-link formats:
+  //  - token_hash + type  -> verifyOtp (robust: works even if the link is opened
+  //    in a different browser/in-app webview than the one that requested it)
+  //  - code               -> exchangeCodeForSession (PKCE; requires same browser)
+  const { data, error: authError } = tokenHash
+    ? await supabase.auth.verifyOtp({ type: otpType ?? 'email', token_hash: tokenHash })
+    : await supabase.auth.exchangeCodeForSession(code!);
 
-  if (exchangeError || !data.user) {
-    console.error('Auth exchange failed:', exchangeError?.message);
+  if (authError || !data.user) {
+    console.error('Auth verification failed:', authError?.message);
     return NextResponse.redirect(`${origin}/login?error=expired`);
   }
 
