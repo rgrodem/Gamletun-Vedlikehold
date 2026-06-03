@@ -120,10 +120,15 @@ export default function EquipmentDashboard({
   const [editEquipment, setEditEquipment] = useState<Equipment | null>(null);
   const [faultEquipment, setFaultEquipment] = useState<Equipment | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const router = useRouter();
   const searchParams = useSearchParams();
   const addFromNav = searchParams.get('add') === 'equipment';
+  // Allow deep-linking to a pre-filtered category, e.g. from the equipment
+  // detail page's "Kategori" tile (/?category=<id>).
+  const categoryFromUrl = searchParams.get('category');
+  const [selectedCategory, setSelectedCategory] = useState<string>(
+    categoryFromUrl && categories.some((c) => c.id === categoryFromUrl) ? categoryFromUrl : 'all'
+  );
 
   const handleSuccess = () => router.refresh();
   const handleCloseAddModal = () => {

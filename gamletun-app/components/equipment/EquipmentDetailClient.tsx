@@ -162,7 +162,7 @@ export default function EquipmentDetailClient({
             alt={equipment.name}
             fill
             priority
-            className="object-cover"
+            className="object-contain object-center p-3"
             sizes="(max-width: 1024px) 100vw, 1024px"
           />
         ) : (
@@ -252,12 +252,13 @@ export default function EquipmentDetailClient({
 
       {/* Metadata grid */}
       <div className="px-5 pt-5 sm:px-6 lg:px-8 grid grid-cols-2 gap-2.5">
-        <MetaTile k="Sist vedlikeholdt" v={formatRelative(lastDate)} sub={maintenanceLogs[0]?.maintenance_type?.type_name || ''} />
-        <MetaTile k="Totalt logget" v={`${maintenanceLogs.length}`} sub={maintenanceLogs.length === 1 ? 'oppføring' : 'oppføringer'} />
+        <MetaTile k="Sist vedlikeholdt" v={formatRelative(lastDate)} sub={maintenanceLogs[0]?.maintenance_type?.type_name || ''} href="#historikk" />
+        <MetaTile k="Totalt logget" v={`${maintenanceLogs.length}`} sub={maintenanceLogs.length === 1 ? 'oppføring' : 'oppføringer'} href="#historikk" />
         <MetaTile
           k="Kategori"
           v={equipment.category?.name || '—'}
           sub={equipment.category?.icon || ''}
+          href={equipment.category?.id ? `/?category=${equipment.category.id}` : undefined}
         />
         <MetaTile
           k="Anskaffet"
@@ -298,7 +299,7 @@ export default function EquipmentDetailClient({
         <WorkOrderSection equipment={{ id: equipment.id, name: equipment.name }} onUpdate={handleSuccess} />
         <DocumentSection equipmentId={equipment.id} onUpdate={handleSuccess} />
 
-        <div>
+        <div id="historikk" className="scroll-mt-20">
           <h3 className="font-serif text-[18px] font-medium text-ink tracking-tightish mb-2.5">Historikk</h3>
           <div className="bg-paper border border-line rounded-[16px] overflow-hidden">
             <MaintenanceHistory logs={maintenanceLogs} equipmentName={equipment.name} onUpdate={handleSuccess} />
@@ -334,12 +335,24 @@ export default function EquipmentDetailClient({
   );
 }
 
-function MetaTile({ k, v, sub }: { k: string; v: string; sub: string }) {
-  return (
-    <div className="bg-paper border border-line rounded-[16px] px-3.5 py-3 min-w-0">
+function MetaTile({ k, v, sub, href }: { k: string; v: string; sub: string; href?: string }) {
+  const inner = (
+    <>
       <div className="text-[11px] text-ink3 font-medium uppercase tracking-[0.06em]">{k}</div>
       <div className="font-serif text-[22px] font-medium text-ink tracking-tight2 mt-1 leading-tight break-words">{v}</div>
       {sub && <div className="text-[12px] text-ink3 mt-0.5">{sub}</div>}
-    </div>
+    </>
   );
+
+  const base = 'bg-paper border border-line rounded-[16px] px-3.5 py-3 min-w-0';
+
+  if (href) {
+    return (
+      <Link href={href} className={`${base} block transition-colors hover:border-ink/30 active:bg-line2`}>
+        {inner}
+      </Link>
+    );
+  }
+
+  return <div className={base}>{inner}</div>;
 }
