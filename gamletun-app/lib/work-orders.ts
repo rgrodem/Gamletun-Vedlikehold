@@ -1,4 +1,5 @@
 // Work Orders API functions
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '@/lib/supabase/client';
 import { refreshEquipmentStatus } from './equipment-status';
 
@@ -159,8 +160,11 @@ export async function getWorkOrders(filters?: {
 /**
  * Get work orders that require attention
  */
-export async function getWorkOrdersDashboard() {
-  const supabase = createClient();
+export async function getWorkOrdersDashboard(client?: SupabaseClient) {
+  // Server components must pass their authenticated server client; without it
+  // this would use the browser client (no cookie -> anon role) and silently
+  // return zeros after the work_orders RLS was tightened to authenticated.
+  const supabase = client ?? createClient();
   const activeStatuses = ['open', 'scheduled', 'in_progress', 'waiting_parts'];
 
   const { data, error } = await supabase
@@ -515,8 +519,10 @@ export async function getOpenWorkOrdersCount(equipmentId: string): Promise<numbe
  * Get count of open work orders grouped by equipment
  * Returns a map of equipment_id -> count
  */
-export async function getOpenWorkOrderCountsByEquipment(): Promise<Record<string, number>> {
-  const supabase = createClient();
+export async function getOpenWorkOrderCountsByEquipment(
+  client?: SupabaseClient
+): Promise<Record<string, number>> {
+  const supabase = client ?? createClient();
 
   const { data, error } = await supabase
     .from('work_orders')

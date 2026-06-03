@@ -15,7 +15,7 @@ export default async function ReservationsPage() {
   } = await supabase.auth.getUser();
 
   // Get work order stats for sidebar
-  const workOrderStats = await getWorkOrdersDashboard();
+  const workOrderStats = await getWorkOrdersDashboard(supabase);
   const now = new Date().toISOString();
 
   const { data: expiredReservations } = await supabase

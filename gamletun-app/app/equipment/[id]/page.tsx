@@ -16,41 +16,38 @@ export default async function EquipmentDetailPage({ params }: PageProps) {
   const { id } = await params;
   const supabase = await createClient();
 
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // These queries are independent — run them in one round trip instead of
+  // five sequential awaits (each was a separate hop to Supabase eu-west-1).
+  const [
+    userResult,
+    workOrderStats,
+    equipmentResult,
+    maintenanceLogsResult,
+    categoriesResult,
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    getWorkOrdersDashboard(supabase),
+    supabase.from('equipment').select('*, category:categories(*)').eq('id', id).single(),
+    supabase
+      .from('maintenance_logs')
+      .select(`
+        *,
+        maintenance_type:maintenance_types(type_name),
+        performed_by_profile:performed_by(id, full_name)
+      `)
+      .eq('equipment_id', id)
+      .order('performed_date', { ascending: false }),
+    supabase.from('categories').select('*').order('name'),
+  ]);
 
-  // Get work order stats for sidebar
-  const workOrderStats = await getWorkOrdersDashboard();
-
-  // Fetch equipment details
-  const { data: equipment, error: equipmentError } = await supabase
-    .from('equipment')
-    .select('*, category:categories(*)')
-    .eq('id', id)
-    .single();
+  const user = userResult.data.user;
+  const { data: equipment, error: equipmentError } = equipmentResult;
+  const { data: maintenanceLogs } = maintenanceLogsResult;
+  const { data: categories } = categoriesResult;
 
   if (equipmentError || !equipment) {
     notFound();
   }
-
-  // Fetch maintenance logs
-  const { data: maintenanceLogs } = await supabase
-    .from('maintenance_logs')
-    .select(`
-      *,
-      maintenance_type:maintenance_types(type_name),
-      performed_by_profile:performed_by(id, full_name)
-    `)
-    .eq('equipment_id', id)
-    .order('performed_date', { ascending: false });
-
-  // Fetch all categories for editing
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('*')
-    .order('name');
 
   return (
     <AppLayout email={user?.email} workOrderStats={workOrderStats}>

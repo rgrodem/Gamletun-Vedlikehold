@@ -19,19 +19,39 @@ function firstRelation<T>(relation: T | T[] | null | undefined): T | null {
 export default async function ReportsPage() {
   const supabase = await createClient();
 
-  // Get current user
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Current month range (computed before the queries that depend on it).
+  const now = new Date();
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-  // Get work order stats for sidebar
-  const workOrderStats = await getWorkOrdersDashboard();
+  // Independent queries -> one parallel round trip instead of five sequential.
+  const [
+    userResult,
+    workOrderStats,
+    equipmentResult,
+    maintenanceTypesResult,
+    maintenanceLogsResult,
+  ] = await Promise.all([
+    supabase.auth.getUser(),
+    getWorkOrdersDashboard(supabase),
+    supabase.from('equipment').select('id, name, categories(name)').order('name'),
+    supabase.from('maintenance_types').select('*').order('type_name'),
+    supabase
+      .from('maintenance_logs')
+      .select(`
+        *,
+        equipment:equipment(name, category:categories(name)),
+        maintenance_type:maintenance_types(type_name)
+      `)
+      .gte('performed_date', firstDayOfMonth.toISOString().split('T')[0])
+      .lte('performed_date', lastDayOfMonth.toISOString().split('T')[0])
+      .order('performed_date', { ascending: false }),
+  ]);
 
-  // Fetch all equipment
-  const { data: equipmentData } = await supabase
-    .from('equipment')
-    .select('id, name, categories(name)')
-    .order('name');
+  const user = userResult.data.user;
+  const { data: equipmentData } = equipmentResult;
+  const { data: maintenanceTypes } = maintenanceTypesResult;
+  const { data: maintenanceLogs } = maintenanceLogsResult;
 
   // Transform equipment data to match the expected structure
   const equipment = (equipmentData as EquipmentReportRow[] | null)?.map(item => ({
@@ -39,28 +59,6 @@ export default async function ReportsPage() {
     name: item.name,
     category: firstRelation(item.categories),
   }));
-
-  // Fetch all maintenance types
-  const { data: maintenanceTypes } = await supabase
-    .from('maintenance_types')
-    .select('*')
-    .order('type_name');
-
-  // Get current month's data by default
-  const now = new Date();
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastDayOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-  const { data: maintenanceLogs } = await supabase
-    .from('maintenance_logs')
-    .select(`
-      *,
-      equipment:equipment(name, category:categories(name)),
-      maintenance_type:maintenance_types(type_name)
-    `)
-    .gte('performed_date', firstDayOfMonth.toISOString().split('T')[0])
-    .lte('performed_date', lastDayOfMonth.toISOString().split('T')[0])
-    .order('performed_date', { ascending: false });
 
   return (
     <AppLayout email={user?.email} workOrderStats={workOrderStats}>

@@ -85,8 +85,8 @@ export default async function Home() {
       .in('status', ['open', 'scheduled', 'in_progress', 'waiting_parts'])
       .not('due_date', 'is', null)
       .order('due_date', { ascending: true }),
-    getOpenWorkOrderCountsByEquipment(),
-    getWorkOrdersDashboard(),
+    getOpenWorkOrderCountsByEquipment(supabase),
+    getWorkOrdersDashboard(supabase),
   ]);
 
   const user = userResult.data.user;

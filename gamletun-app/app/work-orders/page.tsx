@@ -16,11 +16,10 @@ export default async function WorkOrdersPage({
   const supabase = await createClient();
   const params = await searchParams;
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const workOrderStats = await getWorkOrdersDashboard();
+  const filter = params.filter;
+  const equipmentId = params.equipment;
+  const today = new Date().toISOString();
+  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
   let query = supabase
     .from('work_orders')
@@ -29,11 +28,6 @@ export default async function WorkOrdersPage({
       equipment:equipment_id (id, name)
     `)
     .order('due_date', { ascending: true, nullsFirst: false });
-
-  const filter = params.filter;
-  const equipmentId = params.equipment;
-  const today = new Date().toISOString();
-  const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
 
   if (equipmentId) query = query.eq('equipment_id', equipmentId);
 
@@ -60,18 +54,20 @@ export default async function WorkOrdersPage({
     query = query.in('status', ['open', 'scheduled', 'in_progress', 'waiting_parts']);
   }
 
-  const { data: workOrders } = await query;
-  const typedWorkOrders = (workOrders || []) as WorkOrder[];
+  // user, dashboard, the (filtered) work-order list and the optional equipment
+  // name are all independent — fetch them in one parallel round trip.
+  const [userResult, workOrderStats, workOrdersResult, equipmentNameResult] = await Promise.all([
+    supabase.auth.getUser(),
+    getWorkOrdersDashboard(supabase),
+    query,
+    equipmentId
+      ? supabase.from('equipment').select('name').eq('id', equipmentId).single()
+      : Promise.resolve({ data: null as { name: string } | null }),
+  ]);
 
-  let equipmentName = '';
-  if (equipmentId) {
-    const { data: equipment } = await supabase
-      .from('equipment')
-      .select('name')
-      .eq('id', equipmentId)
-      .single();
-    equipmentName = equipment?.name || '';
-  }
+  const user = userResult.data.user;
+  const typedWorkOrders = (workOrdersResult.data || []) as WorkOrder[];
+  const equipmentName = equipmentNameResult.data?.name || '';
 
   const view = params.view || 'list';
   const openCount = workOrderStats.openTotal;
