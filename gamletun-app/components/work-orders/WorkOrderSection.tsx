@@ -48,36 +48,36 @@ export default function WorkOrderSection({ equipment, onUpdate }: WorkOrderSecti
   );
 
   return (
-    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-200">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+    <div>
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-3">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Arbeidsordre</h2>
-          <p className="text-sm text-gray-600 mt-1">
+          <h3 className="font-serif text-[18px] font-medium text-ink tracking-tightish m-0">Arbeidsordre</h3>
+          <p className="text-[13px] text-ink3 mt-0.5">
             {openWorkOrders.length} {openWorkOrders.length === 1 ? 'åpen ordre' : 'åpne ordrer'}
           </p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+        <div className="flex gap-2 w-full sm:w-auto">
           <button
+            type="button"
             onClick={() => setShowReportModal(true)}
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-orange-600 text-white px-4 py-3 rounded-xl hover:shadow-lg active:scale-[0.98] transition-all duration-200 font-medium touch-manipulation min-h-[44px]"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-rust text-white px-4 py-3 rounded-[14px] active:scale-[0.98] transition-transform font-semibold text-[14px] min-h-[44px]"
           >
-            <FaExclamationTriangle className="text-lg" />
-            <span>Meld feil</span>
+            <FaExclamationTriangle /> <span>Meld feil</span>
           </button>
           <button
+            type="button"
             onClick={() => setShowScheduleModal(true)}
-            className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-3 rounded-xl hover:shadow-lg active:scale-[0.98] transition-all duration-200 font-medium touch-manipulation min-h-[44px]"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-moss text-white px-4 py-3 rounded-[14px] active:scale-[0.98] transition-transform font-semibold text-[14px] min-h-[44px]"
           >
-            <FaCalendarAlt className="text-lg" />
-            <span>Planlegg vedlikehold</span>
+            <FaCalendarAlt /> <span>Planlegg</span>
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="animate-pulse space-y-4">
+        <div className="animate-pulse motion-reduce:animate-none space-y-2.5">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-24 bg-gray-100 rounded-xl"></div>
+            <div key={i} className="h-20 bg-line/60 rounded-[14px]"></div>
           ))}
         </div>
       ) : workOrders.length > 0 ? (
@@ -87,28 +87,28 @@ export default function WorkOrderSection({ equipment, onUpdate }: WorkOrderSecti
           onStatusChange={handleSuccess}
         />
       ) : (
-        <div className="bg-gray-50 border-2 border-dashed border-gray-300 rounded-xl p-8 text-center">
-          <FaCalendarAlt className="text-4xl text-gray-400 mx-auto mb-3" />
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">
+        <div className="bg-bg border border-dashed border-line rounded-[16px] p-8 text-center">
+          <FaCalendarAlt className="text-3xl text-ink3 mx-auto mb-3" />
+          <h4 className="text-[15px] font-semibold text-ink mb-1.5">
             Ingen arbeidsordre registrert
-          </h3>
-          <p className="text-sm text-gray-600 mb-4">
+          </h4>
+          <p className="text-[13px] text-ink3 mb-4">
             Opprett en arbeidsordre for å planlegge vedlikehold eller melde feil
           </p>
           <div className="flex flex-col sm:flex-row gap-2 justify-center">
             <button
+              type="button"
               onClick={() => setShowReportModal(true)}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-red-600 to-orange-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-medium"
+              className="inline-flex items-center justify-center gap-2 bg-rust text-white px-4 py-2.5 rounded-[12px] font-semibold text-[14px]"
             >
-              <FaExclamationTriangle />
-              <span>Meld feil</span>
+              <FaExclamationTriangle /> <span>Meld feil</span>
             </button>
             <button
+              type="button"
               onClick={() => setShowScheduleModal(true)}
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all font-medium"
+              className="inline-flex items-center justify-center gap-2 bg-moss text-white px-4 py-2.5 rounded-[12px] font-semibold text-[14px]"
             >
-              <FaCalendarAlt />
-              <span>Planlegg vedlikehold</span>
+              <FaCalendarAlt /> <span>Planlegg</span>
             </button>
           </div>
         </div>

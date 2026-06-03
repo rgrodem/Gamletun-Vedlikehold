@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { FaTools, FaCalendar, FaEdit, FaImage, FaFilePdf, FaFileAlt, FaDownload } from 'react-icons/fa';
-import { HiClock } from 'react-icons/hi';
+import { FaTools, FaCalendar, FaEdit, FaFilePdf, FaFileAlt, FaDownload } from 'react-icons/fa';
 import Image from 'next/image';
 import EditMaintenanceModal from './EditMaintenanceModal';
 import { createClient } from '@/lib/supabase/client';
@@ -92,10 +91,10 @@ export default function MaintenanceHistory({ logs, equipmentName, onUpdate }: Ma
 
   if (logs.length === 0) {
     return (
-      <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-8 text-center">
-        <FaTools className="text-4xl text-gray-400 mx-auto mb-3" />
-        <p className="text-gray-600 font-medium">Ingen vedlikeholdshistorikk ennå</p>
-        <p className="text-sm text-gray-500 mt-1">Klikk på "Logg Vedlikehold" for å legge til</p>
+      <div className="p-8 text-center">
+        <FaTools className="text-3xl text-ink3 mx-auto mb-3" />
+        <p className="text-ink font-medium text-[15px]">Ingen vedlikeholdshistorikk ennå</p>
+        <p className="text-[13px] text-ink3 mt-1">Trykk «Logg vedlikehold» for å legge til</p>
       </div>
     );
   }
@@ -111,108 +110,100 @@ export default function MaintenanceHistory({ logs, equipmentName, onUpdate }: Ma
 
   return (
     <>
-      <div className="space-y-4">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl">
-            <HiClock className="text-2xl text-white" />
-          </div>
-          <div>
-            <h3 className="text-xl font-bold text-gray-900">Vedlikeholdshistorikk</h3>
-            <p className="text-sm text-gray-600">{equipmentName}</p>
-          </div>
-        </div>
-
-        <div className="space-y-3">
-          {logs.map((log) => (
-            <div
-              key={log.id}
-              className="bg-white border border-gray-200 rounded-xl p-5 hover:shadow-md transition-all duration-200"
-            >
-              <div className="flex items-start justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg">
-                    <FaTools className="text-blue-600" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">
-                      {log.maintenance_type?.type_name || 'Vedlikehold'}
-                    </h4>
-                    <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                      <FaCalendar className="text-xs" />
-                      <span>{formatDate(log.performed_date)}</span>
-                      {log.performed_by_profile && (
-                        <>
-                          <span className="text-gray-300">•</span>
-                          <span>{log.performed_by_profile.full_name}</span>
-                        </>
-                      )}
-                    </div>
+      <div>
+        {logs.map((log) => (
+          <div
+            key={log.id}
+            className="p-4 border-t border-line first:border-t-0"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="p-2 bg-mossBg rounded-[10px] flex-shrink-0">
+                  <FaTools className="text-moss" />
+                </div>
+                <div className="min-w-0">
+                  <h4 className="font-semibold text-ink text-[15px] truncate">
+                    {log.maintenance_type?.type_name || 'Vedlikehold'}
+                  </h4>
+                  <div className="flex items-center gap-2 text-[12px] text-ink3 mt-0.5 flex-wrap">
+                    <FaCalendar className="text-[10px]" />
+                    <span>{formatDate(log.performed_date)}</span>
+                    {log.performed_by_profile && (
+                      <>
+                        <span className="text-line">•</span>
+                        <span>{log.performed_by_profile.full_name}</span>
+                      </>
+                    )}
                   </div>
                 </div>
-                <button
-                  onClick={() => setEditingLog(log)}
-                  className="p-2 hover:bg-blue-50 text-blue-600 rounded-lg transition-colors"
-                  title="Rediger vedlikehold"
-                >
-                  <FaEdit className="text-lg" />
-                </button>
               </div>
-
-              {log.description && (
-                <p className="text-gray-700 text-sm leading-relaxed bg-gray-50 rounded-lg p-3 mt-3">
-                  {log.description}
-                </p>
-              )}
-
-              {/* Attachments */}
-              {attachments[log.id] && attachments[log.id].length > 0 && (
-                <div className="mt-4">
-                  <p className="text-xs font-semibold text-gray-600 mb-2">Vedlegg:</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-                    {attachments[log.id].map((attachment) => {
-                      const isImage = attachment.file_type?.startsWith('image/');
-                      const fileUrl = getFileUrl(attachment.file_path);
-
-                      return (
-                        <div key={attachment.id} className="relative group">
-                          {isImage ? (
-                            <button
-                              onClick={() => setSelectedImage(fileUrl)}
-                              className="relative w-full aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-400 transition-all cursor-pointer"
-                            >
-                              <Image
-                                src={fileUrl}
-                                alt={attachment.file_name}
-                                fill
-                                className="object-cover"
-                                sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-                              />
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleDownload(attachment)}
-                              className="w-full aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-400 transition-all cursor-pointer bg-gray-50 flex flex-col items-center justify-center gap-2 p-2"
-                            >
-                              {attachment.file_type === 'application/pdf' ? (
-                                <FaFilePdf className="text-3xl text-red-500" />
-                              ) : (
-                                <FaFileAlt className="text-3xl text-gray-500" />
-                              )}
-                              <p className="text-xs text-gray-600 text-center truncate w-full px-1">
-                                {attachment.file_name}
-                              </p>
-                              <FaDownload className="text-xs text-blue-600" />
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
+              <button
+                type="button"
+                onClick={() => setEditingLog(log)}
+                className="p-2 -mr-1 text-ink3 hover:text-ink rounded-lg transition-colors flex-shrink-0"
+                title="Rediger vedlikehold"
+              >
+                <FaEdit />
+              </button>
             </div>
-          ))}
-        </div>
+
+            {log.description && (
+              <p className="text-ink2 text-[13px] leading-relaxed bg-bg rounded-[10px] p-3 mt-3 break-words">
+                {log.description}
+              </p>
+            )}
+
+            {/* Attachments */}
+            {attachments[log.id] && attachments[log.id].length > 0 && (
+              <div className="mt-3">
+                <p className="text-[11px] font-semibold text-ink3 mb-2 uppercase tracking-[0.06em]">Vedlegg</p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                  {attachments[log.id].map((attachment) => {
+                    const isImage = attachment.file_type?.startsWith('image/');
+                    const fileUrl = getFileUrl(attachment.file_path);
+
+                    return (
+                      <div key={attachment.id} className="relative group">
+                        {isImage ? (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedImage(fileUrl)}
+                            aria-label={`Vis ${attachment.file_name}`}
+                            className="relative w-full aspect-square rounded-[10px] overflow-hidden border border-line hover:border-ink/30 transition-all cursor-pointer"
+                          >
+                            <Image
+                              src={fileUrl}
+                              alt={attachment.file_name}
+                              fill
+                              className="object-cover"
+                              sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+                            />
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleDownload(attachment)}
+                            className="w-full aspect-square rounded-[10px] overflow-hidden border border-line hover:border-ink/30 transition-all cursor-pointer bg-bg flex flex-col items-center justify-center gap-2 p-2"
+                          >
+                            {attachment.file_type === 'application/pdf' ? (
+                              <FaFilePdf className="text-3xl text-rust" />
+                            ) : (
+                              <FaFileAlt className="text-3xl text-ink3" />
+                            )}
+                            <p className="text-[11px] text-ink3 text-center truncate w-full px-1">
+                              {attachment.file_name}
+                            </p>
+                            <FaDownload className="text-[10px] text-moss" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* Image Modal */}
