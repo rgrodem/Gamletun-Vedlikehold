@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { FaTimes, FaExclamationTriangle } from 'react-icons/fa';
 import { createWorkOrder, WorkOrderPriority } from '@/lib/work-orders';
+import { getActiveReservationForEquipment } from '@/lib/reservations';
 
 interface Equipment {
   id: string;
@@ -28,6 +29,25 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
   const [dueDate, setDueDate] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [reservedBy, setReservedBy] = useState<{ name: string; from: string } | null>(null);
+
+  // Warn the reporter if this equipment is already reserved by someone — they
+  // should be told it's now defective. (Email notification is a later step.)
+  useEffect(() => {
+    let cancelled = false;
+    getActiveReservationForEquipment(equipment.id)
+      .then((res) => {
+        if (cancelled || !res) return;
+        setReservedBy({
+          name: res.user_profile?.full_name || 'en bruker',
+          from: new Date(res.start_time).toLocaleString('nb-NO', {
+            day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit',
+          }),
+        });
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [equipment.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +102,17 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4">
               <p className="text-red-800 text-sm">{error}</p>
+            </div>
+          )}
+
+          {reservedBy && (
+            <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 flex gap-3">
+              <FaExclamationTriangle className="text-amber-600 mt-0.5 flex-shrink-0" />
+              <p className="text-amber-900 text-sm">
+                <strong>OBS:</strong> dette utstyret er reservert av{' '}
+                <strong>{reservedBy.name}</strong> fra {reservedBy.from}. Gi beskjed om at
+                utstyret nå er meldt defekt. Når feilen er åpen kan utstyret ikke reserveres på nytt.
+              </p>
             </div>
           )}
 
