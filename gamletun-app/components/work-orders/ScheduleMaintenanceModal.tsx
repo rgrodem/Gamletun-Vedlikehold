@@ -27,7 +27,6 @@ export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess
   const [dueDate, setDueDate] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [intervalDays, setIntervalDays] = useState('');
-  const [intervalHours, setIntervalHours] = useState('');
   const [estimatedHours, setEstimatedHours] = useState('');
   const [estimatedCost, setEstimatedCost] = useState('');
   const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
@@ -62,7 +61,6 @@ export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess
         scheduled_date: dueDate,
         is_recurring: isRecurring,
         recurrence_interval_days: intervalDays ? parseInt(intervalDays) : undefined,
-        recurrence_interval_hours: intervalHours ? parseInt(intervalHours) : undefined,
         estimated_hours: estimatedHours ? parseFloat(estimatedHours) : undefined,
         estimated_cost: estimatedCost ? parseFloat(estimatedCost) : undefined,
         checklist: checklist.length > 0 ? checklist : undefined,

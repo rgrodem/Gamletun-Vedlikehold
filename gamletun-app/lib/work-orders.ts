@@ -28,7 +28,6 @@ export interface WorkOrder {
   scheduled_date: string | null;
   is_recurring: boolean;
   recurrence_interval_days: number | null;
-  recurrence_interval_hours: number | null;
   next_due_date: string | null;
   assigned_to: string | null;
   created_by: string | null;
@@ -70,7 +69,6 @@ export interface CreateWorkOrderData {
   scheduled_date?: string;
   is_recurring?: boolean;
   recurrence_interval_days?: number;
-  recurrence_interval_hours?: number;
   checklist?: ChecklistItem[];
 }
 
@@ -88,7 +86,6 @@ export interface UpdateWorkOrderData {
   scheduled_date?: string | null;
   is_recurring?: boolean;
   recurrence_interval_days?: number | null;
-  recurrence_interval_hours?: number | null;
   next_due_date?: string | null;
   assigned_to?: string | null;
   checklist?: ChecklistItem[];
@@ -97,15 +94,57 @@ export interface UpdateWorkOrderData {
   completed_maintenance_log_id?: string | null;
 }
 
-export function isWorkOrderOverdue(dueDate: string | null, status: WorkOrderStatus): boolean {
-  if (!dueDate || ['completed', 'closed'].includes(status)) return false;
-  const due = /^\d{4}-\d{2}-\d{2}$/.test(dueDate)
+// Hvor mange dager frem som regnes som "forfaller snart" på forsiden.
+export const DUE_SOON_DAYS = 30;
+// Hvor langt frem forsiden i det hele tatt henter/teller åpne ordrer.
+export const FRONT_PAGE_HORIZON_DAYS = 60;
+
+// Tolk en due_date som enten 'YYYY-MM-DD' (lokal dag) eller full timestamp.
+function parseDueDate(dueDate: string): Date {
+  return /^\d{4}-\d{2}-\d{2}$/.test(dueDate)
     ? (() => {
         const [year, month, day] = dueDate.split('-').map(Number);
         return new Date(year, month - 1, day, 23, 59, 59, 999);
       })()
     : new Date(dueDate);
-  return due < new Date();
+}
+
+export function isWorkOrderOverdue(dueDate: string | null, status: WorkOrderStatus): boolean {
+  if (!dueDate || ['completed', 'closed'].includes(status)) return false;
+  return parseDueDate(dueDate) < new Date();
+}
+
+// "Forfaller snart" = ikke forfalt ennå, men innen `days` dager frem.
+export function isWorkOrderDueSoon(
+  dueDate: string | null,
+  status: WorkOrderStatus,
+  days: number = DUE_SOON_DAYS
+): boolean {
+  if (!dueDate || ['completed', 'closed'].includes(status)) return false;
+  if (isWorkOrderOverdue(dueDate, status)) return false;
+  const horizon = new Date();
+  horizon.setHours(0, 0, 0, 0);
+  horizon.setDate(horizon.getDate() + days);
+  horizon.setHours(23, 59, 59, 999);
+  return parseDueDate(dueDate) <= horizon;
+}
+
+// Menneskelig "dager igjen / forfalt"-etikett, delt mellom liste, forside og detalj.
+export function formatDueLabel(dueDate: string | null, status: WorkOrderStatus): string {
+  if (!dueDate || ['completed', 'closed'].includes(status)) return '';
+  const due = parseDueDate(dueDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const dueDay = new Date(due);
+  dueDay.setHours(0, 0, 0, 0);
+  const diffDays = Math.round((dueDay.getTime() - today.getTime()) / 86_400_000);
+  if (diffDays < 0) {
+    const n = Math.abs(diffDays);
+    return `Forfalt · ${n} ${n === 1 ? 'dag' : 'dager'}`;
+  }
+  if (diffDays === 0) return 'I dag';
+  if (diffDays === 1) return 'I morgen';
+  return `Om ${diffDays} dager`;
 }
 
 /**

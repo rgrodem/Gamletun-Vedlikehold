@@ -2,7 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import EquipmentDashboard from '@/components/equipment/EquipmentDashboard';
 import AppLayout from '@/components/layout/AppLayout';
 import { refreshEquipmentStatusWithClient } from '@/lib/equipment-status-core';
-import { getOpenWorkOrderCountsByEquipment, getWorkOrdersDashboard } from '@/lib/work-orders';
+import { getOpenWorkOrderCountsByEquipment, getWorkOrdersDashboard, FRONT_PAGE_HORIZON_DAYS } from '@/lib/work-orders';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,6 +14,13 @@ export default async function Home() {
   thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
   const thirtyDaysAgoISO = thirtyDaysAgo.toISOString().split('T')[0];
   const nowISO = new Date().toISOString();
+
+  // Only fetch work orders due within the front-page horizon — planned
+  // maintenance far in the future (e.g. 11 months out) belongs on /work-orders,
+  // not in the front-page overview.
+  const horizon = new Date();
+  horizon.setDate(horizon.getDate() + FRONT_PAGE_HORIZON_DAYS);
+  const horizonISO = horizon.toISOString().split('T')[0];
 
   const { data: expiredReservations } = await supabase
     .from('equipment_reservations')
@@ -84,6 +91,7 @@ export default async function Home() {
       .select('equipment_id, due_date, title')
       .in('status', ['open', 'scheduled', 'in_progress', 'waiting_parts'])
       .not('due_date', 'is', null)
+      .lte('due_date', horizonISO)
       .order('due_date', { ascending: true }),
     getOpenWorkOrderCountsByEquipment(supabase),
     getWorkOrdersDashboard(supabase),
@@ -117,6 +125,7 @@ export default async function Home() {
         equipment={equipment || []}
         recentMaintenance={recentMaintenance || []}
         workOrderCounts={workOrderCounts}
+        workOrderStats={workOrderStats}
         reservations={reservations}
         lastMaintenanceDates={lastMaintenanceDates}
         nextWorkOrders={nextWorkOrdersData || []}

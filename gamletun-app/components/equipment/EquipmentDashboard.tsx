@@ -9,6 +9,7 @@ import ReportFaultModal from '../work-orders/ReportFaultModal';
 import AddEquipmentModal from './AddEquipmentModal';
 import LogMaintenanceModal from '../maintenance/LogMaintenanceModal';
 import EditEquipmentModal from './EditEquipmentModal';
+import { formatDueLabel, DUE_SOON_DAYS } from '@/lib/work-orders';
 
 interface Category {
   id: string;
@@ -62,6 +63,7 @@ interface Props {
   reservations: ReservationSummary[];
   recentMaintenance: MaintenanceLog[];
   workOrderCounts: Record<string, number>;
+  workOrderStats?: { overdue: number; thisWeek: number; openFaults: number; scheduled: number; openTotal: number };
   lastMaintenanceDates?: Record<string, string>;
   nextWorkOrders?: NextWorkOrder[];
 }
@@ -112,6 +114,7 @@ export default function EquipmentDashboard({
   reservations,
   recentMaintenance,
   workOrderCounts,
+  workOrderStats,
   lastMaintenanceDates = {},
   nextWorkOrders = [],
 }: Props) {
@@ -152,12 +155,14 @@ export default function EquipmentDashboard({
     return map;
   }, [reservations]);
 
-  // Attention-card stats
+  // Attention-card stats: only what actually needs attention — overdue,
+  // due soon (within DUE_SOON_DAYS) and open faults. Planned maintenance far
+  // in the future is intentionally excluded (page.tsx limits the horizon too).
   const todayStart = new Date(now);
   todayStart.setHours(0, 0, 0, 0);
-  const weekEnd = new Date(todayStart);
-  weekEnd.setDate(weekEnd.getDate() + 7);
-  weekEnd.setHours(23, 59, 59, 999);
+  const dueSoonEnd = new Date(todayStart);
+  dueSoonEnd.setDate(dueSoonEnd.getDate() + DUE_SOON_DAYS);
+  dueSoonEnd.setHours(23, 59, 59, 999);
   const toDueDate = (value: string) => {
     if (/^\d{4}-\d{2}-\d{2}$/.test(value)) {
       const [year, month, day] = value.split('-').map(Number);
@@ -166,12 +171,20 @@ export default function EquipmentDashboard({
     return new Date(value);
   };
   const overdueCount = nextWorkOrders.filter(w => toDueDate(w.due_date) < todayStart).length;
-  const openOrdersCount = Object.values(workOrderCounts).reduce((a, b) => a + b, 0);
-  const thisWeekCount = nextWorkOrders.filter(w => {
+  const dueSoonCount = nextWorkOrders.filter(w => {
     const d = toDueDate(w.due_date);
-    return d >= todayStart && d <= weekEnd;
+    return d >= todayStart && d <= dueSoonEnd;
   }).length;
-  const attentionTotal = openOrdersCount;
+  const openFaults = workOrderStats?.openFaults ?? 0;
+  const attentionTotal = overdueCount + dueSoonCount + openFaults;
+
+  // "Kommer opp" — de nærmeste oppgavene (allerede due-sortert + horisont-begrenset).
+  const equipmentNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    equipment.forEach(e => m.set(e.id, e.name));
+    return m;
+  }, [equipment]);
+  const upcoming = nextWorkOrders.slice(0, 5);
 
   // Category chip counts
   const categoryChips = useMemo(() => {
@@ -207,10 +220,7 @@ export default function EquipmentDashboard({
       </div>
 
       {/* Attention card */}
-      <Link
-        href="/work-orders?filter=all_open"
-        className="block rounded-[20px] bg-ink text-paper p-[18px] pb-4 overflow-hidden relative"
-      >
+      <div className="rounded-[20px] bg-ink text-paper p-[18px] pb-4 overflow-hidden relative">
         <div className="text-[11px] font-semibold uppercase tracking-[0.12em] opacity-60">
           Krever oppmerksomhet
         </div>
@@ -218,11 +228,40 @@ export default function EquipmentDashboard({
           {attentionTotal} {attentionTotal === 1 ? 'sak' : 'saker'}
         </div>
         <div className="flex gap-2.5 mt-4">
-          <AttentionTile count={overdueCount} label="Forfalt" tone="rust" />
-          <AttentionTile count={openOrdersCount} label="Åpne ordrer" tone="rust" />
-          <AttentionTile count={thisWeekCount} label="Denne uken" tone="moss" />
+          <AttentionTile href="/work-orders?filter=overdue" count={overdueCount} label="Forfalt" tone="rust" />
+          <AttentionTile href="/work-orders?filter=all_open" count={dueSoonCount} label="Forfaller snart" tone="moss" />
+          <AttentionTile href="/work-orders?filter=faults" count={openFaults} label="Åpne feil" tone="rust" />
         </div>
-      </Link>
+      </div>
+
+      {/* Kommer opp — nærmeste vedlikehold/ordrer med dager-igjen */}
+      {upcoming.length > 0 && (
+        <div className="bg-paper border border-line rounded-[16px] overflow-hidden">
+          <div className="px-3.5 pt-3 pb-1 text-[11px] font-semibold uppercase tracking-[0.08em] text-ink3">
+            Kommer opp
+          </div>
+          <div>
+            {upcoming.map((w, i) => {
+              const overdue = toDueDate(w.due_date) < todayStart;
+              return (
+                <Link
+                  key={`${w.equipment_id}-${i}`}
+                  href={`/equipment/${w.equipment_id}`}
+                  className="flex items-center justify-between gap-3 px-3.5 py-2.5 border-t border-line first:border-t-0 active:bg-line2"
+                >
+                  <div className="min-w-0">
+                    <div className="text-[14px] text-ink font-medium truncate">{w.title}</div>
+                    <div className="text-[12px] text-ink3 truncate">{equipmentNameById.get(w.equipment_id) || 'Utstyr'}</div>
+                  </div>
+                  <div className={`text-[12px] font-semibold flex-shrink-0 ${overdue ? 'text-rust' : 'text-ink2'}`}>
+                    {formatDueLabel(w.due_date, 'open')}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Search */}
       <div className="flex items-center gap-2.5 bg-paper border border-line rounded-[14px] px-3.5 py-3.5 text-ink3">
@@ -401,18 +440,29 @@ function AttentionTile({
   count,
   label,
   tone,
+  href,
 }: {
   count: number;
   label: string;
   tone: 'rust' | 'moss';
+  href?: string;
 }) {
   const color = tone === 'rust' ? '#e9c0a5' : '#d5deb0';
-  return (
-    <div className="flex-1 rounded-xl px-3 py-2.5" style={{ background: 'rgba(255,255,255,0.08)' }}>
+  const content = (
+    <>
       <div className="text-[22px] font-semibold leading-none" style={{ color }}>
         {count}
       </div>
       <div className="text-[11px] opacity-75 mt-0.5">{label}</div>
-    </div>
+    </>
+  );
+  const cls = 'flex-1 rounded-xl px-3 py-2.5 block';
+  const bg = { background: 'rgba(255,255,255,0.08)' };
+  return href ? (
+    <Link href={href} className={`${cls} active:opacity-80 transition-opacity`} style={bg}>
+      {content}
+    </Link>
+  ) : (
+    <div className={cls} style={bg}>{content}</div>
   );
 }
