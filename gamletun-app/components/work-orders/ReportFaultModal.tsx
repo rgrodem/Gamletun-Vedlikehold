@@ -86,6 +86,13 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
         }
       }
 
+      // E-postvarsel i bakgrunnen — skal aldri blokkere innmeldingen.
+      fetch('/api/notify/fault', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ workOrderId: workOrder.id }),
+      }).catch((notifyError) => console.error('E-postvarsel feilet:', notifyError));
+
       onSuccess();
       onClose();
     } catch (err: unknown) {
