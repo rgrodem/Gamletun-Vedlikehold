@@ -83,7 +83,7 @@ export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4 overflow-y-auto overscroll-contain" role="dialog" aria-modal="true" aria-labelledby="schedule-modal-title">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8 max-h-[90vh] overflow-y-auto overscroll-contain">
         {/* Header */}
-        <div className="sticky top-0 bg-white flex items-center justify-between p-6 border-b border-gray-200 rounded-t-2xl z-10">
+        <div className="bg-white flex items-center justify-between p-6 border-b border-gray-200 rounded-t-2xl z-10">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-blue-100 rounded-xl">
               <FaCalendarAlt className="text-2xl text-blue-600" />

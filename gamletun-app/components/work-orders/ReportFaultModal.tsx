@@ -100,7 +100,7 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4 overflow-y-auto overscroll-contain" role="dialog" aria-modal="true" aria-labelledby="fault-modal-title">
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full my-8">
         {/* Header */}
-        <div className="sticky top-0 bg-white flex items-center justify-between p-6 border-b border-gray-200 rounded-t-2xl z-10">
+        <div className="bg-white flex items-center justify-between p-6 border-b border-gray-200 rounded-t-2xl z-10">
           <div className="flex items-center gap-3">
             <div className="p-3 bg-red-100 rounded-xl">
               <FaExclamationTriangle className="text-2xl text-red-600" />

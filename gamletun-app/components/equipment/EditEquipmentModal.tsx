@@ -157,7 +157,7 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4 overflow-y-auto overscroll-contain">
       <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8 max-h-[90vh] overflow-y-auto overscroll-contain">
         {/* Header */}
-        <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 sm:p-6 rounded-t-2xl flex justify-between items-center z-10">
+        <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 sm:p-6 rounded-t-2xl flex justify-between items-center z-10">
           <h2 className="text-xl sm:text-2xl font-bold">Rediger Utstyr</h2>
           <button
             onClick={onClose}

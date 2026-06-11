@@ -146,7 +146,7 @@ export default function WorkOrderDetailModal({ workOrder: initialWorkOrder, onCl
     >
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full my-8 max-h-[90vh] overflow-y-auto overscroll-contain">
         {/* Header */}
-        <div className="sticky top-0 bg-white flex items-start justify-between p-6 border-b border-gray-200 rounded-t-2xl z-10">
+        <div className="bg-white flex items-start justify-between p-6 border-b border-gray-200 rounded-t-2xl z-10">
           <div className="flex-1 pr-4">
             {isEditing ? (
               <div className="space-y-3">

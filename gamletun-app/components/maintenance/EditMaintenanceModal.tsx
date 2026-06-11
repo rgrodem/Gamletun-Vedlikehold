@@ -87,7 +87,7 @@ export default function EditMaintenanceModal({ log, equipmentName, onClose, onSu
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4 overflow-y-auto overscroll-contain">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full my-8 max-h-[90vh] overflow-y-auto overscroll-contain">
         {/* Header */}
-        <div className="sticky top-0 bg-white flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 rounded-t-2xl z-10">
+        <div className="bg-white flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 rounded-t-2xl z-10">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Rediger Vedlikehold</h2>
             <p className="text-xs sm:text-sm text-gray-600 mt-1">{equipmentName}</p>
