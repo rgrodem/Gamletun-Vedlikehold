@@ -38,16 +38,21 @@ export default function EditMaintenanceModal({ log, equipmentName, onClose, onSu
     try {
       const supabase = createClient();
 
-      // Update maintenance log
-      const { error: updateError } = await supabase
+      // Update maintenance log. .select() avslører om RLS stille traff 0
+      // rader, så brukeren får beskjed i stedet for at ingenting skjer.
+      const { data: updatedRows, error: updateError } = await supabase
         .from('maintenance_logs')
         .update({
           description: description || null,
           performed_date: performedDate,
         })
-        .eq('id', log.id);
+        .eq('id', log.id)
+        .select('id');
 
       if (updateError) throw updateError;
+      if (!updatedRows || updatedRows.length === 0) {
+        throw new Error('Loggen ble ikke oppdatert — du mangler trolig rettighet i databasen (kjør migrasjon 014).');
+      }
 
       onSuccess();
       onClose();
@@ -66,12 +71,18 @@ export default function EditMaintenanceModal({ log, equipmentName, onClose, onSu
     try {
       const supabase = createClient();
 
-      const { error: deleteError } = await supabase
+      // .select() avslører om RLS stille traff 0 rader (sletting "lyktes"
+      // men ingenting forsvant) — da viser vi feil i stedet.
+      const { data: deletedRows, error: deleteError } = await supabase
         .from('maintenance_logs')
         .delete()
-        .eq('id', log.id);
+        .eq('id', log.id)
+        .select('id');
 
       if (deleteError) throw deleteError;
+      if (!deletedRows || deletedRows.length === 0) {
+        throw new Error('Loggen ble ikke slettet — du mangler trolig rettighet i databasen (kjør migrasjon 014).');
+      }
 
       onSuccess();
       onClose();
