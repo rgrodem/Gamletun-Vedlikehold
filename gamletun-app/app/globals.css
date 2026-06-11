@@ -120,3 +120,26 @@ img, video, canvas, svg, iframe {
   max-width: 100%;
   min-width: 0;
 }
+
+/*
+ * Utskrift av QR-etiketter: skjul alt unntatt .print-area så bare etiketten
+ * havner på papiret. Brukes av QRCodeModal.
+ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+  .print-area {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+  }
+}

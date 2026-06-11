@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FaArrowLeft, FaEllipsisH, FaEdit, FaFileExport, FaCheck, FaExclamationTriangle, FaHandPaper } from 'react-icons/fa';
+import { FaArrowLeft, FaEllipsisH, FaEdit, FaFileExport, FaCheck, FaExclamationTriangle, FaHandPaper, FaQrcode } from 'react-icons/fa';
 import MaintenanceHistory from '../maintenance/MaintenanceHistory';
 import LogMaintenanceModal from '../maintenance/LogMaintenanceModal';
 import EditEquipmentModal from './EditEquipmentModal';
+import QRCodeModal from './QRCodeModal';
 import WorkOrderSection from '../work-orders/WorkOrderSection';
 import DocumentSection from './DocumentSection';
 import ReservationModal from '../reservations/ReservationModal';
@@ -33,6 +34,7 @@ interface Equipment {
   category_id: string | null;
   notes: string | null;
   image_url: string | null;
+  usage_hours?: number | null;
 }
 
 interface MaintenanceLog {
@@ -89,6 +91,7 @@ export default function EquipmentDetailClient({
   const [showLogModal, setShowLogModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showReservationModal, setShowReservationModal] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
   const [showMore, setShowMore] = useState(false);
   const [activeReservation, setActiveReservation] = useState<Reservation | null>(null);
   const [loadingReservation, setLoadingReservation] = useState(true);
@@ -215,6 +218,13 @@ export default function EquipmentDetailClient({
             >
               <FaFileExport className="text-ink3 text-xs" /> Eksporter CSV
             </button>
+            <button
+              type="button"
+              onClick={() => { setShowQRModal(true); setShowMore(false); }}
+              className="w-full text-left px-3 py-2 text-sm text-ink hover:bg-line2 flex items-center gap-2"
+            >
+              <FaQrcode className="text-ink3 text-xs" /> QR-kode
+            </button>
             {!activeReservation && equipment.status !== 'maintenance' && (
               <button
                 type="button"
@@ -267,6 +277,13 @@ export default function EquipmentDetailClient({
           v={equipment.purchase_date ? new Date(equipment.purchase_date).toLocaleDateString('nb-NO', { year: 'numeric', month: 'short' }) : '—'}
           sub=""
         />
+        {equipment.usage_hours != null && (
+          <MetaTile
+            k="Timeteller"
+            v={`${equipment.usage_hours} t`}
+            sub="Oppdateres under Rediger"
+          />
+        )}
       </div>
 
       {/* Action row */}
@@ -331,6 +348,12 @@ export default function EquipmentDetailClient({
           equipment={equipment}
           onClose={() => setShowReservationModal(false)}
           onSuccess={handleSuccess}
+        />
+      )}
+      {showQRModal && (
+        <QRCodeModal
+          equipment={equipment}
+          onClose={() => setShowQRModal(false)}
         />
       )}
     </div>

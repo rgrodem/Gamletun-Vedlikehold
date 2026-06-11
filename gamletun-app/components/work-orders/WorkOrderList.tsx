@@ -6,6 +6,7 @@ import {
   priorityLabels,
   updateWorkOrder,
   isWorkOrderOverdue,
+  isWorkOrderHoursOverdue,
 } from '@/lib/work-orders';
 import { FaPlay, FaCheckCircle, FaRegClock } from 'react-icons/fa';
 import CompleteWorkOrderModal from './CompleteWorkOrderModal';
@@ -31,8 +32,16 @@ const TAG_STYLE: Record<TagKey, { bg: string; fg: string; label: string }> = {
   apen:     { bg: 'bg-amberBg', fg: 'text-amber', label: 'Åpen' },
 };
 
+// Forfalt på dato ELLER på timeteller (driftstimer).
+function isOverdue(wo: WorkOrder): boolean {
+  return (
+    isWorkOrderOverdue(wo.due_date, wo.status) ||
+    isWorkOrderHoursOverdue(wo.due_hours, wo.equipment?.usage_hours, wo.status)
+  );
+}
+
 function statusToTag(wo: WorkOrder): TagKey {
-  if (isWorkOrderOverdue(wo.due_date, wo.status)) return 'forfalt';
+  if (isOverdue(wo)) return 'forfalt';
   if (wo.status === 'in_progress') return 'pagar';
   if (wo.status === 'completed' || wo.status === 'closed') return 'ferdig';
   if (wo.type === 'corrective' && !['completed', 'closed'].includes(wo.status)) return 'feil';
@@ -62,7 +71,7 @@ export default function WorkOrderList({
 
   const filteredWorkOrders = workOrders.filter(wo => {
     switch (activeTab) {
-      case 'overdue': return isWorkOrderOverdue(wo.due_date, wo.status);
+      case 'overdue': return isOverdue(wo);
       case 'faults': return wo.type === 'corrective' && !['completed', 'closed'].includes(wo.status);
       case 'scheduled': return wo.status === 'scheduled';
       case 'in_progress': return wo.status === 'in_progress';
@@ -73,7 +82,7 @@ export default function WorkOrderList({
 
   const counts = {
     all: workOrders.length,
-    overdue: workOrders.filter(wo => isWorkOrderOverdue(wo.due_date, wo.status)).length,
+    overdue: workOrders.filter(wo => isOverdue(wo)).length,
     faults: workOrders.filter(wo => wo.type === 'corrective' && !['completed', 'closed'].includes(wo.status)).length,
     scheduled: workOrders.filter(wo => wo.status === 'scheduled').length,
     in_progress: workOrders.filter(wo => wo.status === 'in_progress').length,
@@ -155,7 +164,7 @@ export default function WorkOrderList({
       ) : (
         <div className="flex flex-col gap-2.5">
           {filteredWorkOrders.map(wo => {
-            const overdueFlag = isWorkOrderOverdue(wo.due_date, wo.status);
+            const overdueFlag = isOverdue(wo);
             const tagKey = statusToTag(wo);
             const tag = TAG_STYLE[tagKey];
             return (
@@ -192,7 +201,10 @@ export default function WorkOrderList({
                 >
                   <span className="inline-flex items-center gap-1.5">
                     <FaRegClock className="text-[12px]" />
-                    {formatDue(wo.due_date, overdueFlag) || priorityLabels[wo.priority]}
+                    {isWorkOrderHoursOverdue(wo.due_hours, wo.equipment?.usage_hours, wo.status)
+                      ? `Forfalt · ${wo.due_hours} t nådd`
+                      : formatDue(wo.due_date, isWorkOrderOverdue(wo.due_date, wo.status)) ||
+                        (wo.due_hours != null ? `Ved ${wo.due_hours} t` : priorityLabels[wo.priority])}
                   </span>
 
                   <span className="inline-flex items-center gap-2">

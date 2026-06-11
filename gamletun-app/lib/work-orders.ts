@@ -25,6 +25,7 @@ export interface WorkOrder {
   actual_hours: number | null;
   actual_cost: number | null;
   due_date: string | null;
+  due_hours: number | null;
   scheduled_date: string | null;
   is_recurring: boolean;
   recurrence_interval_days: number | null;
@@ -40,6 +41,7 @@ export interface WorkOrder {
   equipment?: {
     id: string;
     name: string;
+    usage_hours?: number | null;
   };
 }
 
@@ -66,6 +68,7 @@ export interface CreateWorkOrderData {
   estimated_hours?: number;
   estimated_cost?: number;
   due_date?: string;
+  due_hours?: number;
   scheduled_date?: string;
   is_recurring?: boolean;
   recurrence_interval_days?: number;
@@ -83,6 +86,7 @@ export interface UpdateWorkOrderData {
   actual_hours?: number | null;
   actual_cost?: number | null;
   due_date?: string | null;
+  due_hours?: number | null;
   scheduled_date?: string | null;
   is_recurring?: boolean;
   recurrence_interval_days?: number | null;
@@ -112,6 +116,18 @@ function parseDueDate(dueDate: string): Date {
 export function isWorkOrderOverdue(dueDate: string | null, status: WorkOrderStatus): boolean {
   if (!dueDate || ['completed', 'closed'].includes(status)) return false;
   return parseDueDate(dueDate) < new Date();
+}
+
+// Timebasert forfall: ordren forfaller når utstyrets timeteller (usage_hours)
+// har nådd due_hours. Krever at begge verdiene finnes.
+export function isWorkOrderHoursOverdue(
+  dueHours: number | null | undefined,
+  usageHours: number | null | undefined,
+  status: WorkOrderStatus
+): boolean {
+  if (dueHours == null || usageHours == null) return false;
+  if (['completed', 'closed'].includes(status)) return false;
+  return usageHours >= dueHours;
 }
 
 // "Forfaller snart" = ikke forfalt ennå, men innen `days` dager frem.
@@ -162,7 +178,7 @@ export async function getWorkOrders(filters?: {
     .from('work_orders')
     .select(`
       *,
-      equipment:equipment_id (id, name)
+      equipment:equipment_id (id, name, usage_hours)
     `)
     .order('created_at', { ascending: false });
 
@@ -261,7 +277,7 @@ export async function getWorkOrder(id: string): Promise<WorkOrder | null> {
     .from('work_orders')
     .select(`
       *,
-      equipment:equipment_id (id, name)
+      equipment:equipment_id (id, name, usage_hours)
     `)
     .eq('id', id)
     .single();

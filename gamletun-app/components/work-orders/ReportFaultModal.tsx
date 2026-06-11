@@ -1,9 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FaTimes, FaExclamationTriangle } from 'react-icons/fa';
+import { FaTimes, FaExclamationTriangle, FaCamera, FaImage, FaTrash } from 'react-icons/fa';
 import { createWorkOrder, WorkOrderPriority } from '@/lib/work-orders';
 import { getActiveReservationForEquipment } from '@/lib/reservations';
+import { uploadWorkOrderAttachment } from '@/lib/work-order-attachments';
+import { formatFileSize } from '@/lib/storage';
 import { useModalBehavior } from '@/lib/use-modal-behavior';
 
 interface Equipment {
@@ -27,6 +29,17 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [reservedBy, setReservedBy] = useState<{ name: string; from: string } | null>(null);
+  const [photos, setPhotos] = useState<File[]>([]);
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files) return;
+    const newFiles = Array.from(e.target.files);
+    if (newFiles.some(f => f.size > 40 * 1024 * 1024)) {
+      setError('Noen filer er for store. Maks 40 MB per fil.');
+      return;
+    }
+    setPhotos(prev => [...prev, ...newFiles]);
+  };
 
   // Warn the reporter if this equipment is already reserved by someone — they
   // should be told it's now defective. (Email notification is a later step.)
@@ -54,7 +67,7 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
     setError('');
 
     try {
-      await createWorkOrder({
+      const workOrder = await createWorkOrder({
         equipment_id: equipment.id,
         type: 'corrective',
         priority,
@@ -62,6 +75,16 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
         description: description || undefined,
         due_date: dueDate || undefined,
       });
+
+      // Last opp foto av feilen. Feilmeldingen er allerede opprettet, så en
+      // feilet opplasting skal ikke stoppe flyten — bare logges.
+      for (const photo of photos) {
+        try {
+          await uploadWorkOrderAttachment(workOrder.id, photo);
+        } catch (uploadError) {
+          console.error('Error uploading fault photo:', uploadError);
+        }
+      }
 
       onSuccess();
       onClose();
@@ -180,6 +203,52 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
               className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-transparent outline-none transition-all resize-none"
               placeholder="Detaljert beskrivelse av problemet..."
             />
+          </div>
+
+          {/* Photos */}
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Foto av feilen (valgfritt)
+            </label>
+            <label className="block cursor-pointer border border-dashed border-gray-300 rounded-xl px-5 py-5 text-center text-gray-500 hover:border-gray-400 transition-colors">
+              <span className="inline-flex items-center gap-2">
+                <FaCamera className="text-[16px]" />
+                <span className="text-sm font-medium">Ta bilde eller last opp</span>
+              </span>
+              <input
+                type="file"
+                onChange={handlePhotoSelect}
+                accept="image/*"
+                multiple
+                className="hidden"
+              />
+            </label>
+            {photos.length > 0 && (
+              <div className="mt-2.5 space-y-2">
+                {photos.map((file, index) => (
+                  <div
+                    key={`${file.name}-${index}`}
+                    className="flex items-center justify-between border border-gray-200 rounded-xl px-3 py-2.5"
+                  >
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      <FaImage className="text-blue-500 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium text-gray-900 truncate">{file.name}</p>
+                        <p className="text-[11px] text-gray-500">{formatFileSize(file.size)}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setPhotos(prev => prev.filter((_, i) => i !== index))}
+                      className="p-2 text-red-600 rounded-lg"
+                      aria-label="Fjern bilde"
+                    >
+                      <FaTrash className="text-[12px]" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Due Date */}

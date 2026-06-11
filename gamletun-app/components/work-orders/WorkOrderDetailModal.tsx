@@ -18,6 +18,8 @@ import {
 } from '@/lib/work-orders';
 import { useModalBehavior } from '@/lib/use-modal-behavior';
 import CompleteWorkOrderModal from './CompleteWorkOrderModal';
+import WorkOrderAttachmentsSection from './WorkOrderAttachmentsSection';
+import WorkOrderPartsSection from './WorkOrderPartsSection';
 
 interface WorkOrderDetailModalProps {
   workOrder: WorkOrder;
@@ -307,6 +309,16 @@ export default function WorkOrderDetailModal({ workOrder: initialWorkOrder, onCl
                 </p>
               </div>
             )}
+            {workOrder.due_hours != null && (
+              <div>
+                <p className="text-xs text-gray-500 mb-1">Forfaller ved timetall</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {workOrder.due_hours} t
+                  {workOrder.equipment?.usage_hours != null &&
+                    ` (nå ${workOrder.equipment.usage_hours} t)`}
+                </p>
+              </div>
+            )}
             {workOrder.estimated_hours && (
               <div>
                 <p className="text-xs text-gray-500 mb-1">Estimerte timer</p>
@@ -359,6 +371,18 @@ export default function WorkOrderDetailModal({ workOrder: initialWorkOrder, onCl
               </div>
             </div>
           )}
+
+          {/* Photos */}
+          <WorkOrderAttachmentsSection
+            workOrderId={workOrder.id}
+            readOnly={['completed', 'closed'].includes(workOrder.status)}
+          />
+
+          {/* Parts */}
+          <WorkOrderPartsSection
+            workOrderId={workOrder.id}
+            readOnly={['completed', 'closed'].includes(workOrder.status)}
+          />
 
           {/* Comments Section */}
           <div>

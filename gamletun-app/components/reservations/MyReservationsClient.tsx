@@ -3,15 +3,17 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { FaArrowLeft, FaCalendarAlt, FaClock, FaCheckCircle, FaBan, FaHourglass } from 'react-icons/fa';
+import { FaArrowLeft, FaCalendarAlt, FaClock, FaCheckCircle, FaBan, FaHourglass, FaExclamationTriangle } from 'react-icons/fa';
 import { Reservation, completeReservation, cancelReservation } from '@/lib/reservations';
 import { useRouter } from 'next/navigation';
 
 interface MyReservationsClientProps {
   reservations: Reservation[];
+  /** Åpne feilmeldinger (titler) per equipment_id — vises som varsel på aktive reservasjoner. */
+  faultsByEquipment?: Record<string, string[]>;
 }
 
-export default function MyReservationsClient({ reservations }: MyReservationsClientProps) {
+export default function MyReservationsClient({ reservations, faultsByEquipment = {} }: MyReservationsClientProps) {
   const [loading, setLoading] = useState<string | null>(null);
   const router = useRouter();
 
@@ -180,6 +182,18 @@ export default function MyReservationsClient({ reservations }: MyReservationsCli
         {reservation.notes && (
           <div className="mb-4 p-3 bg-gray-50 rounded-lg">
             <p className="text-sm text-gray-700 italic">&quot;{reservation.notes}&quot;</p>
+          </div>
+        )}
+
+        {/* Fault warning */}
+        {isActive && (faultsByEquipment[reservation.equipment_id]?.length ?? 0) > 0 && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-300 rounded-lg flex gap-2.5">
+            <FaExclamationTriangle className="text-amber-600 mt-0.5 flex-shrink-0" />
+            <div className="text-sm text-amber-900">
+              <p className="font-semibold">Utstyret er meldt defekt</p>
+              <p>{faultsByEquipment[reservation.equipment_id].join(' · ')}</p>
+              <p className="mt-1 text-xs">Sjekk tilstanden før du bruker utstyret.</p>
+            </div>
           </div>
         )}
 

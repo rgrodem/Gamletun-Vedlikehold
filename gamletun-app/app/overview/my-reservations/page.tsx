@@ -27,5 +27,31 @@ export default async function MyReservationsPage() {
     .eq('user_id', user.id)
     .order('start_time', { ascending: false });
 
-  return <MyReservationsClient reservations={reservations || []} />;
+  // Varsle brukeren hvis utstyr de har reservert har fått meldt feil etterpå.
+  // Lav-prioritet (kosmetiske) feil varsles ikke.
+  const reservationData = reservations || [];
+  const activeEquipmentIds = Array.from(
+    new Set(
+      reservationData
+        .filter((r) => r.status === 'active')
+        .map((r) => r.equipment_id as string)
+    )
+  );
+
+  const faultsByEquipment: Record<string, string[]> = {};
+  if (activeEquipmentIds.length > 0) {
+    const { data: faults } = await supabase
+      .from('work_orders')
+      .select('equipment_id, title')
+      .in('equipment_id', activeEquipmentIds)
+      .eq('type', 'corrective')
+      .neq('priority', 'low')
+      .in('status', ['open', 'in_progress', 'waiting_parts']);
+
+    (faults || []).forEach((fault) => {
+      (faultsByEquipment[fault.equipment_id] ||= []).push(fault.title);
+    });
+  }
+
+  return <MyReservationsClient reservations={reservationData} faultsByEquipment={faultsByEquipment} />;
 }

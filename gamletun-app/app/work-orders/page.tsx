@@ -25,7 +25,7 @@ export default async function WorkOrdersPage({
     .from('work_orders')
     .select(`
       *,
-      equipment:equipment_id (id, name)
+      equipment:equipment_id (id, name, usage_hours)
     `)
     .order('due_date', { ascending: true, nullsFirst: false });
 

@@ -22,6 +22,7 @@ export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [dueHours, setDueHours] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [intervalDays, setIntervalDays] = useState('');
   const [estimatedHours, setEstimatedHours] = useState('');
@@ -55,6 +56,7 @@ export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess
         title,
         description: description || undefined,
         due_date: dueDate,
+        due_hours: dueHours.trim() ? parseFloat(dueHours.replace(',', '.')) : undefined,
         scheduled_date: dueDate,
         is_recurring: isRecurring,
         recurrence_interval_days: intervalDays ? parseInt(intervalDays) : undefined,
@@ -133,18 +135,36 @@ export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess
             />
           </div>
 
-          {/* Due Date */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Forfallsdato <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all min-h-[44px]"
-            />
+          {/* Due Date + Due Hours */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Forfallsdato <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                required
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all min-h-[44px]"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Eller ved timetall (valgfritt)
+              </label>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={dueHours}
+                onChange={(e) => setDueHours(e.target.value)}
+                placeholder="F.eks. 1500 t"
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all min-h-[44px]"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Forfaller også når utstyrets timeteller når dette tallet.
+              </p>
+            </div>
           </div>
 
           {/* Recurring */}

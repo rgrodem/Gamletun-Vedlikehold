@@ -23,6 +23,7 @@ interface Equipment {
   category_id: string | null;
   notes: string | null;
   image_url: string | null;
+  usage_hours?: number | null;
 }
 
 interface EditEquipmentModalProps {
@@ -38,6 +39,9 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
   const [model, setModel] = useState(equipment.model || '');
   const [serialNumber, setSerialNumber] = useState(equipment.serial_number || '');
   const [purchaseDate, setPurchaseDate] = useState(equipment.purchase_date || '');
+  const [usageHours, setUsageHours] = useState(
+    equipment.usage_hours != null ? String(equipment.usage_hours) : ''
+  );
   // Only the manual drift-status is editable here. "in_use"/"maintenance" are
   // derived from reservations/work orders, so map those to "active" (in drift).
   const [status, setStatus] = useState(equipment.status === 'inactive' ? 'inactive' : 'active');
@@ -82,6 +86,7 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
           model: model.trim() || null,
           serial_number: serialNumber.trim() || null,
           purchase_date: purchaseDate || null,
+          usage_hours: usageHours.trim() ? parseFloat(usageHours.replace(',', '.')) : null,
           status,
           category_id: categoryId || null,
           notes: notes.trim() || null,
@@ -258,17 +263,35 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
             </div>
           </div>
 
-          {/* Purchase Date */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Kjøpsdato
-            </label>
-            <input
-              type="date"
-              value={purchaseDate}
-              onChange={(e) => setPurchaseDate(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+          {/* Purchase Date + Usage Hours */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Kjøpsdato
+              </label>
+              <input
+                type="date"
+                value={purchaseDate}
+                onChange={(e) => setPurchaseDate(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Timeteller (driftstimer)
+              </label>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={usageHours}
+                onChange={(e) => setUsageHours(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="F.eks. 1250"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Avlest fra maskinens timeteller. Brukes til timebasert vedlikehold.
+              </p>
+            </div>
           </div>
 
           {/* Notes */}
