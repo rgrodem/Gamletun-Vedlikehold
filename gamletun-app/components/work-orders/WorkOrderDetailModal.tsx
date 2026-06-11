@@ -16,6 +16,8 @@ import {
   priorityColors,
   typeLabels
 } from '@/lib/work-orders';
+import { useModalBehavior } from '@/lib/use-modal-behavior';
+import CompleteWorkOrderModal from './CompleteWorkOrderModal';
 
 interface WorkOrderDetailModalProps {
   workOrder: WorkOrder;
@@ -23,14 +25,24 @@ interface WorkOrderDetailModalProps {
   onUpdate: () => void;
 }
 
-export default function WorkOrderDetailModal({ workOrder, onClose, onUpdate }: WorkOrderDetailModalProps) {
+export default function WorkOrderDetailModal({ workOrder: initialWorkOrder, onClose, onUpdate }: WorkOrderDetailModalProps) {
+  // Local copy so the modal can stay open and show fresh status after
+  // "Start arbeid" etc., instead of forcing the user out and back in.
+  const [workOrder, setWorkOrder] = useState(initialWorkOrder);
   const [comments, setComments] = useState<WorkOrderComment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(workOrder.title);
-  const [editedDescription, setEditedDescription] = useState(workOrder.description || '');
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(initialWorkOrder.title);
+  const [editedDescription, setEditedDescription] = useState(initialWorkOrder.description || '');
+
+  useModalBehavior(onClose);
+
+  useEffect(() => {
+    setWorkOrder(initialWorkOrder);
+  }, [initialWorkOrder]);
 
   useEffect(() => {
     loadComments();
@@ -70,6 +82,7 @@ export default function WorkOrderDetailModal({ workOrder, onClose, onUpdate }: W
         title: editedTitle,
         description: editedDescription || null,
       });
+      setWorkOrder(prev => ({ ...prev, title: editedTitle, description: editedDescription || null }));
       setIsEditing(false);
       onUpdate();
     } catch (error) {
@@ -100,6 +113,10 @@ export default function WorkOrderDetailModal({ workOrder, onClose, onUpdate }: W
         workOrder.status,
         newStatus
       );
+      // Stay in the modal with fresh status so the next step (e.g. "Bekreft
+      // reparasjon") is available right away.
+      setWorkOrder(prev => ({ ...prev, status: newStatus }));
+      await loadComments();
       onUpdate();
     } catch (error) {
       console.error('Error changing status:', error);
@@ -118,8 +135,8 @@ export default function WorkOrderDetailModal({ workOrder, onClose, onUpdate }: W
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full my-8 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4 overflow-y-auto overscroll-contain">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full my-8 max-h-[90vh] overflow-y-auto overscroll-contain">
         {/* Header */}
         <div className="sticky top-0 bg-white flex items-start justify-between p-6 border-b border-gray-200 rounded-t-2xl z-10">
           <div className="flex-1 pr-4">
@@ -248,6 +265,15 @@ export default function WorkOrderDetailModal({ workOrder, onClose, onUpdate }: W
                   >
                     <FaPlay className="text-sm" />
                     <span>Fortsett arbeid</span>
+                  </button>
+                )}
+                {['in_progress', 'waiting_parts'].includes(workOrder.status) && (
+                  <button
+                    onClick={() => setShowCompleteModal(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium text-sm"
+                  >
+                    <FaCheckCircle className="text-sm" />
+                    <span>{workOrder.type === 'corrective' ? 'Utbedret – bekreft reparasjon' : 'Fullfør arbeidsordre'}</span>
                   </button>
                 )}
               </div>
@@ -389,6 +415,18 @@ export default function WorkOrderDetailModal({ workOrder, onClose, onUpdate }: W
           </div>
         </div>
       </div>
+
+      {showCompleteModal && (
+        <CompleteWorkOrderModal
+          workOrder={workOrder}
+          onClose={() => setShowCompleteModal(false)}
+          onSuccess={() => {
+            setShowCompleteModal(false);
+            onUpdate();
+            onClose();
+          }}
+        />
+      )}
     </div>
   );
 }

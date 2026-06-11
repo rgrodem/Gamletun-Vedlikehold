@@ -84,11 +84,14 @@ export async function checkAvailability(
 
   // Block reservation when there is an open corrective work order (a reported
   // fault). Broken equipment should not be bookable until the fault is handled.
+  // Faults with priority 'low' (cosmetic, e.g. a cracked glass on a light) do
+  // NOT block booking — the equipment is still usable.
   const { data: openFaults, error: faultError } = await supabase
     .from('work_orders')
     .select('id, title')
     .eq('equipment_id', equipmentId)
     .eq('type', 'corrective')
+    .neq('priority', 'low')
     .in('status', ['open', 'in_progress', 'waiting_parts'])
     .limit(1);
 

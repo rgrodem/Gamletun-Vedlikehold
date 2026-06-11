@@ -9,6 +9,8 @@ type SupabaseStatusClient = Pick<SupabaseClient, 'from'>;
  *
  * Priority:
  * 1. Active work in progress / waiting for parts -> maintenance
+ *    (low-priority work is ignored: cosmetic faults don't take the
+ *    equipment out of service)
  * 2. Active reservation that has started -> in_use
  * 3. Manually inactive equipment stays inactive
  * 4. Otherwise active
@@ -27,6 +29,7 @@ export async function refreshEquipmentStatusWithClient(
     .from('work_orders')
     .select('id')
     .eq('equipment_id', equipmentId)
+    .neq('priority', 'low')
     .in('status', ['in_progress', 'waiting_parts']);
 
   if (workOrderError) {

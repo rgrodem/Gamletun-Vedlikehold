@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { FaTools, FaTimes, FaTrash } from 'react-icons/fa';
 import { createClient } from '@/lib/supabase/client';
+import { useModalBehavior } from '@/lib/use-modal-behavior';
 
 interface MaintenanceLog {
   id: string;
@@ -21,6 +22,7 @@ interface EditMaintenanceModalProps {
 }
 
 export default function EditMaintenanceModal({ log, equipmentName, onClose, onSuccess }: EditMaintenanceModalProps) {
+  useModalBehavior(onClose);
   const [typeValue, setTypeValue] = useState(log.maintenance_type?.type_name || '');
   const [description, setDescription] = useState(log.description || '');
   const [performedDate, setPerformedDate] = useState(log.performed_date);
@@ -82,8 +84,8 @@ export default function EditMaintenanceModal({ log, equipmentName, onClose, onSu
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full my-8 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4 overflow-y-auto overscroll-contain">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full my-8 max-h-[90vh] overflow-y-auto overscroll-contain">
         {/* Header */}
         <div className="sticky top-0 bg-white flex items-center justify-between p-4 sm:p-6 border-b border-gray-200 rounded-t-2xl z-10">
           <div>

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { FaTimes, FaClock, FaCalendarAlt, FaUser } from 'react-icons/fa';
 import { createReservation, checkAvailability } from '@/lib/reservations';
+import { useModalBehavior } from '@/lib/use-modal-behavior';
 
 interface Equipment {
   id: string;
@@ -17,6 +18,7 @@ interface ReservationModalProps {
 }
 
 export default function ReservationModal({ equipment, onClose, onSuccess }: ReservationModalProps) {
+  useModalBehavior(onClose);
   const [mode, setMode] = useState<'immediate' | 'scheduled'>('immediate');
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [startTime, setStartTime] = useState('08:00');
@@ -136,8 +138,8 @@ export default function ReservationModal({ equipment, onClose, onSuccess }: Rese
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full my-8 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4 overflow-y-auto overscroll-contain">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full my-8 max-h-[90vh] overflow-y-auto overscroll-contain">
         {/* Header */}
         <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6 rounded-t-2xl flex justify-between items-center z-10">
           <div>

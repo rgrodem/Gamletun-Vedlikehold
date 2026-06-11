@@ -9,6 +9,7 @@ import ReportFaultModal from '../work-orders/ReportFaultModal';
 import AddEquipmentModal from './AddEquipmentModal';
 import LogMaintenanceModal from '../maintenance/LogMaintenanceModal';
 import EditEquipmentModal from './EditEquipmentModal';
+import ReservationModal from '../reservations/ReservationModal';
 import { formatDueLabel, DUE_SOON_DAYS } from '@/lib/work-orders';
 
 interface Category {
@@ -122,10 +123,18 @@ export default function EquipmentDashboard({
   const [maintenanceEquipment, setMaintenanceEquipment] = useState<Equipment | null>(null);
   const [editEquipment, setEditEquipment] = useState<Equipment | null>(null);
   const [faultEquipment, setFaultEquipment] = useState<Equipment | null>(null);
+  const [reserveEquipment, setReserveEquipment] = useState<Equipment | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const router = useRouter();
   const searchParams = useSearchParams();
   const addFromNav = searchParams.get('add') === 'equipment';
+  // Hurtigmenyen i bunnfeltet sender hit med ?action=reserve|fault. Da går
+  // listen i "velg utstyr"-modus: trykk på et utstyr åpner riktig modal i
+  // stedet for å navigere til detaljsiden.
+  const actionParam = searchParams.get('action');
+  const pickerAction: 'reserve' | 'fault' | null =
+    actionParam === 'reserve' || actionParam === 'fault' ? actionParam : null;
+  const exitPickerMode = () => router.replace('/', { scroll: false });
   // Allow deep-linking to a pre-filtered category, e.g. from the equipment
   // detail page's "Kategori" tile (/?category=<id>).
   const categoryFromUrl = searchParams.get('category');
@@ -263,6 +272,24 @@ export default function EquipmentDashboard({
         </div>
       )}
 
+      {/* Velg utstyr-modus (fra hurtigmenyen i bunnfeltet) */}
+      {pickerAction && (
+        <div className="bg-skyBg border border-sky/30 rounded-[14px] px-3.5 py-3 flex items-center justify-between gap-3">
+          <p className="text-[14px] text-ink m-0">
+            {pickerAction === 'reserve'
+              ? 'Velg utstyret du vil reservere'
+              : 'Velg utstyret du vil melde feil på'}
+          </p>
+          <button
+            type="button"
+            onClick={exitPickerMode}
+            className="flex-shrink-0 text-[13px] font-semibold text-ink border border-line bg-paper rounded-full px-3 py-1.5"
+          >
+            Avbryt
+          </button>
+        </div>
+      )}
+
       {/* Search */}
       <div className="flex items-center gap-2.5 bg-paper border border-line rounded-[14px] px-3.5 py-3.5 text-ink3">
         <FaSearch className="text-[16px] flex-shrink-0" />
@@ -333,12 +360,9 @@ export default function EquipmentDashboard({
                   minute: '2-digit',
                 })
               : null;
-            return (
-              <Link
-                key={e.id}
-                href={`/equipment/${e.id}`}
-                className="flex items-center gap-3.5 bg-paper border border-line rounded-[18px] p-3.5"
-              >
+            const cardClass = 'flex items-center gap-3.5 bg-paper border border-line rounded-[18px] p-3.5';
+            const cardContent = (
+              <>
                 <div
                   className="relative w-16 h-16 rounded-[14px] flex-shrink-0 flex items-center justify-center text-[28px] border border-line overflow-hidden"
                   style={{
@@ -379,6 +403,22 @@ export default function EquipmentDashboard({
                 </div>
 
                 <FaChevronRight className="text-ink3 flex-shrink-0" />
+              </>
+            );
+            return pickerAction ? (
+              <button
+                key={e.id}
+                type="button"
+                onClick={() =>
+                  pickerAction === 'reserve' ? setReserveEquipment(e) : setFaultEquipment(e)
+                }
+                className={`${cardClass} w-full text-left active:bg-line2`}
+              >
+                {cardContent}
+              </button>
+            ) : (
+              <Link key={e.id} href={`/equipment/${e.id}`} className={cardClass}>
+                {cardContent}
               </Link>
             );
           })}
@@ -429,7 +469,22 @@ export default function EquipmentDashboard({
         <ReportFaultModal
           equipment={faultEquipment}
           onClose={() => setFaultEquipment(null)}
-          onSuccess={() => { setFaultEquipment(null); handleSuccess(); }}
+          onSuccess={() => {
+            setFaultEquipment(null);
+            if (pickerAction) exitPickerMode();
+            handleSuccess();
+          }}
+        />
+      )}
+      {reserveEquipment && (
+        <ReservationModal
+          equipment={reserveEquipment}
+          onClose={() => setReserveEquipment(null)}
+          onSuccess={() => {
+            setReserveEquipment(null);
+            if (pickerAction) exitPickerMode();
+            handleSuccess();
+          }}
         />
       )}
     </div>

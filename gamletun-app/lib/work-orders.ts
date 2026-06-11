@@ -322,12 +322,16 @@ export async function updateWorkOrder(
   // First, get the current work order to access equipment_id
   const { data: currentWorkOrder } = await supabase
     .from('work_orders')
-    .select('equipment_id, status')
+    .select('equipment_id, status, priority')
     .eq('id', id)
     .single();
 
+  // Starting work normally requires the equipment to be free of reservations.
+  // Low-priority (cosmetic) work is exempt — it doesn't take the equipment out
+  // of service, so it can run alongside a reservation.
   if (
     currentWorkOrder &&
+    currentWorkOrder.priority !== 'low' &&
     updates.status === 'in_progress' &&
     currentWorkOrder.status !== 'in_progress'
   ) {

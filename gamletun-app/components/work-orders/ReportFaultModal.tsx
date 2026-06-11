@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { FaTimes, FaExclamationTriangle } from 'react-icons/fa';
 import { createWorkOrder, WorkOrderPriority } from '@/lib/work-orders';
 import { getActiveReservationForEquipment } from '@/lib/reservations';
+import { useModalBehavior } from '@/lib/use-modal-behavior';
 
 interface Equipment {
   id: string;
@@ -17,11 +18,7 @@ interface ReportFaultModalProps {
 }
 
 export default function ReportFaultModal({ equipment, onClose, onSuccess }: ReportFaultModalProps) {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  useModalBehavior(onClose);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -75,7 +72,7 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="fault-modal-title">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4 overflow-y-auto overscroll-contain" role="dialog" aria-modal="true" aria-labelledby="fault-modal-title">
       <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full my-8">
         {/* Header */}
         <div className="sticky top-0 bg-white flex items-center justify-between p-6 border-b border-gray-200 rounded-t-2xl z-10">
@@ -111,7 +108,10 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
               <p className="text-amber-900 text-sm">
                 <strong>OBS:</strong> dette utstyret er reservert av{' '}
                 <strong>{reservedBy.name}</strong> fra {reservedBy.from}. Gi beskjed om at
-                utstyret nå er meldt defekt. Når feilen er åpen kan utstyret ikke reserveres på nytt.
+                utstyret nå er meldt defekt.
+                {priority === 'low'
+                  ? ' Feil med lav prioritet blokkerer ikke nye reservasjoner.'
+                  : ' Når feilen er åpen kan utstyret ikke reserveres på nytt.'}
               </p>
             </div>
           )}
@@ -159,6 +159,11 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
                 </button>
               ))}
             </div>
+            <p className="text-xs text-gray-500 mt-2">
+              {priority === 'low'
+                ? 'Lav prioritet er for kosmetiske feil (f.eks. sprukket lyktglass). Utstyret kan fortsatt reserveres og brukes.'
+                : 'Utstyret kan ikke reserveres før feilen er utbedret.'}
+            </p>
           </div>
 
           {/* Description */}

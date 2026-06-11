@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { FaTimes, FaTrash, FaExclamationTriangle } from 'react-icons/fa';
+import { useModalBehavior } from '@/lib/use-modal-behavior';
 
 interface DeleteCategoryModalProps {
   category: {
@@ -16,6 +17,7 @@ interface DeleteCategoryModalProps {
 }
 
 export default function DeleteCategoryModal({ category, onClose, onSuccess }: DeleteCategoryModalProps) {
+  useModalBehavior(onClose);
   const [equipmentCount, setEquipmentCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +75,7 @@ export default function DeleteCategoryModal({ category, onClose, onSuccess }: De
   const canDelete = equipmentCount === 0;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
       <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">

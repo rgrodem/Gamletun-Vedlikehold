@@ -235,10 +235,9 @@ export default function WorkOrderList({
         <WorkOrderDetailModal
           workOrder={workOrderToView}
           onClose={() => setWorkOrderToView(null)}
-          onUpdate={() => {
-            setWorkOrderToView(null);
-            onStatusChange?.();
-          }}
+          // Keep the modal open on updates (e.g. "Start arbeid") so the user
+          // can go straight to "Bekreft reparasjon" without reopening it.
+          onUpdate={() => onStatusChange?.()}
         />
       )}
     </div>

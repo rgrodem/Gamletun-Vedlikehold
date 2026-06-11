@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { FaTimes, FaCalendarAlt, FaPlus, FaTrash } from 'react-icons/fa';
 import { createWorkOrder, ChecklistItem } from '@/lib/work-orders';
+import { useModalBehavior } from '@/lib/use-modal-behavior';
 
 interface Equipment {
   id: string;
@@ -16,11 +17,7 @@ interface ScheduleMaintenanceModalProps {
 }
 
 export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess }: ScheduleMaintenanceModalProps) {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [onClose]);
+  useModalBehavior(onClose);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -77,8 +74,8 @@ export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="schedule-modal-title">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4 overflow-y-auto overscroll-contain" role="dialog" aria-modal="true" aria-labelledby="schedule-modal-title">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full my-8 max-h-[90vh] overflow-y-auto overscroll-contain">
         {/* Header */}
         <div className="sticky top-0 bg-white flex items-center justify-between p-6 border-b border-gray-200 rounded-t-2xl z-10">
           <div className="flex items-center gap-3">

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { FaTimes, FaSave, FaPlus } from 'react-icons/fa';
+import { useModalBehavior } from '@/lib/use-modal-behavior';
 
 interface CategoryModalProps {
   category?: {
@@ -33,6 +34,7 @@ const commonColors = [
 ];
 
 export default function CategoryModal({ category, onClose, onSuccess }: CategoryModalProps) {
+  useModalBehavior(onClose);
   const [name, setName] = useState(category?.name || '');
   const [icon, setIcon] = useState(category?.icon || '🚜');
   const [color, setColor] = useState(category?.color || '#3b82f6');
@@ -97,8 +99,8 @@ export default function CategoryModal({ category, onClose, onSuccess }: Category
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto overscroll-contain">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <h2 className="text-2xl font-bold text-gray-900">

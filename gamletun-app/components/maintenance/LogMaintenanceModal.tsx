@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { FaTimes, FaImage, FaFileAlt, FaTrash, FaCamera } from 'react-icons/fa';
 import { createClient } from '@/lib/supabase/client';
 import { uploadFile, formatFileSize } from '@/lib/storage';
+import { useModalBehavior } from '@/lib/use-modal-behavior';
 
 interface Equipment {
   id: string;
@@ -20,6 +21,7 @@ interface LogMaintenanceModalProps {
 const PRESET_TYPES = ['Oljeskift', 'Filterbytte', 'Rengjøring', 'Inspeksjon', 'Reparasjon', 'Annet'];
 
 export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: LogMaintenanceModalProps) {
+  useModalBehavior(onClose);
   const [typeValue, setTypeValue] = useState('');
   const [customType, setCustomType] = useState('');
   const [description, setDescription] = useState('');
@@ -130,12 +132,12 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col justify-end"
+      className="fixed inset-0 z-[60] flex flex-col justify-end"
       style={{ background: 'rgba(0,0,0,0.35)' }}
       onClick={onClose}
     >
       <div
-        className="bg-bg rounded-t-[24px] px-5 pt-2.5 pb-6 max-h-[92%] overflow-y-auto noscroll"
+        className="bg-bg rounded-t-[24px] px-5 pt-2.5 pb-6 max-h-[92%] overflow-y-auto overscroll-contain noscroll"
         style={{ boxShadow: '0 -10px 40px rgba(0,0,0,0.15)' }}
         onClick={(e) => e.stopPropagation()}
       >

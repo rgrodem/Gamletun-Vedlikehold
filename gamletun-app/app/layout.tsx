@@ -33,7 +33,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="no">
-      <body className="antialiased bg-bg text-ink pb-16 sm:pb-0">
+      {/* Mobil: plass til bunnfeltet (64px) + pluss-knappen som stikker 20px
+          over + safe-area, så innhold nederst aldri havner bak navigasjonen. */}
+      <body className="antialiased bg-bg text-ink pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-0">
         {children}
         <MobileBottomNav />
         <ServiceWorkerRegister />
