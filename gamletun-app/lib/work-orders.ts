@@ -430,13 +430,16 @@ export async function completeWorkOrder(
   const workOrder = await getWorkOrder(id);
   if (!workOrder) throw new Error('Work order not found');
 
-  // Create maintenance log
+  // Create maintenance log. performed_date is a DATE column, so insert a
+  // date-only string instead of a full timestamp.
   const { data: maintenanceLog, error: logError } = await supabase
     .from('maintenance_logs')
     .insert({
       equipment_id: workOrder.equipment_id,
-      description: `${workOrder.title}\n\n${completionData.comment || ''}`,
-      performed_date: new Date().toISOString(),
+      description: completionData.comment
+        ? `${workOrder.title}\n\n${completionData.comment}`
+        : workOrder.title,
+      performed_date: new Date().toISOString().split('T')[0],
       performed_by: user?.id || null,
     })
     .select()
@@ -459,12 +462,15 @@ export async function completeWorkOrder(
     await addWorkOrderComment(id, completionData.comment, 'in_progress', 'completed');
   }
 
-  // Handle recurring tasks
+  // Handle recurring tasks. Anchor the next due date to the original due date
+  // so the schedule doesn't drift when a task is completed late — but never
+  // schedule it in the past.
   if (workOrder.is_recurring && workOrder.recurrence_interval_days) {
-    const nextDueDate = calculateNextDueDate(
-      new Date(),
-      workOrder.recurrence_interval_days
-    );
+    const anchor = workOrder.due_date ? parseDueDate(workOrder.due_date) : new Date();
+    let nextDueDate = calculateNextDueDate(anchor, workOrder.recurrence_interval_days);
+    if (nextDueDate < new Date()) {
+      nextDueDate = calculateNextDueDate(new Date(), workOrder.recurrence_interval_days);
+    }
 
     await createWorkOrder({
       equipment_id: workOrder.equipment_id,

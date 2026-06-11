@@ -82,7 +82,7 @@ export default function MobileBottomNav() {
         aria-label="Mobilnavigasjon"
       >
         {menuOpen && (
-          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-[calc(100vw-32px)] max-w-sm grid grid-cols-3 gap-2.5 px-1">
+          <div className="absolute bottom-full left-1/2 -translate-x-1/2 z-50 mb-3 w-[calc(100vw-32px)] max-w-sm grid grid-cols-3 gap-2.5 px-1">
             {quickActions.map(({ href, Icon, label }) => (
               <Link
                 key={href}

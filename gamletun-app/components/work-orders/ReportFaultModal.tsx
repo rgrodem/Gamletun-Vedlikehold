@@ -42,7 +42,9 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
           }),
         });
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error('Failed to check active reservation:', err);
+      });
     return () => { cancelled = true; };
   }, [equipment.id]);
 
@@ -110,7 +112,7 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
                 <strong>{reservedBy.name}</strong> fra {reservedBy.from}. Gi beskjed om at
                 utstyret nå er meldt defekt.
                 {priority === 'low'
-                  ? ' Feil med lav prioritet blokkerer ikke nye reservasjoner.'
+                  ? ' Denne feilen har lav prioritet og blokkerer ikke nye reservasjoner.'
                   : ' Når feilen er åpen kan utstyret ikke reserveres på nytt.'}
               </p>
             </div>

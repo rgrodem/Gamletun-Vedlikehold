@@ -135,7 +135,13 @@ export default function WorkOrderDetailModal({ workOrder: initialWorkOrder, onCl
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4 overflow-y-auto overscroll-contain">
+    <div
+      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4 overflow-y-auto overscroll-contain"
+      onClick={(e) => {
+        // Klikk på selve bakteppet (ikke innholdet) lukker visningen.
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
       <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full my-8 max-h-[90vh] overflow-y-auto overscroll-contain">
         {/* Header */}
         <div className="sticky top-0 bg-white flex items-start justify-between p-6 border-b border-gray-200 rounded-t-2xl z-10">

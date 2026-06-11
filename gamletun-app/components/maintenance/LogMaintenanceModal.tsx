@@ -158,7 +158,7 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
             type="button"
             onClick={onClose}
             aria-label="Lukk"
-            className="w-[34px] h-[34px] rounded-full bg-paper border border-line text-ink flex items-center justify-center"
+            className="w-[44px] h-[44px] rounded-full bg-paper border border-line text-ink flex items-center justify-center"
           >
             <FaTimes className="text-[14px]" />
           </button>
