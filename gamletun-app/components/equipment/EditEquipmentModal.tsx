@@ -86,7 +86,11 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
           model: model.trim() || null,
           serial_number: serialNumber.trim() || null,
           purchase_date: purchaseDate || null,
-          usage_hours: usageHours.trim() ? parseFloat(usageHours.replace(',', '.')) : null,
+          usage_hours: (() => {
+            // Tåler komma som desimaltegn; ugyldig tekst lagres som tomt.
+            const parsed = parseFloat(usageHours.replace(',', '.'));
+            return usageHours.trim() && !isNaN(parsed) ? parsed : null;
+          })(),
           status,
           category_id: categoryId || null,
           notes: notes.trim() || null,

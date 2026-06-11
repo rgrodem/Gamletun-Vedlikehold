@@ -56,7 +56,11 @@ export default function ScheduleMaintenanceModal({ equipment, onClose, onSuccess
         title,
         description: description || undefined,
         due_date: dueDate,
-        due_hours: dueHours.trim() ? parseFloat(dueHours.replace(',', '.')) : undefined,
+        due_hours: (() => {
+          // Tåler komma som desimaltegn; ugyldig tekst sendes ikke med.
+          const parsed = parseFloat(dueHours.replace(',', '.'));
+          return dueHours.trim() && !isNaN(parsed) ? parsed : undefined;
+        })(),
         scheduled_date: dueDate,
         is_recurring: isRecurring,
         recurrence_interval_days: intervalDays ? parseInt(intervalDays) : undefined,

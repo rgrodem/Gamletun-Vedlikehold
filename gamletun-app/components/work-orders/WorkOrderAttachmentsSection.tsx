@@ -105,7 +105,7 @@ export default function WorkOrderAttachmentsSection({ workOrderId, readOnly = fa
                   sizes="(max-width: 640px) 33vw, 25vw"
                 />
               </button>
-            ) : (
+            ) : attachment.url ? (
               <a
                 href={attachment.url}
                 target="_blank"
@@ -115,6 +115,11 @@ export default function WorkOrderAttachmentsSection({ workOrderId, readOnly = fa
                 <FaFileAlt className="text-lg" />
                 <span className="truncate max-w-full">{attachment.file_name}</span>
               </a>
+            ) : (
+              <div className="w-full h-full rounded-lg border border-gray-200 flex flex-col items-center justify-center gap-1 text-gray-400 text-xs p-1">
+                <FaFileAlt className="text-lg" />
+                <span className="truncate max-w-full">{attachment.file_name}</span>
+              </div>
             )}
             {!readOnly && (
               <button
