@@ -339,33 +339,6 @@ export async function getActiveReservationForEquipment(equipmentId: string): Pro
   return data || null;
 }
 
-/**
- * Auto-complete reservations that have passed their end time
- * Should be called periodically or on page load
- */
-export async function autoCompleteExpiredReservations(): Promise<number> {
-  const supabase = createClient();
-
-  const now = new Date().toISOString();
-
-  const { data, error } = await supabase
-    .from('equipment_reservations')
-    .update({
-      status: 'completed',
-      updated_at: now,
-    })
-    .eq('status', 'active')
-    .not('end_time', 'is', null)
-    .lte('end_time', now)
-    .select('id, equipment_id');
-
-  if (error) {
-    console.error('Error auto-completing reservations:', error);
-    return 0;
-  }
-
-  const equipmentIds = Array.from(new Set((data || []).map((reservation) => reservation.equipment_id)));
-  await Promise.all(equipmentIds.map((equipmentId) => refreshEquipmentStatus(equipmentId)));
-
-  return data?.length || 0;
-}
+// Merk: opprydding av utgåtte reservasjoner gjøres server-side — ved
+// forsidelast (app/page.tsx) og daglig av cron-jobben
+// (app/api/cron/reminders/route.ts).

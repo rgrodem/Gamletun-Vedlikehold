@@ -179,7 +179,11 @@ export default function EquipmentDashboard({
     }
     return new Date(value);
   };
-  const overdueCount = nextWorkOrders.filter(w => toDueDate(w.due_date) < todayStart).length;
+  // Foretrekk telleren fra getWorkOrdersDashboard — den fanger også
+  // timebasert forfall (due_hours), som nextWorkOrders (kun dato) ikke ser.
+  const overdueCount =
+    workOrderStats?.overdue ??
+    nextWorkOrders.filter(w => toDueDate(w.due_date) < todayStart).length;
   const dueSoonCount = nextWorkOrders.filter(w => {
     const d = toDueDate(w.due_date);
     return d >= todayStart && d <= dueSoonEnd;

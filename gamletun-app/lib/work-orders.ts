@@ -224,7 +224,7 @@ export async function getWorkOrdersDashboard(client?: SupabaseClient) {
 
   const { data, error } = await supabase
     .from('work_orders')
-    .select('id, type, status, due_date')
+    .select('id, type, status, due_date, due_hours, equipment:equipment_id (usage_hours)')
     .in('status', activeStatuses);
 
   if (error) {
@@ -254,8 +254,20 @@ export async function getWorkOrdersDashboard(client?: SupabaseClient) {
 
   const activeWorkOrders = data || [];
 
+  // Forfalt på timeteller: utstyrets usage_hours har nådd ordrens due_hours.
+  const hoursOverdue = (wo: (typeof activeWorkOrders)[number]) => {
+    const equipment = Array.isArray(wo.equipment) ? wo.equipment[0] : wo.equipment;
+    return (
+      wo.due_hours != null &&
+      equipment?.usage_hours != null &&
+      equipment.usage_hours >= wo.due_hours
+    );
+  };
+
   return {
-    overdue: activeWorkOrders.filter((wo) => wo.due_date && dueDate(wo.due_date) < todayStart).length,
+    overdue: activeWorkOrders.filter(
+      (wo) => (wo.due_date && dueDate(wo.due_date) < todayStart) || hoursOverdue(wo)
+    ).length,
     thisWeek: activeWorkOrders.filter((wo) => {
       if (!wo.due_date) return false;
       const due = dueDate(wo.due_date);
