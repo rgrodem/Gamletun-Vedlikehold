@@ -189,6 +189,13 @@ export async function createReservation(data: CreateReservationData): Promise<Re
 
   await refreshEquipmentStatus(data.equipment_id);
 
+  // E-postvarsel i bakgrunnen — skal aldri blokkere selve reservasjonen.
+  fetch('/api/notify/reservation', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ reservationId: reservation.id }),
+  }).catch((notifyError) => console.error('Reservasjonsvarsel feilet:', notifyError));
+
   return reservation;
 }
 

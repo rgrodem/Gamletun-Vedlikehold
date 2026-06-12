@@ -1,11 +1,13 @@
 # E-postvarsling (Resend)
 
-Appen sender to typer e-post:
+Appen sender tre typer e-post:
 
 1. **Feilvarsel** — når noen melder feil på utstyr, varsles
    vedlikeholdsansvarlig (`NOTIFY_EMAIL`) og alle som har aktiv reservasjon
    på utstyret.
-2. **Daglig påminnelse** (kl. 05:00 UTC ≈ 06–07 norsk tid) — oppsummering av
+2. **Reservasjonsvarsel** — når noen reserverer utstyr, varsles
+   `RESERVATION_NOTIFY_EMAIL` (faller tilbake til `NOTIFY_EMAIL`).
+3. **Daglig påminnelse** (kl. 05:00 UTC ≈ 06–07 norsk tid) — oppsummering av
    forfalt vedlikehold og det som forfaller innen 7 dager, til `NOTIFY_EMAIL`.
 
 Sending feiler aldri «høyt»: mangler en nøkkel, hopper appen bare over
@@ -20,6 +22,7 @@ varslingen og logger det — selve feilmeldingen/arbeidsordren opprettes uansett
 | `SUPABASE_SERVICE_ROLE_KEY` | Supabase Dashboard → Settings → API → `service_role` | Ja |
 | `CRON_SECRET` | Tilfeldig streng (f.eks. `openssl rand -hex 32`) — beskytter cron-endepunktet. Vercel sender den automatisk. | Ja (for påminnelser) |
 | `EMAIL_FROM` | Avsender, f.eks. `Gamletun <varsel@gamletun.no>` | Nei |
+| `RESERVATION_NOTIFY_EMAIL` | Egen mottaker for reservasjonsvarsler, f.eks. `rune@gamletun.no` | Nei |
 
 Husk å **redeploye** etter at variablene er lagt inn (Deployments → ⋯ → Redeploy).
 
