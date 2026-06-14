@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { FaTimes, FaSave, FaTrash } from 'react-icons/fa';
+import { FaTimes, FaSave, FaTrash, FaCloudDownloadAlt } from 'react-icons/fa';
 import { createClient } from '@/lib/supabase/client';
 import ImageUpload from '../uploads/ImageUpload';
 import { deleteFile } from '@/lib/storage';
@@ -70,6 +70,38 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [lookupMessage, setLookupMessage] = useState<{ type: 'ok' | 'error'; text: string } | null>(null);
+
+  const handleVehicleLookup = async () => {
+    const regnr = registrationNumber.trim();
+    if (!regnr) {
+      setLookupMessage({ type: 'error', text: 'Skriv inn registreringsnummer først.' });
+      return;
+    }
+    setLookupLoading(true);
+    setLookupMessage(null);
+    try {
+      const res = await fetch(`/api/vehicle-lookup?regnr=${encodeURIComponent(regnr)}`);
+      const data = await res.json();
+      if (!res.ok) {
+        setLookupMessage({ type: 'error', text: data.error || 'Oppslaget feilet.' });
+        return;
+      }
+      if (data.registrationNumber) setRegistrationNumber(data.registrationNumber);
+      if (data.totalWeightKg != null) setTotalWeight(String(data.totalWeightKg));
+      if (data.curbWeightKg != null) setCurbWeight(String(data.curbWeightKg));
+      if (data.tireDimension) setTireDimension(data.tireDimension);
+      // Fyll modell kun hvis feltet er tomt, så vi ikke overskriver et eget navn.
+      if (data.model && !model.trim()) setModel(data.model);
+      setLookupMessage({ type: 'ok', text: 'Hentet fra Statens Vegvesen.' });
+    } catch (err) {
+      console.error('Kjøretøyoppslag feilet:', err);
+      setLookupMessage({ type: 'error', text: 'Kunne ikke hente data.' });
+    } finally {
+      setLookupLoading(false);
+    }
+  };
 
   const handleImageUploaded = (url: string, path: string) => {
     setImageUrl(url);
@@ -324,22 +356,39 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
           <div className="border-t border-gray-200 pt-5">
             <h3 className="text-sm font-semibold text-gray-900 mb-1">Kjøretøy / tilhenger</h3>
             <p className="text-xs text-gray-500 mb-3">
-              Valgfritt — fyll inn for tilhengere og registrerte kjøretøy.
+              Valgfritt — for tilhengere og registrerte kjøretøy. Skriv inn
+              registreringsnummer og hent resten fra Statens Vegvesen.
             </p>
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Registreringsnummer
-                  </label>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Registreringsnummer
+                </label>
+                <div className="flex gap-2">
                   <input
                     type="text"
                     value={registrationNumber}
-                    onChange={(e) => setRegistrationNumber(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                    onChange={(e) => { setRegistrationNumber(e.target.value); setLookupMessage(null); }}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleVehicleLookup(); } }}
+                    className="flex-1 min-w-0 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
                     placeholder="F.eks. RU 4033"
                   />
+                  <button
+                    type="button"
+                    onClick={handleVehicleLookup}
+                    disabled={lookupLoading || !registrationNumber.trim()}
+                    className="flex-shrink-0 px-4 py-3 bg-blue-600 text-white rounded-lg font-medium text-sm hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
+                    <FaCloudDownloadAlt /> {lookupLoading ? 'Henter…' : 'Hent'}
+                  </button>
                 </div>
+                {lookupMessage && (
+                  <p className={`text-xs mt-1.5 ${lookupMessage.type === 'ok' ? 'text-green-600' : 'text-red-600'}`}>
+                    {lookupMessage.text}
+                  </p>
+                )}
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Dekkdimensjon
@@ -352,11 +401,9 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
                     placeholder="F.eks. 155 R 13"
                   />
                 </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tillatt totalvekt (kg)
+                    Totalvekt (kg)
                   </label>
                   <input
                     type="text"
