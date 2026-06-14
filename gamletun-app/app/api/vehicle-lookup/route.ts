@@ -72,12 +72,38 @@ export async function GET(request: NextRequest) {
     tekniskeData?.dekkOgFelg?.akselDekkOgFelgKombinasjon?.[0]?.akselDekkOgFelg?.[0];
   const generelt = tekniskeData?.generelt;
 
-  return NextResponse.json({
+  // Normaliser en dato- eller tidsstempelverdi til 'YYYY-MM-DD'.
+  const asDate = (value: unknown): string | null =>
+    typeof value === 'string' && value.length >= 10 ? value.slice(0, 10) : null;
+
+  // "Registrert på eier" ligger ikke alltid på samme felt — prøv de mest
+  // sannsynlige stiene i tur og orden.
+  const registrering = vehicle?.registrering;
+  const registeredOwnerDate =
+    asDate(registrering?.fomTidspunkt) ??
+    asDate(registrering?.fomDato) ??
+    asDate(registrering?.registrertForstegangPaEierDato) ??
+    null;
+
+  const response: Record<string, unknown> = {
     registrationNumber: vehicle?.kjoretoyId?.kjennemerke ?? kjennemerke,
     totalWeightKg: vekter?.tillattTotalvekt ?? null,
     curbWeightKg: vekter?.egenvekt ?? null,
     tireDimension: firstTire?.dekkdimensjon ?? null,
     make: generelt?.merke?.[0]?.merke ?? null,
     model: generelt?.handelsbetegnelse?.[0] ?? null,
-  });
+    firstRegistrationDate: asDate(vehicle?.forstegangsregistrering?.registrertForstegangNorgeDato),
+    registeredOwnerDate,
+  };
+
+  // ?debug=1 returnerer de rå registrerings-objektene (ingen eieridentitet)
+  // så feltstier kan bekreftes mot en ekte respons ved behov.
+  if (request.nextUrl.searchParams.get('debug')) {
+    response._debug = {
+      forstegangsregistrering: vehicle?.forstegangsregistrering ?? null,
+      registrering: registrering ?? null,
+    };
+  }
+
+  return NextResponse.json(response);
 }

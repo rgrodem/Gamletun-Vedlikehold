@@ -28,6 +28,8 @@ interface Equipment {
   total_weight_kg?: number | null;
   curb_weight_kg?: number | null;
   tire_dimension?: string | null;
+  first_registration_date?: string | null;
+  registered_owner_date?: string | null;
 }
 
 interface EditEquipmentModalProps {
@@ -60,6 +62,7 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
     equipment.curb_weight_kg != null ? String(equipment.curb_weight_kg) : ''
   );
   const [tireDimension, setTireDimension] = useState(equipment.tire_dimension || '');
+  const [firstRegistrationDate, setFirstRegistrationDate] = useState(equipment.first_registration_date || '');
   // Only the manual drift-status is editable here. "in_use"/"maintenance" are
   // derived from reservations/work orders, so map those to "active" (in drift).
   const [status, setStatus] = useState(equipment.status === 'inactive' ? 'inactive' : 'active');
@@ -92,6 +95,9 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
       if (data.totalWeightKg != null) setTotalWeight(String(data.totalWeightKg));
       if (data.curbWeightKg != null) setCurbWeight(String(data.curbWeightKg));
       if (data.tireDimension) setTireDimension(data.tireDimension);
+      if (data.firstRegistrationDate) setFirstRegistrationDate(data.firstRegistrationDate);
+      // "Registrert på eier" fyller det eksisterende Anskaffet-feltet.
+      if (data.registeredOwnerDate) setPurchaseDate(data.registeredOwnerDate);
       // Fyll modell kun hvis feltet er tomt, så vi ikke overskriver et eget navn.
       if (data.model && !model.trim()) setModel(data.model);
       setLookupMessage({ type: 'ok', text: 'Hentet fra Statens Vegvesen.' });
@@ -145,6 +151,7 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
           total_weight_kg: parseIntOrNull(totalWeight),
           curb_weight_kg: parseIntOrNull(curbWeight),
           tire_dimension: tireDimension.trim() || null,
+          first_registration_date: firstRegistrationDate || null,
           status,
           category_id: categoryId || null,
           notes: notes.trim() || null,
@@ -325,7 +332,7 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Kjøpsdato
+                Anskaffet
               </label>
               <input
                 type="date"
@@ -333,6 +340,9 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
                 onChange={(e) => setPurchaseDate(e.target.value)}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                For kjøretøy: settes til «registrert på eier» ved oppslag.
+              </p>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -427,6 +437,20 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
                     placeholder="F.eks. 345"
                   />
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Registrert første gang (årsmodell)
+                </label>
+                <input
+                  type="date"
+                  value={firstRegistrationDate}
+                  onChange={(e) => setFirstRegistrationDate(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  «Registrert på eier» fylles inn i Anskaffet-feltet over ved oppslag.
+                </p>
               </div>
             </div>
           </div>

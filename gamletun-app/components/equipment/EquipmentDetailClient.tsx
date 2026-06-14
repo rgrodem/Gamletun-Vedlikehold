@@ -39,6 +39,7 @@ interface Equipment {
   total_weight_kg?: number | null;
   curb_weight_kg?: number | null;
   tire_dimension?: string | null;
+  first_registration_date?: string | null;
 }
 
 interface MaintenanceLog {
@@ -366,10 +367,22 @@ export default function EquipmentDetailClient({
 }
 
 function VehicleInfo({ equipment }: { equipment: Equipment }) {
-  const { registration_number, total_weight_kg, curb_weight_kg, tire_dimension } = equipment;
+  const {
+    registration_number,
+    total_weight_kg,
+    curb_weight_kg,
+    tire_dimension,
+    first_registration_date,
+  } = equipment;
 
   // Vis bare seksjonen når minst ett felt er fylt ut.
-  if (!registration_number && total_weight_kg == null && curb_weight_kg == null && !tire_dimension) {
+  if (
+    !registration_number &&
+    total_weight_kg == null &&
+    curb_weight_kg == null &&
+    !tire_dimension &&
+    !first_registration_date
+  ) {
     return null;
   }
 
@@ -381,6 +394,9 @@ function VehicleInfo({ equipment }: { equipment: Equipment }) {
 
   const rows: Array<{ k: string; v: string }> = [];
   if (registration_number) rows.push({ k: 'Registreringsnummer', v: registration_number });
+  if (first_registration_date) {
+    rows.push({ k: 'Årsmodell', v: String(new Date(first_registration_date).getFullYear()) });
+  }
   if (tire_dimension) rows.push({ k: 'Dekkdimensjon', v: tire_dimension });
   if (total_weight_kg != null) rows.push({ k: 'Tillatt totalvekt', v: `${total_weight_kg} kg` });
   if (curb_weight_kg != null) rows.push({ k: 'Egenvekt', v: `${curb_weight_kg} kg` });
