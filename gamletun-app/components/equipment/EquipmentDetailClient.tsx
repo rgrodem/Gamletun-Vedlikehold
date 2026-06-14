@@ -35,6 +35,10 @@ interface Equipment {
   notes: string | null;
   image_url: string | null;
   usage_hours?: number | null;
+  registration_number?: string | null;
+  total_weight_kg?: number | null;
+  curb_weight_kg?: number | null;
+  tire_dimension?: string | null;
 }
 
 interface MaintenanceLog {
@@ -315,6 +319,7 @@ export default function EquipmentDetailClient({
 
       {/* Content sections */}
       <div className="px-5 pt-6 sm:px-6 lg:px-8 space-y-5 min-w-0">
+        <VehicleInfo equipment={equipment} />
         <WorkOrderSection equipment={{ id: equipment.id, name: equipment.name }} onUpdate={handleSuccess} />
         <DocumentSection equipmentId={equipment.id} onUpdate={handleSuccess} />
 
@@ -356,6 +361,49 @@ export default function EquipmentDetailClient({
           onClose={() => setShowQRModal(false)}
         />
       )}
+    </div>
+  );
+}
+
+function VehicleInfo({ equipment }: { equipment: Equipment }) {
+  const { registration_number, total_weight_kg, curb_weight_kg, tire_dimension } = equipment;
+
+  // Vis bare seksjonen når minst ett felt er fylt ut.
+  if (!registration_number && total_weight_kg == null && curb_weight_kg == null && !tire_dimension) {
+    return null;
+  }
+
+  // Maks nyttelast = totalvekt − egenvekt, når begge finnes.
+  const payload =
+    total_weight_kg != null && curb_weight_kg != null
+      ? total_weight_kg - curb_weight_kg
+      : null;
+
+  const rows: Array<{ k: string; v: string }> = [];
+  if (registration_number) rows.push({ k: 'Registreringsnummer', v: registration_number });
+  if (tire_dimension) rows.push({ k: 'Dekkdimensjon', v: tire_dimension });
+  if (total_weight_kg != null) rows.push({ k: 'Tillatt totalvekt', v: `${total_weight_kg} kg` });
+  if (curb_weight_kg != null) rows.push({ k: 'Egenvekt', v: `${curb_weight_kg} kg` });
+  if (payload != null) rows.push({ k: 'Maks nyttelast', v: `${payload} kg` });
+
+  return (
+    <div>
+      <h3 className="font-serif text-[18px] font-medium text-ink tracking-tightish mb-2.5">
+        Kjøretøyopplysninger
+      </h3>
+      <div className="bg-paper border border-line rounded-[16px] overflow-hidden">
+        {rows.map((row, i) => (
+          <div
+            key={row.k}
+            className={`flex items-center justify-between gap-3 px-3.5 py-2.5 ${
+              i > 0 ? 'border-t border-line' : ''
+            }`}
+          >
+            <span className="text-[13px] text-ink3">{row.k}</span>
+            <span className="text-[14px] text-ink font-medium text-right">{row.v}</span>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

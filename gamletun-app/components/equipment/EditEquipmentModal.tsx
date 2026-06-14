@@ -24,6 +24,10 @@ interface Equipment {
   notes: string | null;
   image_url: string | null;
   usage_hours?: number | null;
+  registration_number?: string | null;
+  total_weight_kg?: number | null;
+  curb_weight_kg?: number | null;
+  tire_dimension?: string | null;
 }
 
 interface EditEquipmentModalProps {
@@ -31,6 +35,12 @@ interface EditEquipmentModalProps {
   categories: Category[];
   onClose: () => void;
   onSuccess: () => void;
+}
+
+// Tolk et tallfelt (vekt) til heltall, eller null hvis tomt/ugyldig.
+function parseIntOrNull(value: string): number | null {
+  const parsed = parseInt(value.replace(/\s/g, ''), 10);
+  return value.trim() && !isNaN(parsed) ? parsed : null;
 }
 
 export default function EditEquipmentModal({ equipment, categories, onClose, onSuccess }: EditEquipmentModalProps) {
@@ -42,6 +52,14 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
   const [usageHours, setUsageHours] = useState(
     equipment.usage_hours != null ? String(equipment.usage_hours) : ''
   );
+  const [registrationNumber, setRegistrationNumber] = useState(equipment.registration_number || '');
+  const [totalWeight, setTotalWeight] = useState(
+    equipment.total_weight_kg != null ? String(equipment.total_weight_kg) : ''
+  );
+  const [curbWeight, setCurbWeight] = useState(
+    equipment.curb_weight_kg != null ? String(equipment.curb_weight_kg) : ''
+  );
+  const [tireDimension, setTireDimension] = useState(equipment.tire_dimension || '');
   // Only the manual drift-status is editable here. "in_use"/"maintenance" are
   // derived from reservations/work orders, so map those to "active" (in drift).
   const [status, setStatus] = useState(equipment.status === 'inactive' ? 'inactive' : 'active');
@@ -91,6 +109,10 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
             const parsed = parseFloat(usageHours.replace(',', '.'));
             return usageHours.trim() && !isNaN(parsed) ? parsed : null;
           })(),
+          registration_number: registrationNumber.trim().toUpperCase() || null,
+          total_weight_kg: parseIntOrNull(totalWeight),
+          curb_weight_kg: parseIntOrNull(curbWeight),
+          tire_dimension: tireDimension.trim() || null,
           status,
           category_id: categoryId || null,
           notes: notes.trim() || null,
@@ -295,6 +317,70 @@ export default function EditEquipmentModal({ equipment, categories, onClose, onS
               <p className="text-xs text-gray-500 mt-1">
                 Avlest fra maskinens timeteller. Brukes til timebasert vedlikehold.
               </p>
+            </div>
+          </div>
+
+          {/* Kjøretøy / tilhenger (valgfritt) */}
+          <div className="border-t border-gray-200 pt-5">
+            <h3 className="text-sm font-semibold text-gray-900 mb-1">Kjøretøy / tilhenger</h3>
+            <p className="text-xs text-gray-500 mb-3">
+              Valgfritt — fyll inn for tilhengere og registrerte kjøretøy.
+            </p>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Registreringsnummer
+                  </label>
+                  <input
+                    type="text"
+                    value={registrationNumber}
+                    onChange={(e) => setRegistrationNumber(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent uppercase"
+                    placeholder="F.eks. RU 4033"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Dekkdimensjon
+                  </label>
+                  <input
+                    type="text"
+                    value={tireDimension}
+                    onChange={(e) => setTireDimension(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="F.eks. 155 R 13"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Tillatt totalvekt (kg)
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={totalWeight}
+                    onChange={(e) => setTotalWeight(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="F.eks. 2000"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Egenvekt (kg)
+                  </label>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    value={curbWeight}
+                    onChange={(e) => setCurbWeight(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="F.eks. 345"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
