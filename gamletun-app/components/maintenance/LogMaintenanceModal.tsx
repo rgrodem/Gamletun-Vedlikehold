@@ -48,22 +48,18 @@ export default function LogMaintenanceModal({ equipment, equipmentCategory, onCl
   // Dokument-tolkning som samtale: forslaget vises i et kort med «Stemmer dette?».
   // Feltene fylles først inn når brukeren bekrefter med «Ja».
   const [parsed, setParsed] = useState<ParsedLog | null>(null);
-  const [docData, setDocData] = useState<{ data: string; mediaType: string; kind: string } | null>(null);
+  type DocPart = { data: string; mediaType: string; kind: string };
+  const [docDocuments, setDocDocuments] = useState<DocPart[] | null>(null);
   const [corrections, setCorrections] = useState<string[]>([]);
   const [correcting, setCorrecting] = useState(false);
   const [correctionText, setCorrectionText] = useState('');
 
-  const callParse = async (
-    doc: { data: string; mediaType: string; kind: string },
-    corr: string[]
-  ): Promise<ParsedLog | null> => {
+  const callParse = async (documents: DocPart[], corr: string[]): Promise<ParsedLog | null> => {
     const res = await fetch('/api/ai/parse-document', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        kind: doc.kind,
-        mediaType: doc.mediaType,
-        data: doc.data,
+        documents,
         equipmentName: equipment.name,
         equipmentModel: equipment.model || undefined,
         equipmentCategory: equipmentCategory || undefined,
@@ -72,35 +68,40 @@ export default function LogMaintenanceModal({ equipment, equipmentCategory, onCl
     });
     const json = await res.json();
     if (!res.ok) {
-      setError(json.error || 'Kunne ikke lese dokumentet.');
+      setError(json.error || 'Kunne ikke lese dokumentene.');
       return null;
     }
     return json as ParsedLog;
   };
 
-  // Steg 1: les dokumentet. Viser tolknings-kortet (fyller ikke felt ennå).
-  const handleParseDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = '';
-    if (!file) return;
-    if (file.size > 25 * 1024 * 1024) {
-      setError('Filen er for stor for KI-lesing (maks 25 MB).');
-      return;
-    }
+  // Tolk alle vedlagte bilder/dokumenter sammen. Viser kortet (fyller ikke felt ennå).
+  const handleAnalyzeAttachments = async () => {
+    if (attachments.length === 0) return;
     setAiLoading(true);
     setAiNote('');
     setError('');
     try {
-      const data = await fileToBase64(file);
-      const doc = { data, mediaType: file.type, kind: file.type === 'application/pdf' ? 'pdf' : 'image' };
-      setDocData(doc);
+      // Send bilder + PDF til KI; hopp over svært store filer (de lagres likevel).
+      const usable = attachments.filter((f) => f.size <= 25 * 1024 * 1024).slice(0, 6);
+      if (usable.length === 0) {
+        setError('Vedleggene er for store for KI-lesing (maks 25 MB hver).');
+        return;
+      }
+      const documents: DocPart[] = await Promise.all(
+        usable.map(async (f) => ({
+          data: await fileToBase64(f),
+          mediaType: f.type,
+          kind: f.type === 'application/pdf' ? 'pdf' : 'image',
+        }))
+      );
+      setDocDocuments(documents);
       setCorrections([]);
       setCorrecting(false);
-      const result = await callParse(doc, []);
+      const result = await callParse(documents, []);
       if (result) setParsed(result);
     } catch (err) {
       console.error('KI-dokumentlesing feilet:', err);
-      setError('Kunne ikke lese dokumentet.');
+      setError('Kunne ikke lese vedleggene.');
     } finally {
       setAiLoading(false);
     }
@@ -109,12 +110,12 @@ export default function LogMaintenanceModal({ equipment, equipmentCategory, onCl
   // «Nei, korriger» → send rettelse, få oppdatert tolkning.
   const handleRefineParse = async () => {
     const text = correctionText.trim();
-    if (!text || !docData) return;
+    if (!text || !docDocuments) return;
     setAiLoading(true);
     setError('');
     try {
       const next = [...corrections, text];
-      const result = await callParse(docData, next);
+      const result = await callParse(docDocuments, next);
       if (result) {
         setParsed(result);
         setCorrections(next);
@@ -294,22 +295,70 @@ export default function LogMaintenanceModal({ equipment, equipmentCategory, onCl
           )}
 
           {/* KI: fyll inn fra kvittering/PDF */}
-          {!parsed && (
-            <label className="block cursor-pointer bg-skyBg border border-sky/30 rounded-[14px] px-4 py-3 text-center text-sky">
-              <span className="inline-flex items-center gap-2 text-[14px] font-semibold">
-                <FaMagic className="text-[14px]" />
-                {aiLoading ? 'Leser dokument…' : 'Fyll inn fra kvittering/PDF'}
+          {/* Bilder og dokumenter — lagres på loggen, og KI kan fylle ut feltene fra dem */}
+          <div>
+            <label className="text-[12px] font-semibold text-ink2 uppercase tracking-[0.06em]">
+              Bilder og dokumenter
+            </label>
+            <p className="text-[12px] text-ink3 mt-1 mb-2">
+              Legg ved kvitteringer (PDF) og bilder — f.eks. kvittering på nye dekk og bilde av dem montert.
+              Alt lagres på loggen, og KI kan fylle ut feltene fra dem.
+            </p>
+            <label className="block cursor-pointer bg-paper border border-dashed border-line rounded-[14px] px-5 py-[18px] text-center text-ink3">
+              <span className="inline-flex items-center gap-2">
+                <FaCamera className="text-[16px]" />
+                <span className="text-[14px] font-medium">Ta bilde / last opp (flere mulig)</span>
               </span>
               <input
                 type="file"
-                onChange={handleParseDocument}
+                onChange={handleFileSelect}
                 accept="image/*,.pdf"
-                disabled={aiLoading}
+                multiple
                 className="hidden"
               />
             </label>
-          )}
-          {aiNote && <p className="text-[12px] text-moss -mt-1.5">{aiNote}</p>}
+
+            {attachments.length > 0 && (
+              <div className="mt-2.5 space-y-2">
+                {attachments.map((file, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between bg-paper border border-line rounded-[12px] px-3 py-2.5"
+                  >
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      {file.type.startsWith('image/')
+                        ? <FaImage className="text-sky flex-shrink-0" />
+                        : <FaFileAlt className="text-rust flex-shrink-0" />}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[13px] font-medium text-ink truncate">{file.name}</p>
+                        <p className="text-[11px] text-ink3">{formatFileSize(file.size)}</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeAttachment(index)}
+                      className="p-2 text-rust rounded-lg"
+                      aria-label="Fjern fil"
+                    >
+                      <FaTrash className="text-[12px]" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {attachments.length > 0 && !parsed && (
+              <button
+                type="button"
+                onClick={handleAnalyzeAttachments}
+                disabled={aiLoading}
+                className="mt-2.5 w-full inline-flex items-center justify-center gap-2 bg-skyBg border border-sky/30 text-sky rounded-[14px] px-4 py-3 text-[14px] font-semibold disabled:opacity-50"
+              >
+                <FaMagic className="text-[14px]" /> {aiLoading ? 'Leser vedleggene…' : 'Fyll inn loggen fra vedleggene (KI)'}
+              </button>
+            )}
+            {aiNote && <p className="text-[12px] text-moss mt-1.5">{aiNote}</p>}
+          </div>
 
           {/* KI-tolkning med «Stemmer dette?» */}
           {parsed && (
@@ -458,54 +507,6 @@ export default function LogMaintenanceModal({ equipment, equipmentCategory, onCl
                 className="mt-2 w-full bg-paper border border-line rounded-[12px] px-3.5 py-3.5 text-[15px] text-ink placeholder:text-ink3 outline-none focus:border-ink3"
               />
             </div>
-          </div>
-
-          {/* Foto */}
-          <div>
-            <label className="text-[12px] font-semibold text-ink2 uppercase tracking-[0.06em]">
-              Foto (valgfritt)
-            </label>
-            <label className="mt-2 block cursor-pointer bg-paper border border-dashed border-line rounded-[14px] px-5 py-[22px] text-center text-ink3">
-              <span className="inline-flex items-center gap-2">
-                <FaCamera className="text-[16px]" />
-                <span className="text-[14px] font-medium">Ta bilde eller last opp</span>
-              </span>
-              <input
-                type="file"
-                onChange={handleFileSelect}
-                accept="image/*,.pdf"
-                multiple
-                className="hidden"
-              />
-            </label>
-            {attachments.length > 0 && (
-              <div className="mt-2.5 space-y-2">
-                {attachments.map((file, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between bg-paper border border-line rounded-[12px] px-3 py-2.5"
-                  >
-                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                      {file.type.startsWith('image/')
-                        ? <FaImage className="text-sky flex-shrink-0" />
-                        : <FaFileAlt className="text-rust flex-shrink-0" />}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-medium text-ink truncate">{file.name}</p>
-                        <p className="text-[11px] text-ink3">{formatFileSize(file.size)}</p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removeAttachment(index)}
-                      className="p-2 text-rust rounded-lg"
-                      aria-label="Fjern fil"
-                    >
-                      <FaTrash className="text-[12px]" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Submit */}

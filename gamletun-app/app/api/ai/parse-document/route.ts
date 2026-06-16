@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Ikke innlogget' }, { status: 401 });
 
   let body: {
+    documents?: Array<{ kind?: string; mediaType?: string; data?: string }>;
     kind?: string;
     mediaType?: string;
     data?: string;
@@ -57,15 +58,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Ugyldig forespørsel' }, { status: 400 });
   }
 
-  const { kind, mediaType, data, equipmentName, equipmentCategory, equipmentModel, corrections } = body;
-  if (!data || !mediaType || (kind !== 'pdf' && kind !== 'image')) {
+  const { equipmentName, equipmentCategory, equipmentModel, corrections } = body;
+
+  // Støtt både flere dokumenter (documents[]) og ett enkelt (bakoverkompatibelt).
+  const rawDocs =
+    Array.isArray(body.documents) && body.documents.length
+      ? body.documents
+      : body.data
+        ? [{ kind: body.kind, mediaType: body.mediaType, data: body.data }]
+        : [];
+
+  // Maks 6 dokumenter til KI for å holde forespørselen håndterbar.
+  const docBlocks: AiContentBlock[] = rawDocs
+    .slice(0, 6)
+    .filter((d) => d.data && d.mediaType && (d.kind === 'pdf' || d.kind === 'image'))
+    .map((d) =>
+      d.kind === 'pdf'
+        ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: d.data! } }
+        : { type: 'image', source: { type: 'base64', media_type: d.mediaType!, data: d.data! } }
+    );
+
+  if (docBlocks.length === 0) {
     return NextResponse.json({ error: 'Mangler dokument' }, { status: 400 });
   }
-
-  const docBlock: AiContentBlock =
-    kind === 'pdf'
-      ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data } }
-      : { type: 'image', source: { type: 'base64', media_type: mediaType, data } };
 
   // Utstyrskontekst gjør at modellen kan TOLKE dokumentet i lys av riktig
   // maskin (f.eks. forstå at "dekk til trillebår/nesehjul" gjelder nesehjulet
@@ -100,13 +115,14 @@ export async function POST(request: NextRequest) {
         'vedlikeholdslogg.\n' +
         'Hvis et felt ikke finnes, sett det til null. Ikke gjett på datoer/tall som ikke står der.',
       content: [
-        docBlock,
+        ...docBlocks,
         {
           type: 'text',
           text:
-            `${equipmentContext}\n\nLes dokumentet og lag en vedlikeholdslogg: en kort, tolket ` +
-            `beskrivelse av hva som ble gjort på dette utstyret, med de viktigste delene og ` +
-            `evt. totalkostnad. Husk å utelate butikk-/ordre-/hentingsinfo.${correctionBlock}`,
+            `${equipmentContext}\n\nDet kan være flere vedlegg (f.eks. en kvittering OG et bilde ` +
+            `av utført arbeid) — bruk dem SAMMEN for å forstå hva som ble gjort. Lag en ` +
+            `vedlikeholdslogg: en kort, tolket beskrivelse av arbeidet på dette utstyret, med de ` +
+            `viktigste delene og evt. totalkostnad. Husk å utelate butikk-/ordre-/hentingsinfo.${correctionBlock}`,
         },
       ],
       schema: schema as unknown as Record<string, unknown>,
