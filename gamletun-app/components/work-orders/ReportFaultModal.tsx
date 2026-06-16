@@ -1,12 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { FaTimes, FaExclamationTriangle, FaCamera, FaImage, FaTrash } from 'react-icons/fa';
+import { FaTimes, FaExclamationTriangle, FaCamera, FaImage, FaTrash, FaMagic } from 'react-icons/fa';
 import { createWorkOrder, WorkOrderPriority } from '@/lib/work-orders';
 import { getActiveReservationForEquipment } from '@/lib/reservations';
 import { uploadWorkOrderAttachment } from '@/lib/work-order-attachments';
 import { formatFileSize } from '@/lib/storage';
 import { useModalBehavior } from '@/lib/use-modal-behavior';
+import { fileToBase64 } from '@/lib/file-to-base64';
 
 interface Equipment {
   id: string;
@@ -15,11 +16,13 @@ interface Equipment {
 
 interface ReportFaultModalProps {
   equipment: Equipment;
+  /** Valgfri kategorinavn — gir KI-feildiagnose mer kontekst. */
+  equipmentCategory?: string | null;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export default function ReportFaultModal({ equipment, onClose, onSuccess }: ReportFaultModalProps) {
+export default function ReportFaultModal({ equipment, equipmentCategory, onClose, onSuccess }: ReportFaultModalProps) {
   useModalBehavior(onClose);
 
   const [title, setTitle] = useState('');
@@ -30,6 +33,8 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
   const [error, setError] = useState('');
   const [reservedBy, setReservedBy] = useState<{ name: string; from: string } | null>(null);
   const [photos, setPhotos] = useState<File[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiNote, setAiNote] = useState('');
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
@@ -39,6 +44,75 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
       return;
     }
     setPhotos(prev => [...prev, ...newFiles]);
+  };
+
+  // Feildiagnose fra bilde: analyser første foto og forhåndsutfyll feltene.
+  const handleDiagnose = async () => {
+    const photo = photos[0];
+    if (!photo) return;
+    setAiLoading(true);
+    setAiNote('');
+    setError('');
+    try {
+      const data = await fileToBase64(photo);
+      const res = await fetch('/api/ai/diagnose-fault', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mediaType: photo.type,
+          data,
+          equipmentName: equipment.name,
+          equipmentCategory: equipmentCategory || undefined,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        setError(d.error || 'Kunne ikke analysere bildet.');
+        return;
+      }
+      if (d.title && !title.trim()) setTitle(d.title);
+      if (d.priority) setPriority(d.priority);
+      const parts = Array.isArray(d.suggestedParts) && d.suggestedParts.length
+        ? `\nMulige deler: ${d.suggestedParts.join(', ')}.`
+        : '';
+      const suggestion = `${d.likelyCause || ''}${d.suggestedAction ? `\nForslag: ${d.suggestedAction}` : ''}${parts}`.trim();
+      if (suggestion) {
+        setDescription((prev) => (prev.trim() ? `${prev}\n\n${suggestion}` : suggestion));
+      }
+      setAiNote('KI-forslag fra bildet — kontroller før du melder feilen.');
+    } catch (err) {
+      console.error('Feildiagnose feilet:', err);
+      setError('Kunne ikke analysere bildet.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // Auto-triagering: foreslå prioritet ut fra tittel/beskrivelse.
+  const handleTriage = async () => {
+    if (!title.trim() && !description.trim()) return;
+    setAiLoading(true);
+    setAiNote('');
+    setError('');
+    try {
+      const res = await fetch('/api/ai/triage-fault', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title, description, equipmentName: equipment.name }),
+      });
+      const t = await res.json();
+      if (!res.ok) {
+        setError(t.error || 'Kunne ikke vurdere feilen.');
+        return;
+      }
+      if (t.priority) setPriority(t.priority);
+      setAiNote(`KI foreslår: ${t.category || 'ukjent kategori'} · ${t.rationale || ''}`.trim());
+    } catch (err) {
+      console.error('Triagering feilet:', err);
+      setError('Kunne ikke vurdere feilen.');
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   // Warn the reporter if this equipment is already reserved by someone — they
@@ -134,6 +208,13 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
             </div>
           )}
 
+          {aiNote && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex gap-2">
+              <FaMagic className="text-blue-600 mt-0.5 flex-shrink-0" />
+              <p className="text-blue-900 text-sm">{aiNote}</p>
+            </div>
+          )}
+
           {reservedBy && (
             <div className="bg-amber-50 border border-amber-300 rounded-lg p-4 flex gap-3">
               <FaExclamationTriangle className="text-amber-600 mt-0.5 flex-shrink-0" />
@@ -166,9 +247,19 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
 
           {/* Priority */}
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Prioritet <span className="text-red-500">*</span>
-            </label>
+            <div className="flex items-center justify-between mb-2">
+              <label className="block text-sm font-semibold text-gray-700">
+                Prioritet <span className="text-red-500">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={handleTriage}
+                disabled={aiLoading || (!title.trim() && !description.trim())}
+                className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 disabled:opacity-40"
+              >
+                <FaMagic className="text-[11px]" /> {aiLoading ? 'Vurderer…' : 'Foreslå prioritet'}
+              </button>
+            </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
               {(['low', 'medium', 'high', 'urgent'] as WorkOrderPriority[]).map((p) => (
                 <button
@@ -230,6 +321,16 @@ export default function ReportFaultModal({ equipment, onClose, onSuccess }: Repo
                 className="hidden"
               />
             </label>
+            {photos.length > 0 && (
+              <button
+                type="button"
+                onClick={handleDiagnose}
+                disabled={aiLoading}
+                className="mt-2.5 w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
+              >
+                <FaMagic /> {aiLoading ? 'Analyserer…' : 'Analyser bilde med KI'}
+              </button>
+            )}
             {photos.length > 0 && (
               <div className="mt-2.5 space-y-2">
                 {photos.map((file, index) => (

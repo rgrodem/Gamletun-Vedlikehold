@@ -10,7 +10,7 @@
 // Bump CACHE_VERSION when you ship a breaking change to make clients
 // drop their old caches.
 
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v3';
 const STATIC_CACHE = `gamletun-static-${CACHE_VERSION}`;
 const RUNTIME_CACHE = `gamletun-runtime-${CACHE_VERSION}`;
 
@@ -53,6 +53,44 @@ function isImmutableStatic(url) {
 function isPrecached(url) {
   return PRECACHE_URLS.includes(url.pathname);
 }
+
+// --- Web push -------------------------------------------------------------
+// Viser alltid en synlig notifikasjon (unngår "silent push"-straff).
+self.addEventListener('push', (event) => {
+  let payload = { title: 'Gamletun Vedlikehold', body: '', url: '/' };
+  try {
+    if (event.data) payload = { ...payload, ...event.data.json() };
+  } catch (_e) {
+    if (event.data) payload.body = event.data.text();
+  }
+
+  event.waitUntil(
+    self.registration.showNotification(payload.title, {
+      body: payload.body,
+      icon: '/icon-192.png',
+      badge: '/icon-192.png',
+      data: { url: payload.url || '/' },
+      tag: payload.tag,
+    })
+  );
+});
+
+// Klikk på varselet → åpne (eller fokuser) appen på riktig side.
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+      return self.clients.openWindow(targetUrl);
+    })
+  );
+});
 
 self.addEventListener('fetch', (event) => {
   const request = event.request;
