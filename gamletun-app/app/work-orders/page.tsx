@@ -3,6 +3,8 @@ import Link from 'next/link';
 import AppLayout from '@/components/layout/AppLayout';
 import WorkOrderListWrapper from '@/components/work-orders/WorkOrderListWrapper';
 import WorkOrderCalendar from '@/components/work-orders/WorkOrderCalendar';
+import WeatherWidget from '@/components/work-orders/WeatherWidget';
+import PushToggle from '@/components/PushToggle';
 import { getWorkOrdersDashboard, type WorkOrder } from '@/lib/work-orders';
 import { FaList, FaCalendarAlt } from 'react-icons/fa';
 
@@ -125,6 +127,12 @@ export default async function WorkOrdersPage({
             </Link>
           </div>
         </div>
+
+        {/* Værvarsel for planlegging av utendørs vedlikehold */}
+        <WeatherWidget />
+
+        {/* Tilbud om å slå på push-varsler (skjuler seg hvis allerede på/ikke støttet) */}
+        <PushToggle />
 
         {/* Filter chips */}
         <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 py-0.5">

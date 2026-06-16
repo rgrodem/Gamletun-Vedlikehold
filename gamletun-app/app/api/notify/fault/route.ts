@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { sendPushToAll } from '@/lib/push';
 import { sendEmail } from '@/lib/email';
 
 const PRIORITY_LABELS: Record<string, string> = {
@@ -105,5 +106,12 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ sent });
+  // Push-varsel i tillegg til e-post (om VAPID er konfigurert).
+  const pushed = await sendPushToAll({
+    title: `Feil meldt: ${equipment?.name ?? 'utstyr'}`,
+    body: `${workOrder.title} · prioritet ${priorityLabel}`,
+    url: `/equipment/${equipment?.id ?? ''}`,
+  });
+
+  return NextResponse.json({ sent, pushed });
 }

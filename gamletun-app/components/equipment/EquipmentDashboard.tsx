@@ -472,6 +472,7 @@ export default function EquipmentDashboard({
       {faultEquipment && (
         <ReportFaultModal
           equipment={faultEquipment}
+          equipmentCategory={faultEquipment.category?.name}
           onClose={() => setFaultEquipment(null)}
           onSuccess={() => {
             setFaultEquipment(null);

@@ -1,10 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { FaTimes, FaImage, FaFileAlt, FaTrash, FaCamera } from 'react-icons/fa';
+import { FaTimes, FaImage, FaFileAlt, FaTrash, FaCamera, FaMagic } from 'react-icons/fa';
 import { createClient } from '@/lib/supabase/client';
 import { uploadFile, formatFileSize } from '@/lib/storage';
 import { useModalBehavior } from '@/lib/use-modal-behavior';
+import { fileToBase64 } from '@/lib/file-to-base64';
+
+const PRESET_TYPES_FOR_MATCH = ['Oljeskift', 'Filterbytte', 'Rengjøring', 'Inspeksjon', 'Reparasjon'];
 
 interface Equipment {
   id: string;
@@ -30,6 +33,58 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiNote, setAiNote] = useState('');
+
+  // Dokument-intelligens: les en kvittering/PDF og forhåndsutfyll feltene.
+  const handleParseDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    if (file.size > 25 * 1024 * 1024) {
+      setError('Filen er for stor for KI-lesing (maks 25 MB).');
+      return;
+    }
+    setAiLoading(true);
+    setAiNote('');
+    setError('');
+    try {
+      const data = await fileToBase64(file);
+      const kind = file.type === 'application/pdf' ? 'pdf' : 'image';
+      const res = await fetch('/api/ai/parse-document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ kind, mediaType: file.type, data }),
+      });
+      const parsed = await res.json();
+      if (!res.ok) {
+        setError(parsed.error || 'Kunne ikke lese dokumentet.');
+        return;
+      }
+      if (parsed.maintenanceType) {
+        const match = PRESET_TYPES_FOR_MATCH.find(
+          (t) => t.toLowerCase() === String(parsed.maintenanceType).toLowerCase()
+        );
+        if (match) {
+          setTypeValue(match);
+        } else {
+          setTypeValue('Annet');
+          setCustomType(parsed.maintenanceType);
+        }
+      }
+      if (parsed.description) setDescription(parsed.description);
+      if (parsed.performedDate && /^\d{4}-\d{2}-\d{2}$/.test(parsed.performedDate)) {
+        setPerformedDate(parsed.performedDate);
+      }
+      if (parsed.hours != null) setHours(String(parsed.hours));
+      setAiNote('Forhåndsutfylt fra dokumentet — kontroller før du lagrer.');
+    } catch (err) {
+      console.error('KI-dokumentlesing feilet:', err);
+      setError('Kunne ikke lese dokumentet.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
@@ -170,6 +225,22 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
               {error}
             </div>
           )}
+
+          {/* KI: fyll inn fra kvittering/PDF */}
+          <label className="block cursor-pointer bg-skyBg border border-sky/30 rounded-[14px] px-4 py-3 text-center text-sky">
+            <span className="inline-flex items-center gap-2 text-[14px] font-semibold">
+              <FaMagic className="text-[14px]" />
+              {aiLoading ? 'Leser dokument…' : 'Fyll inn fra kvittering/PDF'}
+            </span>
+            <input
+              type="file"
+              onChange={handleParseDocument}
+              accept="image/*,.pdf"
+              disabled={aiLoading}
+              className="hidden"
+            />
+          </label>
+          {aiNote && <p className="text-[12px] text-moss -mt-1.5">{aiNote}</p>}
 
           {/* Type chips */}
           <div>
