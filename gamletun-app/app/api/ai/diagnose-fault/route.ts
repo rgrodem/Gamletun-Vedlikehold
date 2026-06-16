@@ -41,14 +41,20 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Ikke innlogget' }, { status: 401 });
 
-  let body: { mediaType?: string; data?: string; equipmentName?: string; equipmentCategory?: string };
+  let body: {
+    mediaType?: string;
+    data?: string;
+    equipmentName?: string;
+    equipmentCategory?: string;
+    corrections?: string[];
+  };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Ugyldig forespørsel' }, { status: 400 });
   }
 
-  const { mediaType, data, equipmentName, equipmentCategory } = body;
+  const { mediaType, data, equipmentName, equipmentCategory, corrections } = body;
   if (!data || !mediaType?.startsWith('image/')) {
     return NextResponse.json({ error: 'Mangler bilde' }, { status: 400 });
   }
@@ -56,6 +62,16 @@ export async function POST(request: NextRequest) {
   const contextLine = equipmentName
     ? `Utstyret er: ${equipmentName}${equipmentCategory ? ` (kategori: ${equipmentCategory})` : ''}.`
     : '';
+
+  // Hvis brukeren har korrigert tidligere diagnoser, ta korreksjonene med i
+  // konteksten så KI lager en oppdatert diagnose som stemmer med virkeligheten.
+  const correctionBlock =
+    Array.isArray(corrections) && corrections.length
+      ? '\n\nDu foreslo tidligere en diagnose, men brukeren — som ser utstyret fysisk — har ' +
+        'korrigert deg. Korreksjoner (nyeste sist):\n' +
+        corrections.map((c, i) => `${i + 1}. ${c}`).join('\n') +
+        '\n\nLag en OPPDATERT diagnose som tar hensyn til korreksjonene. Stol på brukeren.'
+      : '';
 
   try {
     const diagnosis = await extractStructured<Diagnosis>({
@@ -70,7 +86,7 @@ export async function POST(request: NextRequest) {
           type: 'text',
           text:
             `${contextLine}\n\nSe på bildet og vurder feilen: gi en kort tittel, sannsynlig årsak, ` +
-            'alvorlighet (prioritet), foreslått utbedring og sannsynlige deler.',
+            `alvorlighet (prioritet), foreslått utbedring og sannsynlige deler.${correctionBlock}`,
         },
       ],
       schema: schema as unknown as Record<string, unknown>,

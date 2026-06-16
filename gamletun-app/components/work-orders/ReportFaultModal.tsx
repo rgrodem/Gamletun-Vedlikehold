@@ -22,6 +22,21 @@ interface ReportFaultModalProps {
   onSuccess: () => void;
 }
 
+interface Diagnosis {
+  title: string;
+  likelyCause: string;
+  priority: WorkOrderPriority;
+  suggestedAction: string;
+  suggestedParts: string[];
+}
+
+const PRIORITY_LABEL: Record<WorkOrderPriority, string> = {
+  low: 'Lav',
+  medium: 'Medium',
+  high: 'Høy',
+  urgent: 'Akutt',
+};
+
 export default function ReportFaultModal({ equipment, equipmentCategory, onClose, onSuccess }: ReportFaultModalProps) {
   useModalBehavior(onClose);
 
@@ -35,6 +50,13 @@ export default function ReportFaultModal({ equipment, equipmentCategory, onClose
   const [photos, setPhotos] = useState<File[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiNote, setAiNote] = useState('');
+  // Feildiagnose-samtale: forslaget vises i et kort med «Stemmer dette?».
+  // Feltene fylles først inn når brukeren bekrefter med «Ja».
+  const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
+  const [photoData, setPhotoData] = useState<{ data: string; mediaType: string } | null>(null);
+  const [corrections, setCorrections] = useState<string[]>([]);
+  const [correcting, setCorrecting] = useState(false);
+  const [correctionText, setCorrectionText] = useState('');
 
   const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
@@ -46,7 +68,32 @@ export default function ReportFaultModal({ equipment, equipmentCategory, onClose
     setPhotos(prev => [...prev, ...newFiles]);
   };
 
-  // Feildiagnose fra bilde: analyser første foto og forhåndsutfyll feltene.
+  // Kall diagnose-ruten med bildet + evt. tidligere korreksjoner.
+  const callDiagnose = async (
+    data: string,
+    mediaType: string,
+    corr: string[]
+  ): Promise<Diagnosis | null> => {
+    const res = await fetch('/api/ai/diagnose-fault', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        mediaType,
+        data,
+        equipmentName: equipment.name,
+        equipmentCategory: equipmentCategory || undefined,
+        corrections: corr,
+      }),
+    });
+    const d = await res.json();
+    if (!res.ok) {
+      setError(d.error || 'Kunne ikke analysere bildet.');
+      return null;
+    }
+    return d as Diagnosis;
+  };
+
+  // Steg 1: analyser første foto. Viser diagnose-kortet (fyller ikke felt ennå).
   const handleDiagnose = async () => {
     const photo = photos[0];
     if (!photo) return;
@@ -55,37 +102,57 @@ export default function ReportFaultModal({ equipment, equipmentCategory, onClose
     setError('');
     try {
       const data = await fileToBase64(photo);
-      const res = await fetch('/api/ai/diagnose-fault', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          mediaType: photo.type,
-          data,
-          equipmentName: equipment.name,
-          equipmentCategory: equipmentCategory || undefined,
-        }),
-      });
-      const d = await res.json();
-      if (!res.ok) {
-        setError(d.error || 'Kunne ikke analysere bildet.');
-        return;
-      }
-      if (d.title && !title.trim()) setTitle(d.title);
-      if (d.priority) setPriority(d.priority);
-      const parts = Array.isArray(d.suggestedParts) && d.suggestedParts.length
-        ? `\nMulige deler: ${d.suggestedParts.join(', ')}.`
-        : '';
-      const suggestion = `${d.likelyCause || ''}${d.suggestedAction ? `\nForslag: ${d.suggestedAction}` : ''}${parts}`.trim();
-      if (suggestion) {
-        setDescription((prev) => (prev.trim() ? `${prev}\n\n${suggestion}` : suggestion));
-      }
-      setAiNote('KI-forslag fra bildet — kontroller før du melder feilen.');
+      setPhotoData({ data, mediaType: photo.type });
+      setCorrections([]);
+      setCorrecting(false);
+      const d = await callDiagnose(data, photo.type, []);
+      if (d) setDiagnosis(d);
     } catch (err) {
       console.error('Feildiagnose feilet:', err);
       setError('Kunne ikke analysere bildet.');
     } finally {
       setAiLoading(false);
     }
+  };
+
+  // «Nei, korriger» → send brukerens rettelse og få oppdatert diagnose.
+  const handleRefine = async () => {
+    const text = correctionText.trim();
+    if (!text || !photoData) return;
+    setAiLoading(true);
+    setError('');
+    try {
+      const next = [...corrections, text];
+      const d = await callDiagnose(photoData.data, photoData.mediaType, next);
+      if (d) {
+        setDiagnosis(d);
+        setCorrections(next);
+        setCorrectionText('');
+        setCorrecting(false);
+      }
+    } catch (err) {
+      console.error('Korrigering feilet:', err);
+      setError('Kunne ikke oppdatere diagnosen.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // «Ja, bruk dette» → fyll inn feltene fra den bekreftede diagnosen.
+  const handleAcceptDiagnosis = () => {
+    if (!diagnosis) return;
+    if (!title.trim()) setTitle(diagnosis.title);
+    setPriority(diagnosis.priority);
+    const parts = diagnosis.suggestedParts?.length
+      ? `\nMulige deler: ${diagnosis.suggestedParts.join(', ')}.`
+      : '';
+    const summary = `${diagnosis.likelyCause}${diagnosis.suggestedAction ? `\nForslag: ${diagnosis.suggestedAction}` : ''}${parts}`.trim();
+    if (summary) {
+      setDescription((prev) => (prev.trim() ? `${prev}\n\n${summary}` : summary));
+    }
+    setDiagnosis(null);
+    setCorrecting(false);
+    setAiNote('Diagnose lagt inn — kontroller og meld feilen.');
   };
 
   // Auto-triagering: foreslå prioritet ut fra tittel/beskrivelse.
@@ -321,7 +388,7 @@ export default function ReportFaultModal({ equipment, equipmentCategory, onClose
                 className="hidden"
               />
             </label>
-            {photos.length > 0 && (
+            {photos.length > 0 && !diagnosis && (
               <button
                 type="button"
                 onClick={handleDiagnose}
@@ -330,6 +397,75 @@ export default function ReportFaultModal({ equipment, equipmentCategory, onClose
               >
                 <FaMagic /> {aiLoading ? 'Analyserer…' : 'Analyser bilde med KI'}
               </button>
+            )}
+
+            {/* KI-diagnose med «Stemmer dette?» */}
+            {diagnosis && (
+              <div className="mt-2.5 border border-blue-200 bg-blue-50 rounded-xl p-3.5 space-y-2">
+                <div className="flex items-center gap-2 text-blue-900 font-semibold text-sm">
+                  <FaMagic className="text-[13px]" /> KI-diagnose
+                </div>
+                <p className="text-sm text-gray-900">
+                  <strong>{diagnosis.title}</strong> · prioritet {PRIORITY_LABEL[diagnosis.priority]}
+                </p>
+                <p className="text-sm text-gray-700">{diagnosis.likelyCause}</p>
+                {diagnosis.suggestedAction && (
+                  <p className="text-sm text-gray-700">Forslag: {diagnosis.suggestedAction}</p>
+                )}
+                {diagnosis.suggestedParts?.length > 0 && (
+                  <p className="text-xs text-gray-600">Deler: {diagnosis.suggestedParts.join(', ')}</p>
+                )}
+
+                {!correcting ? (
+                  <div className="pt-1">
+                    <p className="text-sm font-medium text-gray-900 mb-2">Stemmer dette?</p>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleAcceptDiagnosis}
+                        className="flex-1 px-4 py-2.5 bg-green-600 text-white rounded-lg text-sm font-semibold min-h-[44px]"
+                      >
+                        Ja, bruk dette
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setCorrecting(true)}
+                        className="flex-1 px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold min-h-[44px]"
+                      >
+                        Nei, korriger
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pt-1 space-y-2">
+                    <textarea
+                      value={correctionText}
+                      onChange={(e) => setCorrectionText(e.target.value)}
+                      rows={2}
+                      autoFocus
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                      placeholder="Beskriv hva som egentlig er feil, f.eks. «det er bremselyset som blinker, ikke varmetråder»"
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={handleRefine}
+                        disabled={aiLoading || !correctionText.trim()}
+                        className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50 min-h-[44px]"
+                      >
+                        {aiLoading ? 'Oppdaterer…' : 'Oppdater diagnose'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setCorrecting(false); setCorrectionText(''); }}
+                        className="px-4 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm font-semibold min-h-[44px]"
+                      >
+                        Avbryt
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
             {photos.length > 0 && (
               <div className="mt-2.5 space-y-2">
