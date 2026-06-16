@@ -17,13 +17,23 @@ interface Equipment {
 
 interface LogMaintenanceModalProps {
   equipment: Equipment;
+  /** Valgfri kategorinavn — gir dokument-tolkningen mer kontekst. */
+  equipmentCategory?: string | null;
   onClose: () => void;
   onSuccess: () => void;
 }
 
+interface ParsedLog {
+  maintenanceType: string | null;
+  description: string | null;
+  performedDate: string | null;
+  hours: number | null;
+  totalCost: number | null;
+}
+
 const PRESET_TYPES = ['Oljeskift', 'Filterbytte', 'Rengjøring', 'Inspeksjon', 'Reparasjon', 'Annet'];
 
-export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: LogMaintenanceModalProps) {
+export default function LogMaintenanceModal({ equipment, equipmentCategory, onClose, onSuccess }: LogMaintenanceModalProps) {
   useModalBehavior(onClose);
   const [typeValue, setTypeValue] = useState('');
   const [customType, setCustomType] = useState('');
@@ -35,8 +45,40 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
   const [attachments, setAttachments] = useState<File[]>([]);
   const [aiLoading, setAiLoading] = useState(false);
   const [aiNote, setAiNote] = useState('');
+  // Dokument-tolkning som samtale: forslaget vises i et kort med «Stemmer dette?».
+  // Feltene fylles først inn når brukeren bekrefter med «Ja».
+  const [parsed, setParsed] = useState<ParsedLog | null>(null);
+  const [docData, setDocData] = useState<{ data: string; mediaType: string; kind: string } | null>(null);
+  const [corrections, setCorrections] = useState<string[]>([]);
+  const [correcting, setCorrecting] = useState(false);
+  const [correctionText, setCorrectionText] = useState('');
 
-  // Dokument-intelligens: les en kvittering/PDF og forhåndsutfyll feltene.
+  const callParse = async (
+    doc: { data: string; mediaType: string; kind: string },
+    corr: string[]
+  ): Promise<ParsedLog | null> => {
+    const res = await fetch('/api/ai/parse-document', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        kind: doc.kind,
+        mediaType: doc.mediaType,
+        data: doc.data,
+        equipmentName: equipment.name,
+        equipmentModel: equipment.model || undefined,
+        equipmentCategory: equipmentCategory || undefined,
+        corrections: corr,
+      }),
+    });
+    const json = await res.json();
+    if (!res.ok) {
+      setError(json.error || 'Kunne ikke lese dokumentet.');
+      return null;
+    }
+    return json as ParsedLog;
+  };
+
+  // Steg 1: les dokumentet. Viser tolknings-kortet (fyller ikke felt ennå).
   const handleParseDocument = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = '';
@@ -50,40 +92,65 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
     setError('');
     try {
       const data = await fileToBase64(file);
-      const kind = file.type === 'application/pdf' ? 'pdf' : 'image';
-      const res = await fetch('/api/ai/parse-document', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ kind, mediaType: file.type, data }),
-      });
-      const parsed = await res.json();
-      if (!res.ok) {
-        setError(parsed.error || 'Kunne ikke lese dokumentet.');
-        return;
-      }
-      if (parsed.maintenanceType) {
-        const match = PRESET_TYPES_FOR_MATCH.find(
-          (t) => t.toLowerCase() === String(parsed.maintenanceType).toLowerCase()
-        );
-        if (match) {
-          setTypeValue(match);
-        } else {
-          setTypeValue('Annet');
-          setCustomType(parsed.maintenanceType);
-        }
-      }
-      if (parsed.description) setDescription(parsed.description);
-      if (parsed.performedDate && /^\d{4}-\d{2}-\d{2}$/.test(parsed.performedDate)) {
-        setPerformedDate(parsed.performedDate);
-      }
-      if (parsed.hours != null) setHours(String(parsed.hours));
-      setAiNote('Forhåndsutfylt fra dokumentet — kontroller før du lagrer.');
+      const doc = { data, mediaType: file.type, kind: file.type === 'application/pdf' ? 'pdf' : 'image' };
+      setDocData(doc);
+      setCorrections([]);
+      setCorrecting(false);
+      const result = await callParse(doc, []);
+      if (result) setParsed(result);
     } catch (err) {
       console.error('KI-dokumentlesing feilet:', err);
       setError('Kunne ikke lese dokumentet.');
     } finally {
       setAiLoading(false);
     }
+  };
+
+  // «Nei, korriger» → send rettelse, få oppdatert tolkning.
+  const handleRefineParse = async () => {
+    const text = correctionText.trim();
+    if (!text || !docData) return;
+    setAiLoading(true);
+    setError('');
+    try {
+      const next = [...corrections, text];
+      const result = await callParse(docData, next);
+      if (result) {
+        setParsed(result);
+        setCorrections(next);
+        setCorrectionText('');
+        setCorrecting(false);
+      }
+    } catch (err) {
+      console.error('Korrigering feilet:', err);
+      setError('Kunne ikke oppdatere tolkningen.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // «Ja, bruk dette» → fyll inn feltene fra den bekreftede tolkningen.
+  const handleAcceptParsed = () => {
+    if (!parsed) return;
+    if (parsed.maintenanceType) {
+      const match = PRESET_TYPES_FOR_MATCH.find(
+        (t) => t.toLowerCase() === String(parsed.maintenanceType).toLowerCase()
+      );
+      if (match) {
+        setTypeValue(match);
+      } else {
+        setTypeValue('Annet');
+        setCustomType(parsed.maintenanceType);
+      }
+    }
+    if (parsed.description) setDescription(parsed.description);
+    if (parsed.performedDate && /^\d{4}-\d{2}-\d{2}$/.test(parsed.performedDate)) {
+      setPerformedDate(parsed.performedDate);
+    }
+    if (parsed.hours != null) setHours(String(parsed.hours));
+    setParsed(null);
+    setCorrecting(false);
+    setAiNote('Lagt inn fra dokumentet — kontroller før du lagrer.');
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -227,20 +294,92 @@ export default function LogMaintenanceModal({ equipment, onClose, onSuccess }: L
           )}
 
           {/* KI: fyll inn fra kvittering/PDF */}
-          <label className="block cursor-pointer bg-skyBg border border-sky/30 rounded-[14px] px-4 py-3 text-center text-sky">
-            <span className="inline-flex items-center gap-2 text-[14px] font-semibold">
-              <FaMagic className="text-[14px]" />
-              {aiLoading ? 'Leser dokument…' : 'Fyll inn fra kvittering/PDF'}
-            </span>
-            <input
-              type="file"
-              onChange={handleParseDocument}
-              accept="image/*,.pdf"
-              disabled={aiLoading}
-              className="hidden"
-            />
-          </label>
+          {!parsed && (
+            <label className="block cursor-pointer bg-skyBg border border-sky/30 rounded-[14px] px-4 py-3 text-center text-sky">
+              <span className="inline-flex items-center gap-2 text-[14px] font-semibold">
+                <FaMagic className="text-[14px]" />
+                {aiLoading ? 'Leser dokument…' : 'Fyll inn fra kvittering/PDF'}
+              </span>
+              <input
+                type="file"
+                onChange={handleParseDocument}
+                accept="image/*,.pdf"
+                disabled={aiLoading}
+                className="hidden"
+              />
+            </label>
+          )}
           {aiNote && <p className="text-[12px] text-moss -mt-1.5">{aiNote}</p>}
+
+          {/* KI-tolkning med «Stemmer dette?» */}
+          {parsed && (
+            <div className="border border-sky/40 bg-skyBg rounded-[14px] p-3.5 flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-sky font-semibold text-[14px]">
+                <FaMagic className="text-[13px]" /> KI-tolkning av dokumentet
+              </div>
+              {parsed.maintenanceType && (
+                <p className="text-[14px] text-ink"><strong>{parsed.maintenanceType}</strong></p>
+              )}
+              {parsed.description && (
+                <p className="text-[14px] text-ink2 whitespace-pre-line">{parsed.description}</p>
+              )}
+              <p className="text-[12px] text-ink3">
+                {parsed.performedDate ? `Dato: ${parsed.performedDate}` : 'Dato: ikke funnet'}
+                {parsed.hours != null ? ` · ${parsed.hours} t` : ''}
+                {parsed.totalCost != null ? ` · ${parsed.totalCost} kr` : ''}
+              </p>
+
+              {!correcting ? (
+                <div className="pt-0.5">
+                  <p className="text-[14px] font-medium text-ink mb-2">Stemmer dette?</p>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleAcceptParsed}
+                      className="flex-1 bg-moss text-white rounded-[12px] px-4 py-2.5 text-[14px] font-semibold"
+                    >
+                      Ja, bruk dette
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCorrecting(true)}
+                      className="flex-1 bg-paper border border-line text-ink rounded-[12px] px-4 py-2.5 text-[14px] font-semibold"
+                    >
+                      Nei, korriger
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="pt-0.5 flex flex-col gap-2">
+                  <textarea
+                    value={correctionText}
+                    onChange={(e) => setCorrectionText(e.target.value)}
+                    rows={2}
+                    autoFocus
+                    className="w-full bg-paper border border-line rounded-[12px] px-3 py-2 text-[14px] text-ink outline-none focus:border-ink3 resize-none"
+                    placeholder="Beskriv hva som egentlig er gjort, f.eks. «dette er nesehjulet på liften, ikke en trillebår»"
+                  />
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleRefineParse}
+                      disabled={aiLoading || !correctionText.trim()}
+                      className="flex-1 bg-ink text-paper rounded-[12px] px-4 py-2.5 text-[14px] font-semibold disabled:opacity-50"
+                    >
+                      {aiLoading ? 'Oppdaterer…' : 'Oppdater tolkning'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setCorrecting(false); setCorrectionText(''); }}
+                      className="bg-paper border border-line text-ink rounded-[12px] px-4 py-2.5 text-[14px] font-semibold"
+                    >
+                      Avbryt
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Type chips */}
           <div>

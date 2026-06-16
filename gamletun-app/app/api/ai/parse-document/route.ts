@@ -42,14 +42,22 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Ikke innlogget' }, { status: 401 });
 
-  let body: { kind?: string; mediaType?: string; data?: string };
+  let body: {
+    kind?: string;
+    mediaType?: string;
+    data?: string;
+    equipmentName?: string;
+    equipmentCategory?: string;
+    equipmentModel?: string;
+    corrections?: string[];
+  };
   try {
     body = await request.json();
   } catch {
     return NextResponse.json({ error: 'Ugyldig forespørsel' }, { status: 400 });
   }
 
-  const { kind, mediaType, data } = body;
+  const { kind, mediaType, data, equipmentName, equipmentCategory, equipmentModel, corrections } = body;
   if (!data || !mediaType || (kind !== 'pdf' && kind !== 'image')) {
     return NextResponse.json({ error: 'Mangler dokument' }, { status: 400 });
   }
@@ -59,25 +67,51 @@ export async function POST(request: NextRequest) {
       ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data } }
       : { type: 'image', source: { type: 'base64', media_type: mediaType, data } };
 
+  // Utstyrskontekst gjør at modellen kan TOLKE dokumentet i lys av riktig
+  // maskin (f.eks. forstå at "dekk til trillebår/nesehjul" gjelder nesehjulet
+  // på en lift) i stedet for å kopiere kvitteringsteksten ordrett.
+  const equipmentContext = equipmentName
+    ? `Denne loggen gjelder utstyret: ${equipmentName}` +
+      `${equipmentModel ? `, modell ${equipmentModel}` : ''}` +
+      `${equipmentCategory ? `, kategori ${equipmentCategory}` : ''}.`
+    : 'Det er ikke oppgitt hvilket utstyr loggen gjelder.';
+
+  const correctionBlock =
+    Array.isArray(corrections) && corrections.length
+      ? '\n\nDu foreslo tidligere en logg, men brukeren har korrigert deg ' +
+        '(nyeste sist):\n' +
+        corrections.map((c, i) => `${i + 1}. ${c}`).join('\n') +
+        '\n\nLag en OPPDATERT logg som tar hensyn til korreksjonene.'
+      : '';
+
   try {
     const parsed = await extractStructured<ParsedLog>({
       model: AI_MODELS.smart,
       system:
-        'Du leser kvitteringer, fakturaer og servicehefter for landbruks- og kjøretøyvedlikehold ' +
-        'og trekker ut informasjon til en vedlikeholdslogg. Svar alltid på norsk. Hvis et felt ikke ' +
-        'finnes i dokumentet, sett det til null. Ikke gjett på datoer eller tall som ikke står der.',
+        'Du leser kvitteringer, fakturaer og servicehefter og lager en vedlikeholdslogg for ET ' +
+        'BESTEMT utstyr. Svar alltid på norsk.\n' +
+        'VIKTIG: Du skal TOLKE dokumentet i lys av utstyret — ikke bare kopiere teksten.\n' +
+        '- Beskriv hva som ble gjort/byttet/reparert og hvorfor, tilpasset utstyret. Hvis ' +
+        'dokumentet bruker en generisk betegnelse (f.eks. "dekk til trillebår/nesehjul") men ' +
+        'utstyret er en lift, så beskriv det som nesehjulet/styrehjulet på liften.\n' +
+        '- Ta MED det som er relevant for vedlikehold/reparasjon: arbeid, deler, og evt. kostnad.\n' +
+        '- UTELAT butikk-, ordre-, betalings- og hentingsinformasjon (f.eks. "kan hentes i ' +
+        'butikk", adresse, kundenummer, ordrenummer, leveringsmåte). Det hører ikke hjemme i en ' +
+        'vedlikeholdslogg.\n' +
+        'Hvis et felt ikke finnes, sett det til null. Ikke gjett på datoer/tall som ikke står der.',
       content: [
         docBlock,
         {
           type: 'text',
           text:
-            'Trekk ut feltene til en vedlikeholdslogg fra dette dokumentet. ' +
-            'Lag en kort, nyttig beskrivelse som oppsummerer arbeidet og de viktigste delene.',
+            `${equipmentContext}\n\nLes dokumentet og lag en vedlikeholdslogg: en kort, tolket ` +
+            `beskrivelse av hva som ble gjort på dette utstyret, med de viktigste delene og ` +
+            `evt. totalkostnad. Husk å utelate butikk-/ordre-/hentingsinfo.${correctionBlock}`,
         },
       ],
       schema: schema as unknown as Record<string, unknown>,
       toolName: 'lagre_vedlikeholdslogg',
-      toolDescription: 'Registrer de uthentede feltene fra dokumentet.',
+      toolDescription: 'Registrer de tolkede feltene til vedlikeholdsloggen.',
       maxTokens: 1024,
     });
 
