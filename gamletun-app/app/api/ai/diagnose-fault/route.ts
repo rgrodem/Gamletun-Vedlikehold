@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Ikke innlogget' }, { status: 401 });
 
   let body: {
+    images?: Array<{ mediaType?: string; data?: string }>;
     mediaType?: string;
     data?: string;
     equipmentName?: string;
@@ -54,8 +55,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Ugyldig forespørsel' }, { status: 400 });
   }
 
-  const { mediaType, data, equipmentName, equipmentCategory, corrections } = body;
-  if (!data || !mediaType?.startsWith('image/')) {
+  const { equipmentName, equipmentCategory, corrections } = body;
+
+  // Støtt flere bilder (images[]) og ett enkelt (bakoverkompatibelt). Maks 6.
+  const rawImages =
+    Array.isArray(body.images) && body.images.length
+      ? body.images
+      : body.data
+        ? [{ mediaType: body.mediaType, data: body.data }]
+        : [];
+
+  const imageBlocks = rawImages
+    .slice(0, 6)
+    .filter((img) => img.data && img.mediaType?.startsWith('image/'))
+    .map((img) => ({
+      type: 'image' as const,
+      source: { type: 'base64' as const, media_type: img.mediaType!, data: img.data! },
+    }));
+
+  if (imageBlocks.length === 0) {
     return NextResponse.json({ error: 'Mangler bilde' }, { status: 400 });
   }
 
@@ -73,6 +91,11 @@ export async function POST(request: NextRequest) {
         '\n\nLag en OPPDATERT diagnose som tar hensyn til korreksjonene. Stol på brukeren.'
       : '';
 
+  const imagesHint =
+    imageBlocks.length > 1
+      ? `\n\nDet er ${imageBlocks.length} bilder — bruk dem sammen for å forstå feilen.`
+      : '';
+
   try {
     const diagnosis = await extractStructured<Diagnosis>({
       model: AI_MODELS.smart,
@@ -81,12 +104,12 @@ export async function POST(request: NextRequest) {
         'Svar alltid på norsk. Vær konkret, men ikke overdriv sikkerheten — dette er et forslag som ' +
         'en person skal kontrollere. Velg prioritet konservativt: ved tvil om sikkerhet, velg høyere.',
       content: [
-        { type: 'image', source: { type: 'base64', media_type: mediaType, data } },
+        ...imageBlocks,
         {
           type: 'text',
           text:
-            `${contextLine}\n\nSe på bildet og vurder feilen: gi en kort tittel, sannsynlig årsak, ` +
-            `alvorlighet (prioritet), foreslått utbedring og sannsynlige deler.${correctionBlock}`,
+            `${contextLine}\n\nSe på bildet/bildene og vurder feilen: gi en kort tittel, sannsynlig årsak, ` +
+            `alvorlighet (prioritet), foreslått utbedring og sannsynlige deler.${imagesHint}${correctionBlock}`,
         },
       ],
       schema: schema as unknown as Record<string, unknown>,

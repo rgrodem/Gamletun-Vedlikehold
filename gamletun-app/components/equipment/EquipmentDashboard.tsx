@@ -330,7 +330,9 @@ export default function EquipmentDashboard({
       {/* Section header */}
       <div className="flex items-baseline justify-between pt-1">
         <h2 className="font-serif text-[20px] font-medium text-ink tracking-tightish m-0">
-          Alt utstyr
+          {selectedCategory === 'all'
+            ? 'Alt utstyr'
+            : categories.find((c) => c.id === selectedCategory)?.name ?? 'Utstyr'}
         </h2>
         <button
           type="button"

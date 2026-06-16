@@ -53,7 +53,8 @@ export default function ReportFaultModal({ equipment, equipmentCategory, onClose
   // Feildiagnose-samtale: forslaget vises i et kort med «Stemmer dette?».
   // Feltene fylles først inn når brukeren bekrefter med «Ja».
   const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
-  const [photoData, setPhotoData] = useState<{ data: string; mediaType: string } | null>(null);
+  type ImagePart = { data: string; mediaType: string };
+  const [imagesData, setImagesData] = useState<ImagePart[] | null>(null);
   const [corrections, setCorrections] = useState<string[]>([]);
   const [correcting, setCorrecting] = useState(false);
   const [correctionText, setCorrectionText] = useState('');
@@ -68,18 +69,13 @@ export default function ReportFaultModal({ equipment, equipmentCategory, onClose
     setPhotos(prev => [...prev, ...newFiles]);
   };
 
-  // Kall diagnose-ruten med bildet + evt. tidligere korreksjoner.
-  const callDiagnose = async (
-    data: string,
-    mediaType: string,
-    corr: string[]
-  ): Promise<Diagnosis | null> => {
+  // Kall diagnose-ruten med bildene + evt. tidligere korreksjoner.
+  const callDiagnose = async (images: ImagePart[], corr: string[]): Promise<Diagnosis | null> => {
     const res = await fetch('/api/ai/diagnose-fault', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        mediaType,
-        data,
+        images,
         equipmentName: equipment.name,
         equipmentCategory: equipmentCategory || undefined,
         corrections: corr,
@@ -93,23 +89,29 @@ export default function ReportFaultModal({ equipment, equipmentCategory, onClose
     return d as Diagnosis;
   };
 
-  // Steg 1: analyser første foto. Viser diagnose-kortet (fyller ikke felt ennå).
+  // Steg 1: analyser alle vedlagte bilder sammen. Viser kortet (fyller ikke felt ennå).
   const handleDiagnose = async () => {
-    const photo = photos[0];
-    if (!photo) return;
+    if (photos.length === 0) return;
     setAiLoading(true);
     setAiNote('');
     setError('');
     try {
-      const data = await fileToBase64(photo);
-      setPhotoData({ data, mediaType: photo.type });
+      const usable = photos.filter((f) => f.size <= 25 * 1024 * 1024).slice(0, 6);
+      if (usable.length === 0) {
+        setError('Bildene er for store for KI-analyse (maks 25 MB hver).');
+        return;
+      }
+      const images: ImagePart[] = await Promise.all(
+        usable.map(async (f) => ({ data: await fileToBase64(f), mediaType: f.type }))
+      );
+      setImagesData(images);
       setCorrections([]);
       setCorrecting(false);
-      const d = await callDiagnose(data, photo.type, []);
+      const d = await callDiagnose(images, []);
       if (d) setDiagnosis(d);
     } catch (err) {
       console.error('Feildiagnose feilet:', err);
-      setError('Kunne ikke analysere bildet.');
+      setError('Kunne ikke analysere bildene.');
     } finally {
       setAiLoading(false);
     }
@@ -118,12 +120,12 @@ export default function ReportFaultModal({ equipment, equipmentCategory, onClose
   // «Nei, korriger» → send brukerens rettelse og få oppdatert diagnose.
   const handleRefine = async () => {
     const text = correctionText.trim();
-    if (!text || !photoData) return;
+    if (!text || !imagesData) return;
     setAiLoading(true);
     setError('');
     try {
       const next = [...corrections, text];
-      const d = await callDiagnose(photoData.data, photoData.mediaType, next);
+      const d = await callDiagnose(imagesData, next);
       if (d) {
         setDiagnosis(d);
         setCorrections(next);
@@ -395,7 +397,7 @@ export default function ReportFaultModal({ equipment, equipmentCategory, onClose
                 disabled={aiLoading}
                 className="mt-2.5 w-full inline-flex items-center justify-center gap-2 bg-blue-600 text-white rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-50"
               >
-                <FaMagic /> {aiLoading ? 'Analyserer…' : 'Analyser bilde med KI'}
+                <FaMagic /> {aiLoading ? 'Analyserer…' : `Analyser ${photos.length > 1 ? 'bildene' : 'bildet'} med KI`}
               </button>
             )}
 
