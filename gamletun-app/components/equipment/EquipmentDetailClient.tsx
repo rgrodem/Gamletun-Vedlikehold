@@ -339,6 +339,7 @@ export default function EquipmentDetailClient({
       {showLogModal && (
         <LogMaintenanceModal
           equipment={equipment}
+          equipmentCategory={equipment.category?.name}
           onClose={() => setShowLogModal(false)}
           onSuccess={handleSuccess}
         />

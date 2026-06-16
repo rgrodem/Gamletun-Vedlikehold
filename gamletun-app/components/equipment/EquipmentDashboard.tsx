@@ -457,6 +457,7 @@ export default function EquipmentDashboard({
       {maintenanceEquipment && (
         <LogMaintenanceModal
           equipment={maintenanceEquipment}
+          equipmentCategory={maintenanceEquipment.category?.name}
           onClose={() => setMaintenanceEquipment(null)}
           onSuccess={handleSuccess}
         />
