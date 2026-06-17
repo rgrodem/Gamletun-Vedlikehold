@@ -134,6 +134,18 @@ export default function PurchaseModal({ parts, equipment, onClose, onSuccess }: 
       for (const l of valid) {
         let partId = l.existingPartId;
         const cost = num(l.unitCost) ?? null;
+        // Gjenbruk en vare som allerede finnes (samme delenummer eller navn) —
+        // også om saldoen er 0 — i stedet for å opprette en dublett.
+        if (!partId) {
+          const pn = l.partNumber.trim().toLowerCase();
+          const nm = l.name.trim().toLowerCase();
+          const match = parts.find(
+            (p) =>
+              (pn && p.part_number?.toLowerCase() === pn) ||
+              (nm && p.name.toLowerCase() === nm)
+          );
+          if (match) partId = match.id;
+        }
         if (!partId) {
           const created = await createPart({
             name: l.name.trim(),

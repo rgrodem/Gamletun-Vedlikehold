@@ -16,6 +16,7 @@ import { useModalBehavior } from '@/lib/use-modal-behavior';
 interface Props {
   equipment: { id: string; name: string }[];
   existingCategories?: string[];
+  existingParts?: Part[];
   part?: Part | null; // redigering
   onClose: () => void;
   onSuccess: () => void;
@@ -23,7 +24,7 @@ interface Props {
 
 const UNITS: PartUnit[] = ['stk', 'liter', 'meter', 'kg'];
 
-export default function PartModal({ equipment, existingCategories = [], part, onClose, onSuccess }: Props) {
+export default function PartModal({ equipment, existingCategories = [], existingParts = [], part, onClose, onSuccess }: Props) {
   useModalBehavior(onClose);
   const editing = !!part;
 
@@ -79,6 +80,21 @@ export default function PartModal({ equipment, existingCategories = [], part, on
       if (editing && id) {
         await updatePart(id, payload);
       } else {
+        // Hindre dublett: samme delenummer (eller navn) finnes allerede —
+        // også blant utsolgte varer. Bruk «Innkjøp» for å øke beholdningen.
+        const pn = partNumber.trim().toLowerCase();
+        const nm = name.trim().toLowerCase();
+        const dup = existingParts.find(
+          (p) => (pn && p.part_number?.toLowerCase() === pn) || (nm && p.name.toLowerCase() === nm)
+        );
+        if (dup) {
+          setError(
+            `«${dup.name}»${dup.part_number ? ` (${dup.part_number})` : ''} finnes allerede` +
+              `${dup.current_stock > 0 ? '' : ' (utsolgt)'}. Bruk «Innkjøp» for å øke beholdningen i stedet for å opprette en ny.`
+          );
+          setLoading(false);
+          return;
+        }
         const created = await createPart(payload);
         id = created.id;
       }

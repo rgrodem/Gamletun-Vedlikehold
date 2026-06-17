@@ -18,6 +18,7 @@ export default function PartsClient({ initialParts, equipment }: Props) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string>('all');
   const [lowOnly, setLowOnly] = useState(false);
+  const [showSold, setShowSold] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [showPurchase, setShowPurchase] = useState(false);
 
@@ -28,6 +29,8 @@ export default function PartsClient({ initialParts, equipment }: Props) {
   }, [initialParts]);
 
   const lowCount = initialParts.filter(isLowStock).length;
+  const inStockCount = initialParts.filter((p) => p.current_stock > 0).length;
+  const soldCount = initialParts.length - inStockCount;
 
   const filtered = initialParts.filter((p) => {
     const matchSearch =
@@ -36,8 +39,13 @@ export default function PartsClient({ initialParts, equipment }: Props) {
       p.part_number?.toLowerCase().includes(search.toLowerCase()) ||
       p.ean?.toLowerCase().includes(search.toLowerCase());
     const matchCat = category === 'all' || p.category === category;
-    const matchLow = !lowOnly || isLowStock(p);
-    return matchSearch && matchCat && matchLow;
+    if (!matchSearch || !matchCat) return false;
+    if (lowOnly) return isLowStock(p);
+    // «Utsolgt»-visning viser bare varer med tom saldo. Søk finner alt.
+    if (showSold) return p.current_stock <= 0;
+    if (search) return true;
+    // Standard: skjul saldo 0 — varen blir liggende i basen for gjenbruk.
+    return p.current_stock > 0;
   });
 
   const refresh = () => router.refresh();
@@ -50,7 +58,8 @@ export default function PartsClient({ initialParts, equipment }: Props) {
             Varelager
           </h1>
           <p className="text-[14px] text-ink2 m-0 mt-0.5">
-            {initialParts.length} deler{lowCount > 0 ? ` · ${lowCount} lavt lager` : ''}
+            {inStockCount} på lager{lowCount > 0 ? ` · ${lowCount} lavt lager` : ''}
+            {soldCount > 0 ? ` · ${soldCount} utsolgt` : ''}
           </p>
         </div>
         <div className="flex gap-1.5">
@@ -85,12 +94,15 @@ export default function PartsClient({ initialParts, equipment }: Props) {
 
       {/* Filtre */}
       <div className="flex gap-2 overflow-x-auto scrollbar-hide -mx-5 px-5 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 py-0.5">
-        <FilterChip active={category === 'all' && !lowOnly} onClick={() => { setCategory('all'); setLowOnly(false); }} label={`Alle · ${initialParts.length}`} />
+        <FilterChip active={category === 'all' && !lowOnly && !showSold} onClick={() => { setCategory('all'); setLowOnly(false); setShowSold(false); }} label={`På lager · ${inStockCount}`} />
         {lowCount > 0 && (
-          <FilterChip active={lowOnly} onClick={() => { setLowOnly(true); setCategory('all'); }} label={`Lavt lager · ${lowCount}`} tone="rust" />
+          <FilterChip active={lowOnly} onClick={() => { setLowOnly(true); setShowSold(false); setCategory('all'); }} label={`Lavt lager · ${lowCount}`} tone="rust" />
+        )}
+        {soldCount > 0 && (
+          <FilterChip active={showSold} onClick={() => { setShowSold(true); setLowOnly(false); setCategory('all'); }} label={`Utsolgt · ${soldCount}`} />
         )}
         {categories.map((c) => (
-          <FilterChip key={c} active={category === c} onClick={() => { setCategory(c); setLowOnly(false); }} label={c} />
+          <FilterChip key={c} active={category === c} onClick={() => { setCategory(c); setLowOnly(false); setShowSold(false); }} label={c} />
         ))}
       </div>
 
@@ -147,6 +159,7 @@ export default function PartsClient({ initialParts, equipment }: Props) {
         <PartModal
           equipment={equipment}
           existingCategories={categories}
+          existingParts={initialParts}
           onClose={() => setShowAdd(false)}
           onSuccess={() => { setShowAdd(false); refresh(); }}
         />
