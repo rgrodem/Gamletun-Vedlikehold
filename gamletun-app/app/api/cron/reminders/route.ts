@@ -118,7 +118,14 @@ export async function GET(request: NextRequest) {
       parseDue(wo.due_date) <= soonEnd
   );
 
-  if (overdue.length === 0 && dueSoon.length === 0) {
+  // Deler under minimumsbeholdning (lavt lager).
+  const { data: lowStock } = await admin
+    .from('parts_low_stock')
+    .select('name, current_stock, min_stock, unit, location')
+    .order('name', { ascending: true });
+  const lowStockParts = lowStock || [];
+
+  if (overdue.length === 0 && dueSoon.length === 0 && lowStockParts.length === 0) {
     return NextResponse.json({
       expiredReservations: expiredEquipmentIds.length,
       sent: 0,
@@ -141,16 +148,20 @@ export async function GET(request: NextRequest) {
     return `<li><strong>${wo.title}</strong> — ${equipment?.name ?? 'Ukjent utstyr'} (${reasons.join(' · ')})</li>`;
   };
 
+  const lowRow = (p: { name: string; current_stock: number; min_stock: number; unit: string; location: string | null }) =>
+    `<li><strong>${p.name}</strong> — ${p.current_stock}/${p.min_stock} ${p.unit}${p.location ? ` (hylle ${p.location})` : ''}</li>`;
+
   const html = `
     <h2>Vedlikeholdspåminnelse — Gamletun</h2>
     ${overdue.length > 0 ? `<h3>Forfalt (${overdue.length})</h3><ul>${overdue.map(row).join('')}</ul>` : ''}
     ${dueSoon.length > 0 ? `<h3>Forfaller innen ${DUE_SOON_DAYS} dager (${dueSoon.length})</h3><ul>${dueSoon.map(row).join('')}</ul>` : ''}
+    ${lowStockParts.length > 0 ? `<h3>Lavt lager (${lowStockParts.length})</h3><ul>${lowStockParts.map(lowRow).join('')}</ul><p><a href="${origin}/parts">Åpne varelager</a></p>` : ''}
     <p><a href="${origin}/work-orders">Åpne arbeidsordrer i Gamletun Vedlikehold</a></p>
   `;
 
   const ok = await sendEmail({
     to: notifyEmail,
-    subject: `Vedlikehold: ${overdue.length} forfalt · ${dueSoon.length} forfaller snart`,
+    subject: `Vedlikehold: ${overdue.length} forfalt · ${dueSoon.length} forfaller snart · ${lowStockParts.length} lavt lager`,
     html,
   });
 
@@ -159,5 +170,6 @@ export async function GET(request: NextRequest) {
     sent: ok ? 1 : 0,
     overdue: overdue.length,
     dueSoon: dueSoon.length,
+    lowStock: lowStockParts.length,
   });
 }

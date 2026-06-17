@@ -12,6 +12,7 @@ import QRCodeModal from './QRCodeModal';
 import WorkOrderSection from '../work-orders/WorkOrderSection';
 import DocumentSection from './DocumentSection';
 import InventorySection from './InventorySection';
+import CompatiblePartsSection from './CompatiblePartsSection';
 import ReservationModal from '../reservations/ReservationModal';
 import ActiveReservationBadge from '../reservations/ActiveReservationBadge';
 import { getActiveReservationForEquipment, type Reservation } from '@/lib/reservations';
@@ -323,6 +324,7 @@ export default function EquipmentDetailClient({
       <div className="px-5 pt-6 sm:px-6 lg:px-8 space-y-5 min-w-0">
         <VehicleInfo equipment={equipment} />
         <WorkOrderSection equipment={{ id: equipment.id, name: equipment.name }} onUpdate={handleSuccess} />
+        <CompatiblePartsSection equipmentId={equipment.id} />
         <InventorySection equipmentId={equipment.id} />
         <DocumentSection equipmentId={equipment.id} onUpdate={handleSuccess} />
 
