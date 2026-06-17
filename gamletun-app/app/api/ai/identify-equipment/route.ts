@@ -1,10 +1,11 @@
-// Gjenkjenn utstyr fra bilde: foto av en maskin/kjøretøy → forslag til navn,
-// modell, kategori, og avlest registreringsnummer fra skiltet hvis synlig.
+// Gjenkjenn utstyr fra bilde eller dokument: foto av en maskin/kjøretøy, et
+// lagret bilde, eller en PDF (f.eks. vognkort/faktura) → forslag til navn,
+// modell, kategori, og avlest registreringsnummer hvis synlig.
 // KUN forslag — brukeren bekrefter i skjemaet. For registrerte kjøretøy
 // gjør klienten et SVV-oppslag på regnummeret etterpå.
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
-import { extractStructured, AI_MODELS } from '@/lib/anthropic';
+import { extractStructured, AI_MODELS, type AiContentBlock } from '@/lib/anthropic';
 
 export const maxDuration = 60;
 
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Ikke innlogget' }, { status: 401 });
 
   let body: {
+    documents?: Array<{ kind?: string; mediaType?: string; data?: string }>;
     images?: Array<{ mediaType?: string; data?: string }>;
     categories?: string[];
     regnrHint?: string;
@@ -72,16 +74,27 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Ugyldig forespørsel' }, { status: 400 });
   }
 
-  const imageBlocks = (Array.isArray(body.images) ? body.images : [])
-    .slice(0, 6)
-    .filter((img) => img.data && img.mediaType?.startsWith('image/'))
-    .map((img) => ({
-      type: 'image' as const,
-      source: { type: 'base64' as const, media_type: img.mediaType!, data: img.data! },
-    }));
+  // Godta både dokumenter (bilde + PDF) og ren bilde-liste (bakoverkompatibelt).
+  const rawDocs =
+    Array.isArray(body.documents) && body.documents.length
+      ? body.documents
+      : (Array.isArray(body.images) ? body.images : []).map((img) => ({
+          kind: 'image',
+          mediaType: img.mediaType,
+          data: img.data,
+        }));
 
-  if (imageBlocks.length === 0) {
-    return NextResponse.json({ error: 'Mangler bilde' }, { status: 400 });
+  const docBlocks: AiContentBlock[] = rawDocs
+    .slice(0, 6)
+    .filter((d) => d.data && d.mediaType && (d.kind === 'pdf' || d.kind === 'image'))
+    .map((d) =>
+      d.kind === 'pdf'
+        ? { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: d.data! } }
+        : { type: 'image', source: { type: 'base64', media_type: d.mediaType!, data: d.data! } }
+    );
+
+  if (docBlocks.length === 0) {
+    return NextResponse.json({ error: 'Mangler bilde eller dokument' }, { status: 400 });
   }
 
   const categories = Array.isArray(body.categories) ? body.categories.filter(Boolean) : [];
@@ -89,31 +102,34 @@ export async function POST(request: NextRequest) {
     ? `Tilgjengelige kategorier (velg den som passer best, ellers tom): ${categories.join(', ')}.`
     : '';
   const regnrLine = body.regnrHint?.trim()
-    ? `Brukeren har oppgitt registreringsnummer: ${body.regnrHint.trim().toUpperCase()}. Bruk dette med mindre skiltet på bildet tydelig viser noe annet.`
+    ? `Brukeren har oppgitt registreringsnummer: ${body.regnrHint.trim().toUpperCase()}. Bruk dette med mindre dokumentet tydelig viser noe annet.`
     : '';
-  const imagesHint =
-    imageBlocks.length > 1 ? `\n\nDet er ${imageBlocks.length} bilder — bruk dem sammen.` : '';
+  const docsHint =
+    docBlocks.length > 1 ? `\n\nDet er ${docBlocks.length} vedlegg — bruk dem sammen.` : '';
 
   try {
     const result = await extractStructured<Identification>({
       model: AI_MODELS.smart,
       system:
-        'Du hjelper en gård med å registrere utstyr og kjøretøy ut fra foto. Svar alltid på norsk. ' +
-        'Tolk det du ser — ikke bare les av tekst. Hvis et norsk bilskilt er synlig, les av ' +
-        'registreringsnummeret nøyaktig (to bokstaver fulgt av fem siffer). Vær konkret men ' +
-        'ikke gjett vilt: bruk tom streng for felt du er usikker på.',
+        'Du hjelper en gård med å registrere utstyr og kjøretøy ut fra bilder og dokumenter. ' +
+        'Vedlegget kan være et foto av maskinen, et lagret bilde, eller en PDF som vognkort, ' +
+        'faktura eller salgspapir. Svar alltid på norsk. Tolk det du ser — ikke bare les av tekst. ' +
+        'Hvis et norsk registreringsnummer er synlig (på skilt eller i vognkort), les det av ' +
+        'nøyaktig (to bokstaver fulgt av fem siffer). Et vognkort kan også oppgi merke, modell og ' +
+        'årsmodell — ta det med. Vær konkret men ikke gjett vilt: bruk tom streng for felt du er ' +
+        'usikker på.',
       content: [
-        ...imageBlocks,
+        ...docBlocks,
         {
           type: 'text',
           text:
-            `Se på bildet/bildene og identifiser utstyret. Foreslå navn, modell og kategori, ` +
-            `og les av registreringsnummeret hvis et skilt er synlig.\n\n${categoryLine}\n${regnrLine}${imagesHint}`,
+            `Se på vedlegget/vedleggene og identifiser utstyret. Foreslå navn, modell og kategori, ` +
+            `og les av registreringsnummeret hvis det er synlig (skilt eller vognkort).\n\n${categoryLine}\n${regnrLine}${docsHint}`,
         },
       ],
       schema: schema as unknown as Record<string, unknown>,
       toolName: 'registrer_utstyr',
-      toolDescription: 'Registrer det identifiserte utstyret fra bildet.',
+      toolDescription: 'Registrer det identifiserte utstyret fra vedlegget.',
       maxTokens: 1024,
     });
 
