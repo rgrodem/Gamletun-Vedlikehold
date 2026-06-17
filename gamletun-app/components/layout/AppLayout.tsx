@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Sidebar from './Sidebar';
 import UserMenu from '../auth/UserMenu';
+import PullToRefresh from './PullToRefresh';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -29,6 +30,7 @@ interface AppLayoutProps {
 export default function AppLayout({ children, email, workOrderStats }: AppLayoutProps) {
   return (
     <div className="min-h-screen w-full overflow-x-hidden bg-bg text-ink">
+      <PullToRefresh />
       <div className="flex min-h-screen">
         <Sidebar workOrderStats={workOrderStats} />
 
