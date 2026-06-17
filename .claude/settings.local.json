@@ -51,7 +51,10 @@
       "Bash(findstr:*)",
       "Bash(gh auth status:*)",
       "Bash(gh auth logout:*)",
-      "Bash(gh pr create:*)"
+      "Bash(gh pr create:*)",
+      "mcp__Supabase__list_projects",
+      "mcp__Supabase__list_migrations",
+      "mcp__Supabase__get_logs"
     ],
     "deny": [],
     "ask": []

@@ -12,6 +12,7 @@ import {
   FaExclamationTriangle,
   FaHandPaper,
   FaBoxes,
+  FaUsers,
 } from 'react-icons/fa';
 import { useRole } from '@/components/RoleProvider';
 
@@ -29,6 +30,7 @@ const quickActions: Array<{ href: string; Icon: typeof FaTractor; label: string;
   { href: '/?action=reserve', Icon: FaHandPaper,           label: 'Ny reservasjon' },
   { href: '/?action=fault',   Icon: FaExclamationTriangle, label: 'Meld feil' },
   { href: '/parts',           Icon: FaBoxes,               label: 'Varelager' },
+  { href: '/users',           Icon: FaUsers,               label: 'Brukere', adminOnly: true },
 ];
 
 export default function MobileBottomNav() {
