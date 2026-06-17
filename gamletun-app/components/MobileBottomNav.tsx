@@ -11,6 +11,7 @@ import {
   FaPlus,
   FaExclamationTriangle,
   FaHandPaper,
+  FaBoxes,
 } from 'react-icons/fa';
 
 const HIDDEN_PATHS = ['/login', '/auth'];
@@ -26,6 +27,7 @@ const quickActions: Array<{ href: string; Icon: typeof FaTractor; label: string 
   { href: '/?add=equipment',  Icon: FaTractor,             label: 'Nytt utstyr' },
   { href: '/?action=reserve', Icon: FaHandPaper,           label: 'Ny reservasjon' },
   { href: '/?action=fault',   Icon: FaExclamationTriangle, label: 'Meld feil' },
+  { href: '/parts',           Icon: FaBoxes,               label: 'Varelager' },
 ];
 
 export default function MobileBottomNav() {

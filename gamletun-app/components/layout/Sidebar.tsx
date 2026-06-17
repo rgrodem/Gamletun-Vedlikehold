@@ -9,6 +9,7 @@ import {
   FaTools,
   FaCalendarAlt,
   FaChartBar,
+  FaBoxes,
 } from 'react-icons/fa';
 import { HiDocumentReport } from 'react-icons/hi';
 
@@ -22,6 +23,7 @@ interface SidebarProps {
 const navigation = [
   { name: 'Utstyr', href: '/', icon: FaTractor },
   { name: 'Arbeidsordrer', href: '/work-orders', icon: FaTools },
+  { name: 'Varelager', href: '/parts', icon: FaBoxes },
   { name: 'Reservasjoner', href: '/reservations', icon: FaCalendarAlt },
   { name: 'Rapporter', href: '/reports', icon: HiDocumentReport },
 ];
