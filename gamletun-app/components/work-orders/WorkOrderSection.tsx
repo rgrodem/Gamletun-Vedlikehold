@@ -6,6 +6,7 @@ import { getWorkOrders, WorkOrder } from '@/lib/work-orders';
 import WorkOrderList from './WorkOrderList';
 import ReportFaultModal from './ReportFaultModal';
 import ScheduleMaintenanceModal from './ScheduleMaintenanceModal';
+import { useRole } from '@/components/RoleProvider';
 
 interface Equipment {
   id: string;
@@ -18,6 +19,7 @@ interface WorkOrderSectionProps {
 }
 
 export default function WorkOrderSection({ equipment, onUpdate }: WorkOrderSectionProps) {
+  const { isAdmin } = useRole();
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -64,13 +66,15 @@ export default function WorkOrderSection({ equipment, onUpdate }: WorkOrderSecti
           >
             <FaExclamationTriangle /> <span>Meld feil</span>
           </button>
-          <button
-            type="button"
-            onClick={() => setShowScheduleModal(true)}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-moss text-white px-4 py-3 rounded-[14px] active:scale-[0.98] transition-transform font-semibold text-[14px] min-h-[44px]"
-          >
-            <FaCalendarAlt /> <span>Planlegg</span>
-          </button>
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setShowScheduleModal(true)}
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-moss text-white px-4 py-3 rounded-[14px] active:scale-[0.98] transition-transform font-semibold text-[14px] min-h-[44px]"
+            >
+              <FaCalendarAlt /> <span>Planlegg</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -103,13 +107,15 @@ export default function WorkOrderSection({ equipment, onUpdate }: WorkOrderSecti
             >
               <FaExclamationTriangle /> <span>Meld feil</span>
             </button>
-            <button
-              type="button"
-              onClick={() => setShowScheduleModal(true)}
-              className="inline-flex items-center justify-center gap-2 bg-moss text-white px-4 py-2.5 rounded-[12px] font-semibold text-[14px]"
-            >
-              <FaCalendarAlt /> <span>Planlegg</span>
-            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => setShowScheduleModal(true)}
+                className="inline-flex items-center justify-center gap-2 bg-moss text-white px-4 py-2.5 rounded-[12px] font-semibold text-[14px]"
+              >
+                <FaCalendarAlt /> <span>Planlegg</span>
+              </button>
+            )}
           </div>
         </div>
       )}

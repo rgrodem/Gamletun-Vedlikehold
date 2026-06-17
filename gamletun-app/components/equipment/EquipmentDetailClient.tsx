@@ -16,6 +16,7 @@ import CompatiblePartsSection from './CompatiblePartsSection';
 import ReservationModal from '../reservations/ReservationModal';
 import ActiveReservationBadge from '../reservations/ActiveReservationBadge';
 import { getActiveReservationForEquipment, type Reservation } from '@/lib/reservations';
+import { useRole } from '@/components/RoleProvider';
 
 interface Category {
   id: string;
@@ -95,6 +96,7 @@ export default function EquipmentDetailClient({
   maintenanceLogs,
   categories,
 }: EquipmentDetailClientProps) {
+  const { isAdmin } = useRole();
   const [showLogModal, setShowLogModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showReservationModal, setShowReservationModal] = useState(false);
@@ -211,13 +213,15 @@ export default function EquipmentDetailClient({
 
         {showMore && (
           <div className="absolute top-16 right-4 z-10 bg-paper border border-line rounded-[14px] py-1 shadow-md min-w-[180px]">
-            <button
-              type="button"
-              onClick={() => { setShowEditModal(true); setShowMore(false); }}
-              className="w-full text-left px-3 py-2 text-sm text-ink hover:bg-line2 flex items-center gap-2"
-            >
-              <FaEdit className="text-ink3 text-xs" /> Rediger
-            </button>
+            {isAdmin && (
+              <button
+                type="button"
+                onClick={() => { setShowEditModal(true); setShowMore(false); }}
+                className="w-full text-left px-3 py-2 text-sm text-ink hover:bg-line2 flex items-center gap-2"
+              >
+                <FaEdit className="text-ink3 text-xs" /> Rediger
+              </button>
+            )}
             <button
               type="button"
               onClick={() => { exportToCSV(); setShowMore(false); }}
@@ -305,13 +309,15 @@ export default function EquipmentDetailClient({
             <FaHandPaper className="text-[14px]" /> Reserver
           </button>
         )}
-        <button
-          type="button"
-          onClick={() => setShowLogModal(true)}
-          className="bg-moss text-white rounded-[14px] px-4 py-4 text-[15px] font-semibold flex items-center justify-center gap-2"
-        >
-          <FaCheck className="text-[14px]" /> Logg vedlikehold
-        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setShowLogModal(true)}
+            className="bg-moss text-white rounded-[14px] px-4 py-4 text-[15px] font-semibold flex items-center justify-center gap-2"
+          >
+            <FaCheck className="text-[14px]" /> Logg vedlikehold
+          </button>
+        )}
         <Link
           href={`/work-orders?equipment=${equipment.id}`}
           className="bg-paper text-rust border border-line rounded-[14px] px-4 py-4 text-[15px] font-semibold flex items-center justify-center gap-2"

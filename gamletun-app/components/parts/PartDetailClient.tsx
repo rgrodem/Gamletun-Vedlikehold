@@ -18,6 +18,7 @@ import {
 } from '@/lib/parts';
 import PartModal from './PartModal';
 import PartLabelModal from './PartLabelModal';
+import { useRole } from '@/components/RoleProvider';
 
 interface Props {
   part: Part;
@@ -26,6 +27,7 @@ interface Props {
 
 export default function PartDetailClient({ part, equipment }: Props) {
   const router = useRouter();
+  const { isAdmin } = useRole();
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [compat, setCompat] = useState<{ equipment_id: string; name: string }[]>([]);
   const [showEdit, setShowEdit] = useState(false);
@@ -58,7 +60,7 @@ export default function PartDetailClient({ part, equipment }: Props) {
           </div>
           <div className="flex gap-1.5 flex-shrink-0">
             <button onClick={() => setShowLabel(true)} className="p-2.5 border border-line rounded-[12px] text-ink" aria-label="QR-etikett"><FaQrcode /></button>
-            <button onClick={() => setShowEdit(true)} className="p-2.5 border border-line rounded-[12px] text-ink" aria-label="Rediger"><FaEdit /></button>
+            {isAdmin && <button onClick={() => setShowEdit(true)} className="p-2.5 border border-line rounded-[12px] text-ink" aria-label="Rediger"><FaEdit /></button>}
           </div>
         </div>
 
@@ -80,11 +82,13 @@ export default function PartDetailClient({ part, equipment }: Props) {
         </div>
 
         {/* Handlinger */}
-        <div className="grid grid-cols-3 gap-2 mt-4">
-          <button onClick={() => setAction('in')} className="flex items-center justify-center gap-1.5 bg-moss text-white rounded-[12px] py-2.5 text-[13px] font-semibold"><FaPlus className="text-[11px]" /> Innkjøp</button>
-          <button onClick={() => setAction('out')} className="flex items-center justify-center gap-1.5 bg-ink text-paper rounded-[12px] py-2.5 text-[13px] font-semibold"><FaMinus className="text-[11px]" /> Forbruk</button>
-          <button onClick={() => setAction('correction')} className="flex items-center justify-center gap-1.5 bg-paper border border-line text-ink rounded-[12px] py-2.5 text-[13px] font-semibold"><FaBalanceScale className="text-[11px]" /> Tell opp</button>
-        </div>
+        {isAdmin && (
+          <div className="grid grid-cols-3 gap-2 mt-4">
+            <button onClick={() => setAction('in')} className="flex items-center justify-center gap-1.5 bg-moss text-white rounded-[12px] py-2.5 text-[13px] font-semibold"><FaPlus className="text-[11px]" /> Innkjøp</button>
+            <button onClick={() => setAction('out')} className="flex items-center justify-center gap-1.5 bg-ink text-paper rounded-[12px] py-2.5 text-[13px] font-semibold"><FaMinus className="text-[11px]" /> Forbruk</button>
+            <button onClick={() => setAction('correction')} className="flex items-center justify-center gap-1.5 bg-paper border border-line text-ink rounded-[12px] py-2.5 text-[13px] font-semibold"><FaBalanceScale className="text-[11px]" /> Tell opp</button>
+          </div>
+        )}
       </div>
 
       {/* Passer til */}
@@ -134,16 +138,18 @@ export default function PartDetailClient({ part, equipment }: Props) {
       </div>
 
       {/* Slett */}
-      <button
-        onClick={async () => {
-          if (!confirm('Slette denne delen og all historikk?')) return;
-          await deletePart(part.id);
-          router.push('/parts');
-        }}
-        className="inline-flex items-center gap-2 text-rust text-sm font-medium"
-      >
-        <FaTrash className="text-xs" /> Slett del
-      </button>
+      {isAdmin && (
+        <button
+          onClick={async () => {
+            if (!confirm('Slette denne delen og all historikk?')) return;
+            await deletePart(part.id);
+            router.push('/parts');
+          }}
+          className="inline-flex items-center gap-2 text-rust text-sm font-medium"
+        >
+          <FaTrash className="text-xs" /> Slett del
+        </button>
+      )}
 
       <div className="h-6" />
 

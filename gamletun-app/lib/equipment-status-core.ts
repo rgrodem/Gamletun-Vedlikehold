@@ -2,77 +2,32 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 
 export type EquipmentStatus = 'active' | 'maintenance' | 'inactive' | 'in_use';
 
-type SupabaseStatusClient = Pick<SupabaseClient, 'from'>;
+type SupabaseRpcClient = Pick<SupabaseClient, 'rpc'>;
 
 /**
- * Recalculate one equipment status from current work orders and reservations.
+ * Recompute one equipment's status from current work orders and reservations.
  *
- * Priority:
- * 1. Active work in progress / waiting for parts -> maintenance
- *    (low-priority work is ignored: cosmetic faults don't take the
- *    equipment out of service)
- * 2. Active reservation that has started -> in_use
- * 3. Manually inactive equipment stays inactive
- * 4. Otherwise active
+ * The actual logic lives in the Postgres function `refresh_equipment_status`
+ * (migration 020). It runs SECURITY DEFINER so members — who may report faults
+ * and reserve equipment but cannot otherwise write to `equipment` — can still
+ * trigger the derived status update. Keeping it in one place (the DB) also means
+ * server and client paths can never drift.
+ *
+ * Priority: active non-low work -> maintenance; started reservation -> in_use;
+ * manually inactive stays inactive; otherwise active.
  */
 export async function refreshEquipmentStatusWithClient(
-  supabase: SupabaseStatusClient,
+  supabase: SupabaseRpcClient,
   equipmentId: string
 ): Promise<EquipmentStatus> {
-  const { data: currentEquipment } = await supabase
-    .from('equipment')
-    .select('status')
-    .eq('id', equipmentId)
-    .single();
+  const { data, error } = await supabase.rpc('refresh_equipment_status', {
+    p_equipment_id: equipmentId,
+  });
 
-  const { data: activeWorkOrders, error: workOrderError } = await supabase
-    .from('work_orders')
-    .select('id')
-    .eq('equipment_id', equipmentId)
-    .neq('priority', 'low')
-    .in('status', ['in_progress', 'waiting_parts']);
-
-  if (workOrderError) {
-    console.error('Error checking active work orders:', workOrderError);
-    return (currentEquipment?.status as EquipmentStatus) || 'active';
+  if (error) {
+    console.error('Error refreshing equipment status:', error);
+    return 'active';
   }
 
-  if (activeWorkOrders && activeWorkOrders.length > 0) {
-    await supabase
-      .from('equipment')
-      .update({ status: 'maintenance' })
-      .eq('id', equipmentId);
-    return 'maintenance';
-  }
-
-  const now = new Date().toISOString();
-  const { data: activeReservations, error: reservationError } = await supabase
-    .from('equipment_reservations')
-    .select('id')
-    .eq('equipment_id', equipmentId)
-    .eq('status', 'active')
-    .lte('start_time', now)
-    .or(`end_time.is.null,end_time.gt.${now}`);
-
-  if (reservationError) {
-    console.error('Error checking active reservations:', reservationError);
-    return (currentEquipment?.status as EquipmentStatus) || 'active';
-  }
-
-  if (activeReservations && activeReservations.length > 0) {
-    await supabase
-      .from('equipment')
-      .update({ status: 'in_use' })
-      .eq('id', equipmentId);
-    return 'in_use';
-  }
-
-  const newStatus: EquipmentStatus = currentEquipment?.status === 'inactive' ? 'inactive' : 'active';
-
-  await supabase
-    .from('equipment')
-    .update({ status: newStatus })
-    .eq('id', equipmentId);
-
-  return newStatus;
+  return (data as EquipmentStatus) || 'active';
 }

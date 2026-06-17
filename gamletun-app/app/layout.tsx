@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import ServiceWorkerRegister from "@/components/layout/ServiceWorkerRegister";
+import { RoleProvider } from "@/components/RoleProvider";
 
 export const metadata: Metadata = {
   title: "Gamletun Vedlikehold",
@@ -36,8 +37,10 @@ export default function RootLayout({
       {/* Mobil: plass til bunnfeltet (64px) + pluss-knappen som stikker 20px
           over + safe-area, så innhold nederst aldri havner bak navigasjonen. */}
       <body className="antialiased bg-bg text-ink pb-[calc(6rem+env(safe-area-inset-bottom))] sm:pb-0">
-        {children}
-        <MobileBottomNav />
+        <RoleProvider>
+          {children}
+          <MobileBottomNav />
+        </RoleProvider>
         <ServiceWorkerRegister />
       </body>
     </html>

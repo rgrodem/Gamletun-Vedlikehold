@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { FaFileAlt, FaFilePdf, FaFileWord, FaFileExcel, FaImage, FaTrash, FaDownload, FaPlus } from 'react-icons/fa';
 import { createClient } from '@/lib/supabase/client';
 import { uploadFile, deleteFile, formatFileSize } from '@/lib/storage';
+import { useRole } from '@/components/RoleProvider';
 
 interface EquipmentDocument {
   id: string;
@@ -23,6 +24,7 @@ interface DocumentSectionProps {
 }
 
 export default function DocumentSection({ equipmentId, onUpdate }: DocumentSectionProps) {
+  const { isAdmin } = useRole();
   const [documents, setDocuments] = useState<EquipmentDocument[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -182,14 +184,16 @@ export default function DocumentSection({ equipmentId, onUpdate }: DocumentSecti
     <div>
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-serif text-[18px] font-medium text-ink tracking-tightish m-0">Dokumenter</h3>
-        <button
-          type="button"
-          onClick={() => setShowUploadForm(!showUploadForm)}
-          className="flex items-center gap-2 bg-moss text-white px-4 py-2.5 rounded-[12px] active:scale-[0.98] transition-transform font-semibold text-[14px] min-h-[44px]"
-        >
-          <FaPlus className="text-[12px]" />
-          <span>Last opp</span>
-        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setShowUploadForm(!showUploadForm)}
+            className="flex items-center gap-2 bg-moss text-white px-4 py-2.5 rounded-[12px] active:scale-[0.98] transition-transform font-semibold text-[14px] min-h-[44px]"
+          >
+            <FaPlus className="text-[12px]" />
+            <span>Last opp</span>
+          </button>
+        )}
       </div>
 
       {/* Upload Form */}
@@ -318,14 +322,16 @@ export default function DocumentSection({ equipmentId, onUpdate }: DocumentSecti
                 >
                   <FaDownload />
                 </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(doc)}
-                  className="p-3 bg-rustBg text-rust rounded-[10px] transition-all touch-manipulation min-h-[44px] min-w-[44px]"
-                  aria-label="Slett"
-                >
-                  <FaTrash />
-                </button>
+                {isAdmin && (
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(doc)}
+                    className="p-3 bg-rustBg text-rust rounded-[10px] transition-all touch-manipulation min-h-[44px] min-w-[44px]"
+                    aria-label="Slett"
+                  >
+                    <FaTrash />
+                  </button>
+                )}
               </div>
             </div>
           ))}

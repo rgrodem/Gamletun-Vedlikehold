@@ -14,6 +14,7 @@ import {
   returnLoan,
   loanedQuantity,
 } from '@/lib/inventory';
+import { useRole } from '@/components/RoleProvider';
 
 interface InventorySectionProps {
   equipmentId: string;
@@ -24,6 +25,7 @@ interface InventorySectionProps {
  * (f.eks. stillasdeler) i stedet for som én enhet.
  */
 export default function InventorySection({ equipmentId }: InventorySectionProps) {
+  const { isAdmin } = useRole();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loans, setLoans] = useState<InventoryLoan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,13 +98,15 @@ export default function InventorySection({ equipmentId }: InventorySectionProps)
             {totalOut > 0 ? ` · ${totalOut} ute` : ''}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setShowAdd((v) => !v)}
-          className="inline-flex items-center gap-1.5 px-3 py-2 text-[13px] text-ink font-medium border border-line rounded-[12px] bg-paper"
-        >
-          <FaPlus className="text-[11px]" /> Deltype
-        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setShowAdd((v) => !v)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-[13px] text-ink font-medium border border-line rounded-[12px] bg-paper"
+          >
+            <FaPlus className="text-[11px]" /> Deltype
+          </button>
+        )}
       </div>
 
       {error && (

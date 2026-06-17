@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FaSearch, FaPlus, FaFileInvoiceDollar, FaExclamationTriangle, FaChevronRight } from 'react-icons/fa';
 import { Part, UNIT_LABELS, isLowStock } from '@/lib/parts';
+import { useRole } from '@/components/RoleProvider';
 import PartModal from './PartModal';
 import PurchaseModal from './PurchaseModal';
 
@@ -15,6 +16,7 @@ interface Props {
 
 export default function PartsClient({ initialParts, equipment }: Props) {
   const router = useRouter();
+  const { isAdmin } = useRole();
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState<string>('all');
   const [lowOnly, setLowOnly] = useState(false);
@@ -62,22 +64,24 @@ export default function PartsClient({ initialParts, equipment }: Props) {
             {soldCount > 0 ? ` · ${soldCount} utsolgt` : ''}
           </p>
         </div>
-        <div className="flex gap-1.5">
-          <button
-            type="button"
-            onClick={() => setShowPurchase(true)}
-            className="flex items-center gap-2 bg-paper text-ink border border-line px-3 py-2 rounded-[12px] text-sm font-medium"
-          >
-            <FaFileInvoiceDollar className="text-[13px]" /> Innkjøp
-          </button>
-          <button
-            type="button"
-            onClick={() => setShowAdd(true)}
-            className="flex items-center gap-2 bg-ink text-paper px-3 py-2 rounded-[12px] text-sm font-medium"
-          >
-            <FaPlus className="text-[12px]" /> Ny del
-          </button>
-        </div>
+        {isAdmin && (
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              onClick={() => setShowPurchase(true)}
+              className="flex items-center gap-2 bg-paper text-ink border border-line px-3 py-2 rounded-[12px] text-sm font-medium"
+            >
+              <FaFileInvoiceDollar className="text-[13px]" /> Innkjøp
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowAdd(true)}
+              className="flex items-center gap-2 bg-ink text-paper px-3 py-2 rounded-[12px] text-sm font-medium"
+            >
+              <FaPlus className="text-[12px]" /> Ny del
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Søk */}

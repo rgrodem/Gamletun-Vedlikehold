@@ -11,6 +11,7 @@ import LogMaintenanceModal from '../maintenance/LogMaintenanceModal';
 import EditEquipmentModal from './EditEquipmentModal';
 import ReservationModal from '../reservations/ReservationModal';
 import { formatDueLabel, DUE_SOON_DAYS } from '@/lib/work-orders';
+import { useRole } from '@/components/RoleProvider';
 
 interface Category {
   id: string;
@@ -125,9 +126,10 @@ export default function EquipmentDashboard({
   const [faultEquipment, setFaultEquipment] = useState<Equipment | null>(null);
   const [reserveEquipment, setReserveEquipment] = useState<Equipment | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const { isAdmin } = useRole();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const addFromNav = searchParams.get('add') === 'equipment';
+  const addFromNav = isAdmin && searchParams.get('add') === 'equipment';
   // Hurtigmenyen i bunnfeltet sender hit med ?action=reserve|fault. Da går
   // listen i "velg utstyr"-modus: trykk på et utstyr åpner riktig modal i
   // stedet for å navigere til detaljsiden.
@@ -334,13 +336,15 @@ export default function EquipmentDashboard({
             ? 'Alt utstyr'
             : categories.find((c) => c.id === selectedCategory)?.name ?? 'Utstyr'}
         </h2>
-        <button
-          type="button"
-          onClick={() => setShowAddModal(true)}
-          className="inline-flex items-center gap-1.5 -mr-1 px-1 py-2 text-[13px] text-ink font-medium"
-        >
-          <FaPlus className="text-[11px]" /> Legg til
-        </button>
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={() => setShowAddModal(true)}
+            className="inline-flex items-center gap-1.5 -mr-1 px-1 py-2 text-[13px] text-ink font-medium"
+          >
+            <FaPlus className="text-[11px]" /> Legg til
+          </button>
+        )}
       </div>
 
       {/* Equipment list */}
@@ -432,17 +436,19 @@ export default function EquipmentDashboard({
       ) : (
         <div className="bg-paper border border-line rounded-[18px] p-8 text-center">
           <p className="text-ink2 mb-4 text-sm">Ingen utstyr funnet.</p>
-          <button
-            type="button"
-            onClick={() => {
-              setSearchTerm('');
-              setSelectedCategory('all');
-              if (!searchTerm && selectedCategory === 'all') setShowAddModal(true);
-            }}
-            className="inline-flex items-center gap-2 bg-ink text-paper px-4 py-2.5 rounded-[14px] font-medium text-sm"
-          >
-            {searchTerm || selectedCategory !== 'all' ? 'Nullstill' : 'Legg til utstyr'}
-          </button>
+          {(searchTerm || selectedCategory !== 'all' || isAdmin) && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm('');
+                setSelectedCategory('all');
+                if (!searchTerm && selectedCategory === 'all' && isAdmin) setShowAddModal(true);
+              }}
+              className="inline-flex items-center gap-2 bg-ink text-paper px-4 py-2.5 rounded-[14px] font-medium text-sm"
+            >
+              {searchTerm || selectedCategory !== 'all' ? 'Nullstill' : 'Legg til utstyr'}
+            </button>
+          )}
         </div>
       )}
 

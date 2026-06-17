@@ -10,8 +10,10 @@ import {
   FaCalendarAlt,
   FaChartBar,
   FaBoxes,
+  FaUsers,
 } from 'react-icons/fa';
 import { HiDocumentReport } from 'react-icons/hi';
+import { useRole } from '@/components/RoleProvider';
 
 interface SidebarProps {
   workOrderStats?: {
@@ -30,6 +32,10 @@ const navigation = [
 
 export default function Sidebar({ workOrderStats }: SidebarProps) {
   const pathname = usePathname();
+  const { isAdmin } = useRole();
+  const navItems = isAdmin
+    ? [...navigation, { name: 'Brukere', href: '/users', icon: FaUsers }]
+    : navigation;
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/' || pathname.startsWith('/equipment');
@@ -57,7 +63,7 @@ export default function Sidebar({ workOrderStats }: SidebarProps) {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        {navigation.map((item) => {
+        {navItems.map((item) => {
           const active = isActive(item.href);
           const showBadge = item.href === '/work-orders' && urgentCount > 0;
 

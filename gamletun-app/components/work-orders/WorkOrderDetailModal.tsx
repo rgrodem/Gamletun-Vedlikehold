@@ -17,6 +17,7 @@ import {
   typeLabels
 } from '@/lib/work-orders';
 import { useModalBehavior } from '@/lib/use-modal-behavior';
+import { useRole } from '@/components/RoleProvider';
 import CompleteWorkOrderModal from './CompleteWorkOrderModal';
 import WorkOrderAttachmentsSection from './WorkOrderAttachmentsSection';
 import WorkOrderPartsSection from './WorkOrderPartsSection';
@@ -29,6 +30,7 @@ interface WorkOrderDetailModalProps {
 }
 
 export default function WorkOrderDetailModal({ workOrder: initialWorkOrder, onClose, onUpdate }: WorkOrderDetailModalProps) {
+  const { isAdmin } = useRole();
   // Local copy so the modal can stay open and show fresh status after
   // "Start arbeid" etc., instead of forcing the user out and back in.
   const [workOrder, setWorkOrder] = useState(initialWorkOrder);
@@ -205,7 +207,7 @@ export default function WorkOrderDetailModal({ workOrder: initialWorkOrder, onCl
             )}
           </div>
           <div className="flex gap-2 flex-shrink-0">
-            {!isEditing && !['completed', 'closed'].includes(workOrder.status) && (
+            {isAdmin && !isEditing && !['completed', 'closed'].includes(workOrder.status) && (
               <>
                 <button
                   onClick={() => setIsEditing(true)}
@@ -236,7 +238,7 @@ export default function WorkOrderDetailModal({ workOrder: initialWorkOrder, onCl
         {/* Details */}
         <div className="p-6 space-y-6">
           {/* Status Change Section */}
-          {!['completed', 'closed'].includes(workOrder.status) && (
+          {isAdmin && !['completed', 'closed'].includes(workOrder.status) && (
             <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
               <h3 className="text-sm font-semibold text-gray-900 mb-3">Endre status</h3>
               <div className="flex flex-wrap gap-2">
@@ -382,14 +384,14 @@ export default function WorkOrderDetailModal({ workOrder: initialWorkOrder, onCl
           {/* Parts (planlegging: trengs/bestilt/mottatt) */}
           <WorkOrderPartsSection
             workOrderId={workOrder.id}
-            readOnly={['completed', 'closed'].includes(workOrder.status)}
+            readOnly={!isAdmin || ['completed', 'closed'].includes(workOrder.status)}
           />
 
           {/* Forbruk fra varelageret — trekker beholdning */}
           <WorkOrderStockSection
             workOrderId={workOrder.id}
             equipmentId={workOrder.equipment_id}
-            readOnly={workOrder.status === 'closed'}
+            readOnly={!isAdmin || workOrder.status === 'closed'}
           />
 
           {/* Comments Section */}
@@ -399,23 +401,25 @@ export default function WorkOrderDetailModal({ workOrder: initialWorkOrder, onCl
               Kommentarer ({comments.length})
             </h3>
 
-            {/* Add Comment Form */}
-            <form onSubmit={handleAddComment} className="mb-4">
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                rows={3}
-                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
-                placeholder="Skriv en kommentar..."
-              />
-              <button
-                type="submit"
-                disabled={submitting || !newComment.trim()}
-                className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
-              >
-                {submitting ? 'Legger til...' : 'Legg til kommentar'}
-              </button>
-            </form>
+            {/* Add Comment Form — kun admin */}
+            {isAdmin && (
+              <form onSubmit={handleAddComment} className="mb-4">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  rows={3}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all resize-none"
+                  placeholder="Skriv en kommentar..."
+                />
+                <button
+                  type="submit"
+                  disabled={submitting || !newComment.trim()}
+                  className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 active:scale-95 transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm"
+                >
+                  {submitting ? 'Legger til...' : 'Legg til kommentar'}
+                </button>
+              </form>
+            )}
 
             {/* Comments List */}
             {loading ? (

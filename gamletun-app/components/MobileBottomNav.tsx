@@ -13,6 +13,7 @@ import {
   FaHandPaper,
   FaBoxes,
 } from 'react-icons/fa';
+import { useRole } from '@/components/RoleProvider';
 
 const HIDDEN_PATHS = ['/login', '/auth'];
 
@@ -23,8 +24,8 @@ const items: Array<{ id: string; href: string; Icon: typeof FaTractor; label: st
   { id: 'rep',  href: '/reports',      Icon: FaChartBar,    label: 'Rapport' },
 ];
 
-const quickActions: Array<{ href: string; Icon: typeof FaTractor; label: string }> = [
-  { href: '/?add=equipment',  Icon: FaTractor,             label: 'Nytt utstyr' },
+const quickActions: Array<{ href: string; Icon: typeof FaTractor; label: string; adminOnly?: boolean }> = [
+  { href: '/?add=equipment',  Icon: FaTractor,             label: 'Nytt utstyr', adminOnly: true },
   { href: '/?action=reserve', Icon: FaHandPaper,           label: 'Ny reservasjon' },
   { href: '/?action=fault',   Icon: FaExclamationTriangle, label: 'Meld feil' },
   { href: '/parts',           Icon: FaBoxes,               label: 'Varelager' },
@@ -32,7 +33,9 @@ const quickActions: Array<{ href: string; Icon: typeof FaTractor; label: string 
 
 export default function MobileBottomNav() {
   const pathname = usePathname();
+  const { isAdmin } = useRole();
   const [menuOpen, setMenuOpen] = useState(false);
+  const visibleQuickActions = quickActions.filter((a) => !a.adminOnly || isAdmin);
 
   // Lukk hurtigmenyen ved navigasjon.
   useEffect(() => {
@@ -85,7 +88,7 @@ export default function MobileBottomNav() {
       >
         {menuOpen && (
           <div className="absolute bottom-full left-1/2 -translate-x-1/2 z-50 mb-3 w-[calc(100vw-32px)] max-w-sm grid grid-cols-3 gap-2.5 px-1">
-            {quickActions.map(({ href, Icon, label }) => (
+            {visibleQuickActions.map(({ href, Icon, label }) => (
               <Link
                 key={href}
                 href={href}
