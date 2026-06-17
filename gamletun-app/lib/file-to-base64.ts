@@ -1,6 +1,6 @@
 // Leser en File til ren base64 (uten "data:...;base64,"-prefiks) for sending
 // til server-side KI-ruter.
-export function fileToBase64(file: File): Promise<string> {
+export function fileToBase64(file: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {

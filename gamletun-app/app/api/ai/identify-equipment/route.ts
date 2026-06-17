@@ -113,11 +113,14 @@ export async function POST(request: NextRequest) {
       system:
         'Du hjelper en gård med å registrere utstyr og kjøretøy ut fra bilder og dokumenter. ' +
         'Vedlegget kan være et foto av maskinen, et lagret bilde, eller en PDF som vognkort, ' +
-        'faktura eller salgspapir. Svar alltid på norsk. Tolk det du ser — ikke bare les av tekst. ' +
+        'faktura eller salgspapir. Svar alltid på norsk. Tolk det du ser — ikke bare les av tekst.\n' +
+        'VIKTIG: Du skal ALLTID gi et fornuftig navn på det du ser, selv om du er usikker på ' +
+        'detaljer. Ser du en bil, skriv minst «Personbil» (legg til merke/farge hvis du ser det, ' +
+        'f.eks. «Personbil, rød Volkswagen»). Ser du en traktor, gravemaskin, tilhenger e.l., ' +
+        'navngi det. Tom streng for navn skal bare brukes hvis bildet er helt umulig å tolke.\n' +
         'Hvis et norsk registreringsnummer er synlig (på skilt eller i vognkort), les det av ' +
         'nøyaktig (to bokstaver fulgt av fem siffer). Et vognkort kan også oppgi merke, modell og ' +
-        'årsmodell — ta det med. Vær konkret men ikke gjett vilt: bruk tom streng for felt du er ' +
-        'usikker på.',
+        'årsmodell — ta det med. For øvrige felt: bruk tom streng heller enn å gjette.',
       content: [
         ...docBlocks,
         {
