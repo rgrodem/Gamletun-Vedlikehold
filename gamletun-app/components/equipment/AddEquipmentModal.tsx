@@ -279,6 +279,50 @@ export default function AddEquipmentModal({ categories, onClose, onSuccess }: Ad
     }
   };
 
+  // Oppdater et eksisterende utstyr med det nye: fyll inn felt som mangler
+  // (f.eks. bilde, vekt, dekk) uten å overskrive verdier som allerede er satt.
+  const handleUpdateExisting = async (target: ExistingEquipment) => {
+    setLoading(true);
+    setError('');
+    try {
+      const supabase = createClient();
+      const { data: current, error: fetchErr } = await supabase
+        .from('equipment')
+        .select('*')
+        .eq('id', target.id)
+        .single();
+      if (fetchErr || !current) throw fetchErr || new Error('Fant ikke utstyret');
+
+      // Behold eksisterende verdi hvis satt, ellers bruk den nye.
+      const keep = (existingVal: unknown, newVal: unknown) =>
+        existingVal !== null && existingVal !== undefined && existingVal !== '' ? existingVal : newVal;
+
+      const patch = {
+        model: keep(current.model, model.trim() || null),
+        serial_number: keep(current.serial_number, serialNumber.trim() || null),
+        category_id: keep(current.category_id, categoryId || null),
+        purchase_date: keep(current.purchase_date, purchaseDate || null),
+        notes: keep(current.notes, notes.trim() || null),
+        image_url: keep(current.image_url, imageUrl),
+        registration_number: keep(current.registration_number, registrationNumber.trim().toUpperCase() || null),
+        total_weight_kg: keep(current.total_weight_kg, parseIntOrNull(totalWeight)),
+        curb_weight_kg: keep(current.curb_weight_kg, parseIntOrNull(curbWeight)),
+        tire_dimension: keep(current.tire_dimension, tireDimension.trim() || null),
+        first_registration_date: keep(current.first_registration_date, firstRegistrationDate || null),
+      };
+
+      const { error: updateErr } = await supabase.from('equipment').update(patch).eq('id', target.id);
+      if (updateErr) throw updateErr;
+
+      onSuccess();
+      onClose();
+    } catch (err: any) {
+      console.error('Kunne ikke oppdatere eksisterende:', err);
+      setError(err.message || 'Kunne ikke oppdatere eksisterende utstyr');
+      setLoading(false);
+    }
+  };
+
   const inputCls =
     'w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all';
 
@@ -475,23 +519,41 @@ export default function AddEquipmentModal({ categories, onClose, onSuccess }: Ad
                   </p>
                   <p className="text-sm text-amber-800 mt-0.5">
                     {dupKind === 'regnr'
-                      ? 'Dette er sannsynligvis det samme kjøretøyet. Vil du åpne det som finnes, eller registrere dette som en ny enhet likevel?'
+                      ? 'Dette er sannsynligvis det samme kjøretøyet. Du kan oppdatere det som finnes med ny info (f.eks. bilde), eller registrere dette som en ny enhet.'
                       : 'Er dette det samme utstyret, eller en ny enhet (f.eks. en ekstra skuff til gravemaskinen)?'}
                   </p>
-                  <div className="mt-2 space-y-1">
+                  {/* Eksisterende treff — knapp pr. enhet for å oppdatere den med ny info */}
+                  <div className="mt-3 space-y-2">
                     {duplicates.map((d) => (
-                      <Link
-                        key={d.id}
-                        href={`/equipment/${d.id}`}
-                        className="flex items-center gap-1.5 text-sm font-medium text-amber-900 underline underline-offset-2 hover:text-amber-700"
-                      >
-                        {d.name}
-                        {d.model ? ` · ${d.model}` : ''}
-                        {d.registration_number ? ` · ${d.registration_number}` : ''}
-                        <FaArrowRight className="text-[11px]" />
-                      </Link>
+                      <div key={d.id} className="bg-white border border-amber-200 rounded-lg p-2.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-900 truncate">{d.name}</p>
+                            <p className="text-xs text-gray-500 truncate">
+                              {[d.model, d.registration_number].filter(Boolean).join(' · ') || 'Ingen detaljer'}
+                            </p>
+                          </div>
+                          <Link
+                            href={`/equipment/${d.id}`}
+                            className="flex-shrink-0 inline-flex items-center gap-1 text-xs font-medium text-amber-800 underline underline-offset-2"
+                          >
+                            Se <FaArrowRight className="text-[10px]" />
+                          </Link>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateExisting(d)}
+                          disabled={loading}
+                          className="mt-2 w-full px-4 py-2.5 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 disabled:opacity-50 text-sm min-h-[44px]"
+                        >
+                          {loading ? 'Oppdaterer…' : 'Oppdater denne med ny info'}
+                        </button>
+                      </div>
                     ))}
                   </div>
+                  <p className="text-[11px] text-amber-700 mt-1.5">
+                    Oppdatering fyller bare inn felt som mangler — den overskriver ikke det som allerede er utfylt.
+                  </p>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-2 mt-3">
@@ -508,7 +570,7 @@ export default function AddEquipmentModal({ categories, onClose, onSuccess }: Ad
                   disabled={loading}
                   className="flex-1 px-4 py-2.5 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 disabled:opacity-50 text-sm min-h-[44px]"
                 >
-                  {loading ? 'Lagrer…' : 'Registrer som ny enhet'}
+                  Registrer som ny enhet
                 </button>
               </div>
             </div>
