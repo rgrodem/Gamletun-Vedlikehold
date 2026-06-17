@@ -196,6 +196,62 @@ export async function getPartsForEquipment(equipmentId: string): Promise<Part[]>
     .filter(Boolean) as Part[];
 }
 
+// Deler som kan velges som forbruk på en arbeidsordre: alt forbruksmateriell
+// (felles, f.eks. olje) + utstyrsspesifikke deler knyttet til dette utstyret.
+// Slik slipper man å scrolle gjennom filtre som hører til helt andre maskiner.
+export async function getSelectablePartsForWorkOrder(equipmentId: string | null): Promise<Part[]> {
+  const supabase = createClient();
+  const { data: consumables, error } = await supabase
+    .from('parts')
+    .select('*')
+    .eq('part_type', 'consumable')
+    .order('name', { ascending: true });
+  if (error) {
+    console.error('Error fetching consumables:', error);
+    throw error;
+  }
+  const byId = new Map<string, Part>();
+  (consumables || []).forEach((p) => byId.set(p.id, p));
+  if (equipmentId) {
+    const specific = await getPartsForEquipment(equipmentId);
+    specific.forEach((p) => byId.set(p.id, p));
+  }
+  return Array.from(byId.values()).sort((a, b) => a.name.localeCompare(b.name, 'nb'));
+}
+
+// Forbruk (og retur) registrert på én arbeidsordre, med delenavn/enhet for visning.
+export interface WorkOrderStockUsage extends StockMovement {
+  part: Pick<Part, 'id' | 'name' | 'unit'> | null;
+}
+
+export async function getWorkOrderStockUsage(workOrderId: string): Promise<WorkOrderStockUsage[]> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from('stock_movements')
+    .select('*, part:part_id(id, name, unit)')
+    .eq('work_order_id', workOrderId)
+    .in('movement_type', ['out', 'return'])
+    .order('created_at', { ascending: true });
+  if (error) {
+    console.error('Error fetching work order stock usage:', error);
+    throw error;
+  }
+  return (data || []).map((row) => {
+    const part = Array.isArray(row.part) ? row.part[0] : row.part;
+    return { ...row, part: part ?? null } as WorkOrderStockUsage;
+  });
+}
+
+// Slett en lagerbevegelse (angre forbruk). Trigger oppdaterer beholdningen.
+export async function deleteMovement(id: string): Promise<void> {
+  const supabase = createClient();
+  const { error } = await supabase.from('stock_movements').delete().eq('id', id);
+  if (error) {
+    console.error('Error deleting movement:', error);
+    throw error;
+  }
+}
+
 export async function getPartMovements(partId: string): Promise<StockMovement[]> {
   const supabase = createClient();
   const { data, error } = await supabase

@@ -20,6 +20,7 @@ import { useModalBehavior } from '@/lib/use-modal-behavior';
 import CompleteWorkOrderModal from './CompleteWorkOrderModal';
 import WorkOrderAttachmentsSection from './WorkOrderAttachmentsSection';
 import WorkOrderPartsSection from './WorkOrderPartsSection';
+import WorkOrderStockSection from './WorkOrderStockSection';
 
 interface WorkOrderDetailModalProps {
   workOrder: WorkOrder;
@@ -378,10 +379,17 @@ export default function WorkOrderDetailModal({ workOrder: initialWorkOrder, onCl
             readOnly={['completed', 'closed'].includes(workOrder.status)}
           />
 
-          {/* Parts */}
+          {/* Parts (planlegging: trengs/bestilt/mottatt) */}
           <WorkOrderPartsSection
             workOrderId={workOrder.id}
             readOnly={['completed', 'closed'].includes(workOrder.status)}
+          />
+
+          {/* Forbruk fra varelageret — trekker beholdning */}
+          <WorkOrderStockSection
+            workOrderId={workOrder.id}
+            equipmentId={workOrder.equipment_id}
+            readOnly={workOrder.status === 'closed'}
           />
 
           {/* Comments Section */}
