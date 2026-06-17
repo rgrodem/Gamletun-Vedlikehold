@@ -109,11 +109,17 @@ create trigger guard_profile_role
 
 -- 5) Profiles-policyer: alle kan lese; egen profil kan oppdateres (men ikke
 --    rolle, jf. trigger); admin kan oppdatere/sette inn alle.
+--    Dropper både gamle OG nye navn først, så migrasjonen tåler å kjøres flere
+--    ganger (idempotent).
 drop policy if exists "Users can view all profiles" on public.profiles;
 drop policy if exists "Users can update own profile" on public.profiles;
 drop policy if exists "Users update own profile" on public.profiles;
 drop policy if exists "Users can insert own profile" on public.profiles;
 drop policy if exists "Admins manage profiles" on public.profiles;
+drop policy if exists "Anyone can view profiles" on public.profiles;
+drop policy if exists "Self or admin update profile" on public.profiles;
+drop policy if exists "Self insert as member" on public.profiles;
+drop policy if exists "Admin insert profile" on public.profiles;
 
 create policy "Anyone can view profiles" on public.profiles
   for select to authenticated using (true);
