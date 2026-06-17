@@ -107,19 +107,30 @@ export default function AddEquipmentModal({ categories, onClose, onSuccess }: Ad
     setError('');
     setAiNote('');
     try {
-      const usable = files.filter((f) => f.type.startsWith('image/') && f.size <= 25 * 1024 * 1024).slice(0, 6);
+      // Godta bilder og PDF (vognkort/faktura). Maks 6 vedlegg, 25 MB per stk.
+      const usable = files
+        .filter(
+          (f) =>
+            (f.type.startsWith('image/') || f.type === 'application/pdf') &&
+            f.size <= 25 * 1024 * 1024
+        )
+        .slice(0, 6);
       if (usable.length === 0) {
-        setError('Velg minst ett bilde (maks 25 MB per bilde).');
+        setError('Velg minst ett bilde eller en PDF (maks 25 MB per fil).');
         return;
       }
-      const images = await Promise.all(
-        usable.map(async (f) => ({ data: await fileToBase64(f), mediaType: f.type }))
+      const documents = await Promise.all(
+        usable.map(async (f) => ({
+          data: await fileToBase64(f),
+          mediaType: f.type,
+          kind: f.type === 'application/pdf' ? 'pdf' : 'image',
+        }))
       );
       const res = await fetch('/api/ai/identify-equipment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          images,
+          documents,
           categories: categories.map((c) => c.name),
           regnrHint: registrationNumber.trim() || undefined,
         }),
@@ -144,12 +155,15 @@ export default function AddEquipmentModal({ categories, onClose, onSuccess }: Ad
       }
       if (data.isVehicle || regnrFound) setShowVehicle(true);
 
-      // Last opp første bilde som utstyrsbilde.
-      try {
-        const up = await uploadFile('equipment-images', usable[0], 'new');
-        setImageUrl(up.url);
-      } catch (upErr) {
-        console.error('Kunne ikke laste opp bilde:', upErr);
+      // Last opp første bilde som utstyrsbilde (PDF kan ikke være utstyrsbilde).
+      const firstImage = usable.find((f) => f.type.startsWith('image/'));
+      if (firstImage) {
+        try {
+          const up = await uploadFile('equipment-images', firstImage, 'new');
+          setImageUrl(up.url);
+        } catch (upErr) {
+          console.error('Kunne ikke laste opp bilde:', upErr);
+        }
       }
 
       // Hvis vi fant et regnummer: hent kjøretøydata automatisk.
@@ -158,7 +172,7 @@ export default function AddEquipmentModal({ categories, onClose, onSuccess }: Ad
         setAiNote(
           ok
             ? `Gjenkjente «${data.name || 'utstyr'}» og hentet kjøretøydata for ${regnrFound}. Kontroller og lagre.`
-            : `Gjenkjente «${data.name || 'utstyr'}» og leste skiltet ${regnrFound}, men kjøretøyoppslaget feilet. Kontroller manuelt.`
+            : `Gjenkjente «${data.name || 'utstyr'}» og leste regnummer ${regnrFound}, men kjøretøyoppslaget feilet. Kontroller manuelt.`
         );
       } else {
         setAiNote(`Gjenkjente «${data.name || 'utstyr'}». Kontroller feltene og lagre.`);
@@ -231,19 +245,19 @@ export default function AddEquipmentModal({ categories, onClose, onSuccess }: Ad
             </div>
           )}
 
-          {/* KI: gjenkjenn fra bilde */}
+          {/* KI: gjenkjenn fra bilde eller PDF */}
           <label className="block cursor-pointer bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-center text-blue-700">
             <span className="inline-flex items-center gap-2 text-sm font-semibold">
-              <FaMagic /> {aiLoading ? 'Gjenkjenner…' : 'Ta bilde — fyll ut med KI'}
+              <FaMagic /> {aiLoading ? 'Gjenkjenner…' : 'Fyll ut med KI (bilde eller PDF)'}
             </span>
             <p className="text-xs text-blue-600/80 mt-0.5 font-normal">
-              Foto av maskin eller bil. Leser regnummer fra skiltet og henter kjøretøydata.
+              Ta bilde, velg et lagret bilde, eller last opp en PDF (f.eks. vognkort).
+              Leser regnummer og henter kjøretøydata automatisk.
             </p>
             <input
               type="file"
               onChange={handleAiPhoto}
-              accept="image/*"
-              capture="environment"
+              accept="image/*,.pdf"
               multiple
               disabled={aiLoading}
               className="hidden"
