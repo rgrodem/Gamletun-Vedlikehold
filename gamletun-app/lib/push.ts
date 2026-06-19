@@ -26,28 +26,22 @@ export interface PushPayload {
   url?: string;
 }
 
+interface PushSubRow {
+  id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+}
+
 /**
- * Send et push-varsel til alle abonnementer (lite team).
- * Rydder bort abonnementer som er utløpt (404/410). Feiler aldri "høyt".
+ * Sender et payload til en liste abonnementer og rydder bort utløpte (404/410).
+ * Feiler aldri "høyt". Returnerer antall vellykkede.
  */
-export async function sendPushToAll(payload: PushPayload): Promise<number> {
-  if (!ensureConfigured()) {
-    console.warn('VAPID-nøkler mangler – push ikke sendt:', payload.title);
-    return 0;
-  }
-
-  let admin;
-  try {
-    admin = createAdminClient();
-  } catch {
-    return 0;
-  }
-
-  const { data: subs, error } = await admin
-    .from('push_subscriptions')
-    .select('id, endpoint, p256dh, auth');
-  if (error || !subs?.length) return 0;
-
+async function deliver(
+  admin: ReturnType<typeof createAdminClient>,
+  subs: PushSubRow[],
+  payload: PushPayload
+): Promise<number> {
   const body = JSON.stringify(payload);
   let sent = 0;
   const expired: string[] = [];
@@ -75,4 +69,59 @@ export async function sendPushToAll(payload: PushPayload): Promise<number> {
     await admin.from('push_subscriptions').delete().in('id', expired);
   }
   return sent;
+}
+
+/**
+ * Send et push-varsel til alle abonnementer (lite team).
+ * Rydder bort abonnementer som er utløpt (404/410). Feiler aldri "høyt".
+ */
+export async function sendPushToAll(payload: PushPayload): Promise<number> {
+  if (!ensureConfigured()) {
+    console.warn('VAPID-nøkler mangler – push ikke sendt:', payload.title);
+    return 0;
+  }
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return 0;
+  }
+
+  const { data: subs, error } = await admin
+    .from('push_subscriptions')
+    .select('id, endpoint, p256dh, auth');
+  if (error || !subs?.length) return 0;
+
+  return deliver(admin, subs as PushSubRow[], payload);
+}
+
+/**
+ * Send et push-varsel kun til administratorer (abonnementer som tilhører en
+ * profil med role = 'admin'). Brukes til reservasjons- og alvorlige feilvarsler.
+ */
+export async function sendPushToAdmins(payload: PushPayload): Promise<number> {
+  if (!ensureConfigured()) {
+    console.warn('VAPID-nøkler mangler – push ikke sendt:', payload.title);
+    return 0;
+  }
+
+  let admin;
+  try {
+    admin = createAdminClient();
+  } catch {
+    return 0;
+  }
+
+  const { data: admins } = await admin.from('profiles').select('id').eq('role', 'admin');
+  const adminIds = (admins || []).map((a) => a.id as string);
+  if (!adminIds.length) return 0;
+
+  const { data: subs, error } = await admin
+    .from('push_subscriptions')
+    .select('id, endpoint, p256dh, auth')
+    .in('user_id', adminIds);
+  if (error || !subs?.length) return 0;
+
+  return deliver(admin, subs as PushSubRow[], payload);
 }

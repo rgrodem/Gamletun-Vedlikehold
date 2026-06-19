@@ -1,11 +1,13 @@
-// E-postvarsel når utstyr reserveres.
+// Varsel når utstyr reserveres. Sendes til alle administratorer (push + e-post).
 // Kalles i bakgrunnen fra createReservation (lib/reservations.ts).
 //
-// Mottaker: RESERVATION_NOTIFY_EMAIL, ellers NOTIFY_EMAIL.
+// Mottakere: alle admin + ev. RESERVATION_NOTIFY_EMAIL/NOTIFY_EMAIL.
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendEmail } from '@/lib/email';
+import { sendPushToAdmins } from '@/lib/push';
+import { getAdminEmails } from '@/lib/admins';
 
 export async function POST(request: NextRequest) {
   // Bare innloggede brukere kan utløse varsler.
@@ -13,11 +15,6 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: 'Ikke innlogget' }, { status: 401 });
-  }
-
-  const to = process.env.RESERVATION_NOTIFY_EMAIL || process.env.NOTIFY_EMAIL;
-  if (!to) {
-    return NextResponse.json({ sent: 0, skipped: 'notify_email_missing' });
   }
 
   let reservationId: string | undefined;
@@ -80,11 +77,23 @@ export async function POST(request: NextRequest) {
     <p><a href="${origin}/equipment/${equipment?.id ?? ''}">Åpne utstyrssiden i Gamletun Vedlikehold</a></p>
   `;
 
-  const ok = await sendEmail({
-    to,
-    subject: `Reservert: ${equipment?.name ?? 'utstyr'} (${profile?.full_name ?? 'ukjent bruker'})`,
-    html,
+  // Mottakere: alle administratorer + ev. eksplisitt konfigurert adresse.
+  const recipients = new Set<string>(await getAdminEmails(admin));
+  const extra = process.env.RESERVATION_NOTIFY_EMAIL || process.env.NOTIFY_EMAIL;
+  if (extra) recipients.add(extra);
+
+  const subject = `Reservert: ${equipment?.name ?? 'utstyr'} (${profile?.full_name ?? 'ukjent bruker'})`;
+  let sent = 0;
+  for (const to of recipients) {
+    if (await sendEmail({ to, subject, html })) sent += 1;
+  }
+
+  // Push til alle administratorer (om VAPID er konfigurert).
+  const pushed = await sendPushToAdmins({
+    title: `Ny reservasjon: ${equipment?.name ?? 'utstyr'}`,
+    body: `${profile?.full_name ?? 'Ukjent bruker'} reserverte utstyret`,
+    url: `/equipment/${equipment?.id ?? ''}`,
   });
 
-  return NextResponse.json({ sent: ok ? 1 : 0 });
+  return NextResponse.json({ sent, pushed });
 }
