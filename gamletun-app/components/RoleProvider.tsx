@@ -14,7 +14,9 @@ interface RoleContextValue {
 const RoleContext = createContext<RoleContextValue>({ role: null, isAdmin: false, loading: true });
 
 /**
- * Henter innlogget brukers rolle én gang og deler den med hele appen.
+ * Henter innlogget brukers rolle og deler den med hele appen. Rollen hentes på
+ * nytt når appen kommer i forgrunnen igjen og når innloggingstilstanden endrer
+ * seg, slik at en nylig endret rolle slår igjennom uten full omstart.
  * Brukes til å SKJULE admin-knapper for medlemmer — den harde håndhevingen
  * ligger i databasen (RLS, migration 020), så UI-et er bare for opplevelsen.
  */
@@ -23,21 +25,39 @@ export function RoleProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let cancelled = false;
     const supabase = createClient();
-    (async () => {
+    let cancelled = false;
+
+    const fetchRole = async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      if (cancelled) return;
       if (!user) {
-        if (!cancelled) { setRole(null); setLoading(false); }
+        setRole(null);
+        setLoading(false);
         return;
       }
       const { data } = await supabase.from('profiles').select('role').eq('id', user.id).maybeSingle();
-      if (!cancelled) {
-        setRole((data?.role as Role) ?? 'user');
-        setLoading(false);
-      }
-    })();
-    return () => { cancelled = true; };
+      if (cancelled) return;
+      setRole((data?.role as Role) ?? 'user');
+      setLoading(false);
+    };
+
+    fetchRole();
+
+    // En PWA blir ofte liggende åpen, så rollen ville ellers fryse på verdien
+    // den hadde ved første lasting. Hent på nytt når appen blir synlig igjen og
+    // ved endring i innloggingstilstand.
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') fetchRole();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    const { data: authSub } = supabase.auth.onAuthStateChange(() => fetchRole());
+
+    return () => {
+      cancelled = true;
+      document.removeEventListener('visibilitychange', onVisible);
+      authSub.subscription.unsubscribe();
+    };
   }, []);
 
   return (
