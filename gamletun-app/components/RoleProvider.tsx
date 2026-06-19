@@ -51,7 +51,12 @@ export function RoleProvider({ children }: { children: ReactNode }) {
       if (document.visibilityState === 'visible') fetchRole();
     };
     document.addEventListener('visibilitychange', onVisible);
-    const { data: authSub } = supabase.auth.onAuthStateChange(() => fetchRole());
+    // VIKTIG: ikke kall Supabase-funksjoner synkront inne i denne callbacken —
+    // det kan gi en deadlock i auth-klienten. Defer med setTimeout(0) så den
+    // kjører utenfor callbackens lås.
+    const { data: authSub } = supabase.auth.onAuthStateChange(() => {
+      setTimeout(() => { void fetchRole(); }, 0);
+    });
 
     return () => {
       cancelled = true;
