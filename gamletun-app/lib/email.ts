@@ -5,6 +5,10 @@ interface SendEmailParams {
   to: string | string[];
   subject: string;
   html: string;
+  /** Ren-tekst-variant. Sterkt anbefalt: HTML-only utløser ofte spamfilter. */
+  text?: string;
+  /** Svar-til-adresse, f.eks. 'rune@gamletun.no'. */
+  replyTo?: string;
 }
 
 /**
@@ -16,7 +20,7 @@ interface SendEmailParams {
  *  - EMAIL_FROM      (valgfri, f.eks. 'Gamletun <varsel@gamletun.no>'.
  *                     Uten verifisert domene: bruk 'onboarding@resend.dev')
  */
-export async function sendEmail({ to, subject, html }: SendEmailParams): Promise<boolean> {
+export async function sendEmail({ to, subject, html, text, replyTo }: SendEmailParams): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.warn('RESEND_API_KEY er ikke satt – e-post ble ikke sendt:', subject);
@@ -24,6 +28,7 @@ export async function sendEmail({ to, subject, html }: SendEmailParams): Promise
   }
 
   const from = process.env.EMAIL_FROM || 'Gamletun <onboarding@resend.dev>';
+  const replyToAddr = replyTo || process.env.EMAIL_REPLY_TO;
 
   try {
     const response = await fetch('https://api.resend.com/emails', {
@@ -32,7 +37,14 @@ export async function sendEmail({ to, subject, html }: SendEmailParams): Promise
         Authorization: `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ from, to, subject, html }),
+      body: JSON.stringify({
+        from,
+        to,
+        subject,
+        html,
+        ...(text ? { text } : {}),
+        ...(replyToAddr ? { reply_to: replyToAddr } : {}),
+      }),
     });
 
     if (!response.ok) {

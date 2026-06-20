@@ -13,6 +13,7 @@ export default function SettPassordPage() {
   const [confirm, setConfirm] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [done, setDone] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -44,6 +45,11 @@ export default function SettPassordPage() {
       setError('Kunne ikke sette passord. Prøv igjen.');
       return;
     }
+    setSaving(false);
+    setDone(true);
+  };
+
+  const goToApp = () => {
     router.replace('/');
     router.refresh();
   };
@@ -52,6 +58,45 @@ export default function SettPassordPage() {
     return (
       <div className="min-h-screen bg-bg flex items-center justify-center">
         <span className="w-6 h-6 border-2 border-line border-t-ink rounded-full animate-spin motion-reduce:animate-none" />
+      </div>
+    );
+  }
+
+  if (done) {
+    return (
+      <div className="min-h-screen bg-bg flex flex-col">
+        <div className="flex-1 flex flex-col px-7 pt-10 pb-5 max-w-md w-full mx-auto">
+          <h1 className="font-serif text-[28px] font-medium text-ink mb-2 tracking-tight2 leading-tight">
+            Du er klar!
+          </h1>
+          <p className="text-ink2 text-[15px] leading-[1.5] m-0">
+            Passordet er lagret. Et siste tips: legg appen på hjemskjermen, så får du
+            et eget ikon og slipper å lete etter lenken.
+          </p>
+
+          <div className="mt-6 bg-white border border-line rounded-[14px] p-5 flex flex-col gap-4">
+            <div>
+              <p className="text-ink font-semibold text-[15px] m-0">iPhone (Safari)</p>
+              <p className="text-ink2 text-[14px] leading-[1.5] mt-1 m-0">
+                Trykk Del-ikonet nederst (firkant med pil opp) → «Legg til på Hjemskjerm».
+              </p>
+            </div>
+            <div className="border-t border-line pt-4">
+              <p className="text-ink font-semibold text-[15px] m-0">Android (Chrome)</p>
+              <p className="text-ink2 text-[14px] leading-[1.5] mt-1 m-0">
+                Trykk meny-ikonet (⋮) øverst til høyre → «Installer app».
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={goToApp}
+            className="mt-6 flex items-center justify-center bg-ink text-bg rounded-[14px] px-4 py-4 text-base font-semibold tracking-tightish cursor-pointer"
+          >
+            Gå til appen
+          </button>
+        </div>
       </div>
     );
   }
