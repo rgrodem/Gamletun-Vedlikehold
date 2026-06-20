@@ -54,14 +54,20 @@ export async function GET(request: NextRequest) {
 
   const email = data.user.email?.toLowerCase() ?? '';
 
-  // Tilgang: alle med @gamletun.no + en eksplisitt unntaksliste (eier o.l.) fra env.
-  const allowedDomain = '@gamletun.no';
+  // Inviterte brukere og passord-tilbakestilling er allerede legitime: tokenet
+  // ble kun sendt til adressen en admin inviterte / som ba om reset. Da gjelder
+  // ikke domenesperren (ellers ville eksterne pilotbrukere blitt avvist).
+  const isPrivilegedFlow = otpType === 'invite' || otpType === 'recovery';
+
+  // Ellers: tilgang for et tillatt domene + eksplisitt unntaksliste fra env.
+  const allowedDomain = (process.env.AUTH_ALLOW_DOMAIN ?? '@gamletun.no').toLowerCase();
   const extraAllowed = (process.env.AUTH_ALLOW_EMAILS ?? '')
     .split(',')
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
 
-  const hasAccess = email.endsWith(allowedDomain) || extraAllowed.includes(email);
+  const hasAccess =
+    isPrivilegedFlow || email.endsWith(allowedDomain) || extraAllowed.includes(email);
 
   if (!hasAccess) {
     await supabase.auth.signOut();
@@ -87,5 +93,9 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return NextResponse.redirect(`${origin}/`);
+  // Send brukeren videre dit lenken ba om (f.eks. /sett-passord for invitasjon),
+  // men kun interne stier for å unngå open redirect.
+  const next = requestUrl.searchParams.get('next');
+  const dest = next && next.startsWith('/') ? next : '/';
+  return NextResponse.redirect(`${origin}${dest}`);
 }
