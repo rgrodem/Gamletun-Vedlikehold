@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaUserShield, FaUser, FaInfoCircle, FaUserPlus } from 'react-icons/fa';
+import { FaUserShield, FaUser, FaInfoCircle, FaUserPlus, FaTrash, FaKey } from 'react-icons/fa';
 import { createClient } from '@/lib/supabase/client';
 import type { ProfileRow } from '@/app/users/page';
 
@@ -25,6 +25,9 @@ export default function UsersClient({ profiles, currentUserId }: Props) {
   const router = useRouter();
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState('');
+  // Per-bruker handling (slett / send passordlenke) + tilbakemelding.
+  const [acting, setActing] = useState<string | null>(null);
+  const [rowMsg, setRowMsg] = useState<{ id: string; kind: 'ok' | 'err'; text: string } | null>(null);
 
   // Invitasjon av ny bruker
   const [inviteEmail, setInviteEmail] = useState('');
@@ -80,6 +83,52 @@ export default function UsersClient({ profiles, currentUserId }: Props) {
       setError('Kunne ikke endre rolle. Prøv igjen.');
     } finally {
       setSaving(null);
+    }
+  };
+
+  const sendResetLink = async (id: string) => {
+    setActing(id);
+    setRowMsg(null);
+    try {
+      const res = await fetch('/api/users/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Kunne ikke sende lenke');
+      setRowMsg({
+        id,
+        kind: data.emailed ? 'ok' : 'err',
+        text: data.emailed
+          ? 'Passordlenke sendt på e-post.'
+          : 'Lenke laget, men e-posten kunne ikke sendes. Sjekk e-postoppsettet.',
+      });
+    } catch (err) {
+      setRowMsg({ id, kind: 'err', text: err instanceof Error ? err.message : 'Kunne ikke sende lenke' });
+    } finally {
+      setActing(null);
+    }
+  };
+
+  const deleteUser = async (id: string, name: string) => {
+    if (!window.confirm(`Slette ${name}? Brukeren mister tilgangen umiddelbart. Dette kan ikke angres.`)) {
+      return;
+    }
+    setActing(id);
+    setRowMsg(null);
+    try {
+      const res = await fetch('/api/users/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Kunne ikke slette');
+      router.refresh();
+    } catch (err) {
+      setRowMsg({ id, kind: 'err', text: err instanceof Error ? err.message : 'Kunne ikke slette' });
+      setActing(null);
     }
   };
 
@@ -169,37 +218,76 @@ export default function UsersClient({ profiles, currentUserId }: Props) {
         {profiles.map((p) => {
           const isMe = p.id === currentUserId;
           const admin = p.role === 'admin';
+          const busy = saving === p.id || acting === p.id;
+          const msg = rowMsg?.id === p.id ? rowMsg : null;
           return (
-            <div key={p.id} className="flex items-center gap-3.5 bg-paper border border-line rounded-[16px] px-4 py-3.5">
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${admin ? 'bg-mossBg text-moss' : 'bg-line2 text-ink3'}`}>
-                {admin ? <FaUserShield /> : <FaUser />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[15px] font-semibold text-ink truncate">
-                  {p.full_name || 'Uten navn'}{isMe ? ' (deg)' : ''}
+            <div key={p.id} className="bg-paper border border-line rounded-[16px] px-4 py-3.5">
+              <div className="flex items-center gap-3.5">
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${admin ? 'bg-mossBg text-moss' : 'bg-line2 text-ink3'}`}>
+                  {admin ? <FaUserShield /> : <FaUser />}
                 </div>
-                <div className="text-[12.5px] text-ink3">{ROLE_LABEL[p.role]}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[15px] font-semibold text-ink truncate">
+                    {p.full_name || 'Uten navn'}{isMe ? ' (deg)' : ''}
+                  </div>
+                  <div className="text-[12.5px] text-ink3">{ROLE_LABEL[p.role]}</div>
+                </div>
+                {isMe ? (
+                  <span className="text-[12px] text-ink3">Kan ikke endre egen rolle</span>
+                ) : (
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setRole(p.id, 'user')}
+                      disabled={busy || !admin}
+                      className={`px-3 py-2 rounded-[10px] text-[13px] font-medium border ${!admin ? 'bg-ink text-paper border-ink' : 'bg-paper text-ink border-line'} disabled:opacity-60`}
+                    >
+                      Medlem
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRole(p.id, 'admin')}
+                      disabled={busy || admin}
+                      className={`px-3 py-2 rounded-[10px] text-[13px] font-medium border ${admin ? 'bg-ink text-paper border-ink' : 'bg-paper text-ink border-line'} disabled:opacity-60`}
+                    >
+                      Admin
+                    </button>
+                  </div>
+                )}
               </div>
-              {isMe ? (
-                <span className="text-[12px] text-ink3">Kan ikke endre egen rolle</span>
-              ) : (
-                <div className="flex gap-1.5 flex-shrink-0">
+
+              {!isMe && (
+                <div className="mt-3 pt-3 border-t border-line flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setRole(p.id, 'user')}
-                    disabled={saving === p.id || !admin}
-                    className={`px-3 py-2 rounded-[10px] text-[13px] font-medium border ${!admin ? 'bg-ink text-paper border-ink' : 'bg-paper text-ink border-line'} disabled:opacity-60`}
+                    onClick={() => sendResetLink(p.id)}
+                    disabled={busy}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-[13px] font-medium border border-line bg-paper text-ink disabled:opacity-60"
                   >
-                    Medlem
+                    <FaKey className="text-ink3 text-[11px]" />
+                    Send passordlenke
                   </button>
                   <button
                     type="button"
-                    onClick={() => setRole(p.id, 'admin')}
-                    disabled={saving === p.id || admin}
-                    className={`px-3 py-2 rounded-[10px] text-[13px] font-medium border ${admin ? 'bg-ink text-paper border-ink' : 'bg-paper text-ink border-line'} disabled:opacity-60`}
+                    onClick={() => deleteUser(p.id, p.full_name || 'brukeren')}
+                    disabled={busy}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-[13px] font-medium border border-rust/40 bg-rustBg text-rust disabled:opacity-60 ml-auto"
                   >
-                    Admin
+                    <FaTrash className="text-[11px]" />
+                    Slett
                   </button>
+                </div>
+              )}
+
+              {msg && (
+                <div
+                  className={`mt-2 rounded-[10px] px-3 py-2 text-[12.5px] border ${
+                    msg.kind === 'ok'
+                      ? 'bg-mossBg border-moss/30 text-moss'
+                      : 'bg-rustBg border-rust/30 text-rust'
+                  }`}
+                >
+                  {msg.text}
                 </div>
               )}
             </div>
