@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { sendPushToAll } from '@/lib/push';
 import { sendEmail } from '@/lib/email';
+import { getAdminEmails } from '@/lib/admins';
 
 const PRIORITY_LABELS: Record<string, string> = {
   low: 'Lav',
@@ -73,12 +74,19 @@ export async function POST(request: NextRequest) {
     new Set((reservations || []).map((r) => r.user_id as string))
   ).filter((id) => id !== user.id); // ikke varsle den som selv meldte feilen
 
+  // Alvorlig feil (høy/akutt) skal varsle alle administratorer.
+  const isSerious = workOrder.priority === 'high' || workOrder.priority === 'urgent';
+
   const recipients = new Set<string>();
   if (process.env.NOTIFY_EMAIL) recipients.add(process.env.NOTIFY_EMAIL);
 
   for (const reserverId of reserverIds) {
     const { data } = await admin.auth.admin.getUserById(reserverId);
     if (data?.user?.email) recipients.add(data.user.email);
+  }
+
+  if (isSerious) {
+    for (const email of await getAdminEmails(admin)) recipients.add(email);
   }
 
   if (recipients.size === 0) {

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FaUserShield, FaUser, FaInfoCircle } from 'react-icons/fa';
+import { FaUserShield, FaUser, FaInfoCircle, FaUserPlus, FaTrash, FaKey } from 'react-icons/fa';
 import { createClient } from '@/lib/supabase/client';
 import type { ProfileRow } from '@/app/users/page';
 
@@ -25,6 +25,50 @@ export default function UsersClient({ profiles, currentUserId }: Props) {
   const router = useRouter();
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState('');
+  // Per-bruker handling (slett / send passordlenke) + tilbakemelding.
+  const [acting, setActing] = useState<string | null>(null);
+  const [rowMsg, setRowMsg] = useState<{ id: string; kind: 'ok' | 'err'; text: string } | null>(null);
+
+  // Invitasjon av ny bruker
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteName, setInviteName] = useState('');
+  const [inviteRole, setInviteRole] = useState<'admin' | 'user'>('user');
+  const [inviting, setInviting] = useState(false);
+  const [inviteMsg, setInviteMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null);
+
+  const handleInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const email = inviteEmail.trim().toLowerCase();
+    if (!email || !email.includes('@')) {
+      setInviteMsg({ kind: 'err', text: 'Skriv inn en gyldig e-postadresse.' });
+      return;
+    }
+    setInviting(true);
+    setInviteMsg(null);
+    try {
+      const res = await fetch('/api/users/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, fullName: inviteName.trim(), role: inviteRole }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Kunne ikke invitere');
+      setInviteMsg({
+        kind: 'ok',
+        text: data.emailed
+          ? `Invitasjon sendt til ${email}.`
+          : 'Bruker opprettet, men e-posten kunne ikke sendes. Sjekk e-postoppsettet.',
+      });
+      setInviteEmail('');
+      setInviteName('');
+      setInviteRole('user');
+      router.refresh();
+    } catch (err) {
+      setInviteMsg({ kind: 'err', text: err instanceof Error ? err.message : 'Kunne ikke invitere' });
+    } finally {
+      setInviting(false);
+    }
+  };
 
   const setRole = async (id: string, role: 'admin' | 'user') => {
     setSaving(id);
@@ -39,6 +83,52 @@ export default function UsersClient({ profiles, currentUserId }: Props) {
       setError('Kunne ikke endre rolle. Prøv igjen.');
     } finally {
       setSaving(null);
+    }
+  };
+
+  const sendResetLink = async (id: string) => {
+    setActing(id);
+    setRowMsg(null);
+    try {
+      const res = await fetch('/api/users/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Kunne ikke sende lenke');
+      setRowMsg({
+        id,
+        kind: data.emailed ? 'ok' : 'err',
+        text: data.emailed
+          ? 'Passordlenke sendt på e-post.'
+          : 'Lenke laget, men e-posten kunne ikke sendes. Sjekk e-postoppsettet.',
+      });
+    } catch (err) {
+      setRowMsg({ id, kind: 'err', text: err instanceof Error ? err.message : 'Kunne ikke sende lenke' });
+    } finally {
+      setActing(null);
+    }
+  };
+
+  const deleteUser = async (id: string, name: string) => {
+    if (!window.confirm(`Slette ${name}? Brukeren mister tilgangen umiddelbart. Dette kan ikke angres.`)) {
+      return;
+    }
+    setActing(id);
+    setRowMsg(null);
+    try {
+      const res = await fetch('/api/users/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Kunne ikke slette');
+      router.refresh();
+    } catch (err) {
+      setRowMsg({ id, kind: 'err', text: err instanceof Error ? err.message : 'Kunne ikke slette' });
+      setActing(null);
     }
   };
 
@@ -58,6 +148,68 @@ export default function UsersClient({ profiles, currentUserId }: Props) {
         </p>
       </div>
 
+      {/* Inviter ny bruker */}
+      <form onSubmit={handleInvite} className="bg-paper border border-line rounded-[16px] p-4 flex flex-col gap-2.5">
+        <div className="flex items-center gap-2 text-ink">
+          <FaUserPlus className="text-ink2" />
+          <span className="text-[15px] font-semibold">Inviter ny bruker</span>
+        </div>
+        <p className="text-[12.5px] text-ink3 m-0">
+          Brukeren får en e-post med lenke for å sette passord og logge inn.
+        </p>
+        {inviteMsg && (
+          <div
+            className={`rounded-[12px] px-3 py-2 text-[13px] border ${
+              inviteMsg.kind === 'ok'
+                ? 'bg-mossBg border-moss/30 text-moss'
+                : 'bg-rustBg border-rust/30 text-rust'
+            }`}
+          >
+            {inviteMsg.text}
+          </div>
+        )}
+        <input
+          type="email"
+          inputMode="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          placeholder="E-postadresse"
+          value={inviteEmail}
+          onChange={(e) => setInviteEmail(e.target.value)}
+          disabled={inviting}
+          className="w-full bg-white text-ink border border-line rounded-[12px] px-3.5 py-3 text-[15px] outline-none focus:border-ink2 disabled:opacity-50"
+        />
+        <input
+          type="text"
+          placeholder="Navn (valgfritt)"
+          value={inviteName}
+          onChange={(e) => setInviteName(e.target.value)}
+          disabled={inviting}
+          className="w-full bg-white text-ink border border-line rounded-[12px] px-3.5 py-3 text-[15px] outline-none focus:border-ink2 disabled:opacity-50"
+        />
+        <div className="flex gap-2">
+          <select
+            value={inviteRole}
+            onChange={(e) => setInviteRole(e.target.value as 'admin' | 'user')}
+            disabled={inviting}
+            className="flex-1 bg-white text-ink border border-line rounded-[12px] px-3.5 py-3 text-[15px] outline-none focus:border-ink2 disabled:opacity-50"
+          >
+            <option value="user">Medlem</option>
+            <option value="admin">Administrator</option>
+          </select>
+          <button
+            type="submit"
+            disabled={inviting}
+            className="flex items-center justify-center gap-2 bg-ink text-paper rounded-[12px] px-4 py-3 text-[14px] font-semibold disabled:opacity-60"
+          >
+            {inviting && (
+              <span className="w-4 h-4 border-2 border-paper/40 border-t-paper rounded-full animate-spin motion-reduce:animate-none" />
+            )}
+            {inviting ? 'Sender…' : 'Send invitasjon'}
+          </button>
+        </div>
+      </form>
+
       {error && (
         <div className="bg-rustBg border border-rust/30 rounded-[14px] p-3 text-rust text-sm">{error}</div>
       )}
@@ -66,37 +218,76 @@ export default function UsersClient({ profiles, currentUserId }: Props) {
         {profiles.map((p) => {
           const isMe = p.id === currentUserId;
           const admin = p.role === 'admin';
+          const busy = saving === p.id || acting === p.id;
+          const msg = rowMsg?.id === p.id ? rowMsg : null;
           return (
-            <div key={p.id} className="flex items-center gap-3.5 bg-paper border border-line rounded-[16px] px-4 py-3.5">
-              <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${admin ? 'bg-mossBg text-moss' : 'bg-line2 text-ink3'}`}>
-                {admin ? <FaUserShield /> : <FaUser />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="text-[15px] font-semibold text-ink truncate">
-                  {p.full_name || 'Uten navn'}{isMe ? ' (deg)' : ''}
+            <div key={p.id} className="bg-paper border border-line rounded-[16px] px-4 py-3.5">
+              <div className="flex items-center gap-3.5">
+                <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${admin ? 'bg-mossBg text-moss' : 'bg-line2 text-ink3'}`}>
+                  {admin ? <FaUserShield /> : <FaUser />}
                 </div>
-                <div className="text-[12.5px] text-ink3">{ROLE_LABEL[p.role]}</div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-[15px] font-semibold text-ink truncate">
+                    {p.full_name || 'Uten navn'}{isMe ? ' (deg)' : ''}
+                  </div>
+                  <div className="text-[12.5px] text-ink3">{ROLE_LABEL[p.role]}</div>
+                </div>
+                {isMe ? (
+                  <span className="text-[12px] text-ink3">Kan ikke endre egen rolle</span>
+                ) : (
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setRole(p.id, 'user')}
+                      disabled={busy || !admin}
+                      className={`px-3 py-2 rounded-[10px] text-[13px] font-medium border ${!admin ? 'bg-ink text-paper border-ink' : 'bg-paper text-ink border-line'} disabled:opacity-60`}
+                    >
+                      Medlem
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRole(p.id, 'admin')}
+                      disabled={busy || admin}
+                      className={`px-3 py-2 rounded-[10px] text-[13px] font-medium border ${admin ? 'bg-ink text-paper border-ink' : 'bg-paper text-ink border-line'} disabled:opacity-60`}
+                    >
+                      Admin
+                    </button>
+                  </div>
+                )}
               </div>
-              {isMe ? (
-                <span className="text-[12px] text-ink3">Kan ikke endre egen rolle</span>
-              ) : (
-                <div className="flex gap-1.5 flex-shrink-0">
+
+              {!isMe && (
+                <div className="mt-3 pt-3 border-t border-line flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setRole(p.id, 'user')}
-                    disabled={saving === p.id || !admin}
-                    className={`px-3 py-2 rounded-[10px] text-[13px] font-medium border ${!admin ? 'bg-ink text-paper border-ink' : 'bg-paper text-ink border-line'} disabled:opacity-60`}
+                    onClick={() => sendResetLink(p.id)}
+                    disabled={busy}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-[13px] font-medium border border-line bg-paper text-ink disabled:opacity-60"
                   >
-                    Medlem
+                    <FaKey className="text-ink3 text-[11px]" />
+                    Send passordlenke
                   </button>
                   <button
                     type="button"
-                    onClick={() => setRole(p.id, 'admin')}
-                    disabled={saving === p.id || admin}
-                    className={`px-3 py-2 rounded-[10px] text-[13px] font-medium border ${admin ? 'bg-ink text-paper border-ink' : 'bg-paper text-ink border-line'} disabled:opacity-60`}
+                    onClick={() => deleteUser(p.id, p.full_name || 'brukeren')}
+                    disabled={busy}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-[10px] text-[13px] font-medium border border-rust/40 bg-rustBg text-rust disabled:opacity-60 ml-auto"
                   >
-                    Admin
+                    <FaTrash className="text-[11px]" />
+                    Slett
                   </button>
+                </div>
+              )}
+
+              {msg && (
+                <div
+                  className={`mt-2 rounded-[10px] px-3 py-2 text-[12.5px] border ${
+                    msg.kind === 'ok'
+                      ? 'bg-mossBg border-moss/30 text-moss'
+                      : 'bg-rustBg border-rust/30 text-rust'
+                  }`}
+                >
+                  {msg.text}
                 </div>
               )}
             </div>
