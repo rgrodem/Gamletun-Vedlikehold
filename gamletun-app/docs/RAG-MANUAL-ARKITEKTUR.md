@@ -400,6 +400,24 @@ allerede opplasting av dokumenter per maskin (`components/equipment/DocumentSect
 har «Bruksanvisning» og «Vognkort». Opplastingsmønsteret finnes altså allerede —
 vi henger en automatisk prosess på det og legger til et sted å spørre.
 
+### 11.0 Synlighetsregel — ingen manual, ingen «spør»
+**«Spør manualen» (og alle avledede knapper) vises kun når maskinen har minst én
+manual med status `ready`.** Dette er både UX og sikkerhet: assistenten finnes
+bare når det finnes kildemateriale å svare fra — den skal aldri kunne svare uten
+kilde.
+
+Konkret oppførsel per tilstand:
+- **Ingen manual:** «Spør»-feltet og hurtigvalgene vises ikke. For **admin** vises
+  kun et lite hint/opplasting: «Last opp en verkstedmanual for å aktivere
+  assistenten». For **medlem** vises ingenting (de kan ikke laste opp likevel).
+- **Manual indekseres:** «Spør» er deaktivert med status «Klargjør manualen…».
+- **Minst én `ready`:** «Spør manualen» + hurtigvalg blir aktive.
+
+Samme regel gjelder de avledede inngangspunktene: knappene «Hva sier manualen?» /
+«Lag reparasjonsguide» i `ReportFaultModal`, `WorkOrderDetailModal` og
+vedlikeholds-modalene vises **kun** hvis maskinen har en `ready`-manual. Da finner
+en bruker aldri en spør-funksjon på en maskin uten manual.
+
 ### 11.1 Opplasting → automatisk prosess (der dokumenter alt lastes opp)
 - **Utløser:** i dokumentopplastingen, når en bruker laster opp en **PDF** og velger
   type **«Verkstedmanual» / «Servicemanual»** (vi utvider `documentType`-lista med
