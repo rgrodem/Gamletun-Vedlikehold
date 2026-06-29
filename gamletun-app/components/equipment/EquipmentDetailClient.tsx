@@ -12,6 +12,7 @@ import QRCodeModal from './QRCodeModal';
 import WorkOrderSection from '../work-orders/WorkOrderSection';
 import DocumentSection from './DocumentSection';
 import InventorySection from './InventorySection';
+import ManualAssistantSection from './ManualAssistantSection';
 import CompatiblePartsSection from './CompatiblePartsSection';
 import ReservationModal from '../reservations/ReservationModal';
 import ActiveReservationBadge from '../reservations/ActiveReservationBadge';
@@ -333,6 +334,7 @@ export default function EquipmentDetailClient({
         <CompatiblePartsSection equipmentId={equipment.id} />
         <InventorySection equipmentId={equipment.id} />
         <DocumentSection equipmentId={equipment.id} onUpdate={handleSuccess} />
+        <ManualAssistantSection equipmentId={equipment.id} />
 
         <div id="historikk" className="scroll-mt-20">
           <h3 className="font-serif text-[18px] font-medium text-ink tracking-tightish mb-2.5">Historikk</h3>

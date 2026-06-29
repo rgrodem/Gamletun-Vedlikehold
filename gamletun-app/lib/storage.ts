@@ -1,7 +1,7 @@
 // Supabase Storage utility functions
 import { createClient } from '@/lib/supabase/client';
 
-export type StorageBucket = 'equipment-images' | 'equipment-documents' | 'maintenance-attachments';
+export type StorageBucket = 'equipment-images' | 'equipment-documents' | 'maintenance-attachments' | 'manuals';
 
 export interface UploadResult {
   path: string;
