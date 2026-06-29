@@ -392,16 +392,82 @@ inngest.createFunction({ id: 'index-manual' }, { event: 'manual/uploaded' },
 
 ---
 
-## 11. App-integrasjon (UI i maskinvisningen)
+## 11. App-integrasjon — konkret plassering i dagens app
 
-Ny seksjon «Manualer & assistent» på `EquipmentDetailClient`:
-- **Manualer**: liste + opplasting (admin), status (indekserer/klar).
-- Handlingsknapper: «Spør manualen», «Finn servicepunkt», «Lag reparasjonsguide»,
-  «Lag arbeidsordre», «Finn feilkode», «Vis relevante manualbilder».
-- Svar vises med **kildekort** (manual, kapittel, side, «vis siden»-miniatyr).
-- Reparasjonsguide vises som redigerbart utkast → «Godkjenn og lagre» → PDF +
-  arbeidsordre. Gjenbruk rollesystemet: medlemmer kan *spørre/lese*, kun admin
-  laster opp manualer og lagrer arbeidsordrer.
+Forankret i komponentene som finnes i dag. **Viktig utgangspunkt:** appen har
+allerede opplasting av dokumenter per maskin (`components/equipment/DocumentSection.tsx`
+→ `equipment_documents` + Storage), med en `Dokumenttype`-nedtrekk som til og med
+har «Bruksanvisning» og «Vognkort». Opplastingsmønsteret finnes altså allerede —
+vi henger en automatisk prosess på det og legger til et sted å spørre.
+
+### 11.1 Opplasting → automatisk prosess (der dokumenter alt lastes opp)
+- **Utløser:** i dokumentopplastingen, når en bruker laster opp en **PDF** og velger
+  type **«Verkstedmanual» / «Servicemanual»** (vi utvider `documentType`-lista med
+  disse). Da:
+  1. opprettes en `manuals`-rad knyttet til maskinen,
+  2. legges indekseringsjobben i kø (parse → chunk → vektoriser → lagre),
+  3. vises status **rett i lista**: `Indekserer… → Klar for søk → Feilet`
+     (merkelapp + «prøv igjen»).
+- **Plassering:** behold sertifikat/vognkort/tegning i dagens `DocumentSection`,
+  men gi **manualer en egen seksjon «Manualer & assistent»** rett under, fordi
+  status *og* «Spør manualen» hører hjemme der. En manual som alt ligger som
+  dokument kan «forfremmes» til søkbar manual uten ny opplasting.
+
+### 11.2 Hvor det spørres (rangert, med faktiske steder)
+1. **Maskinens detaljside (`EquipmentDetailClient`)** — hovedinngangen. Ny seksjon
+   «Manualer & assistent» med **«Spør manualen»-felt** + hurtigknapper («Finn
+   servicepunkt», «Finn feilkode», «Lag reparasjonsguide», «Vis manualbilder»).
+2. **Feil-flyten (`ReportFaultModal`)** — har alt AI-diagnose fra bilde. Legg til
+   «Hva sier manualen?» / «Hva betyr feilkoden?» og «Lag reparasjonsguide» rett
+   fra feilen → kobles til den korrigerende arbeidsordren.
+3. **Arbeidsordren (`WorkOrderDetailModal`)** — «Lag reparasjonsguide» genererer
+   guiden, og PDF-en lagres som **vedlegg** (`work_order_attachments`) → havner i
+   maskinens historikk.
+4. **Logg/planlegg vedlikehold (`LogMaintenanceModal` / `ScheduleMaintenanceModal`)**
+   — «Hva skal gjøres på 500-timers service?» henter sjekklista fra manualen og
+   kan **forhåndsutfylle sjekkpunktene** på arbeidsordren.
+
+### 11.3 Svar og lagring
+- Svar vises med **kildekort** (manual, kapittel, side, «vis siden»-miniatyr fra
+  `manual_pages`).
+- Reparasjonsguide = redigerbart utkast → «Godkjenn og lagre» → `repair_guides`,
+  som kan forfremmes til **arbeidsordre** (PDF som vedlegg) eller **vedlikeholdslogg**.
+
+### 11.4 Roller (gjenbruker migration 020)
+- **Medlem:** «Spør manualen» + lese svar/kilder.
+- **Admin:** laster opp/indekserer manualer, lagrer guider/arbeidsordrer.
+
+### 11.5 Skjermflyt (maskinens detaljside)
+```
+EquipmentDetailClient
+├─ … (bilde, status, handlingsrad: Reserver / Logg vedlikehold / Se ordrer)
+├─ VehicleInfo
+├─ WorkOrderSection      ← «Lag reparasjonsguide» på en ordre (Fase 2)
+├─ CompatiblePartsSection
+├─ InventorySection
+├─ DocumentSection       ← PDF + type «Verkstedmanual» starter indeksering
+└─ ▼ NY: «Manualer & assistent»
+     ├─ Manualer:  [Porsche verkstedmanual ·  ✓ Klar ]
+     │             [Service 996         ·  ⏳ Indekserer 62 % ]
+     ├─ [ Spør manualen…________________________ ]  (Enter)
+     │   hurtigvalg: Servicepunkt · Feilkode · Reparasjonsguide · Bilder
+     └─ Svar:
+         «Hydraulikkfilteret byttes slik: …»
+         📎 Kilder:  Verkstedmanual · kap. 7 · s. 124   [vis siden]
+         [ Lag reparasjonsguide ]  [ Lag arbeidsordre ]
+```
+
+**Spør → svar (sekvens):**
+```
+Bruker skriver spørsmål i seksjonen
+  → POST /api/manuals/ask { equipmentId, question }
+     → embed spørsmål (Voyage)
+     → match_manual_chunks(equipmentId, …)   (hybrid, kun denne maskinens manualer)
+     → ingen treff over terskel?  → «Ikke funnet i kildematerialet» (stopp)
+     → Claude (Citations) på topp-K chunks
+  → svar + kildekort vises inline
+  → ev. «Lag reparasjonsguide» → /api/manuals/repair-guide → redigerbart utkast → PDF
+```
 
 ---
 
