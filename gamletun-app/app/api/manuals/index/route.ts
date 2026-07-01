@@ -7,7 +7,9 @@ import { extractText } from 'unpdf';
 import { createClient } from '@/lib/supabase/server';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+// Store manualer tar tid å parse. Vercel klemmer dette ned til planens maks
+// (60 s på Hobby), men på Pro får indekseringen mer tid.
+export const maxDuration = 300;
 
 const MAX_CHARS = 3500; // ca. 800–900 tokens pr chunk
 

@@ -67,7 +67,12 @@ export default function ManualAssistantSection({ equipmentId }: Props) {
     e.target.value = '';
     if (!file) return;
     if (file.type !== 'application/pdf') { setError('Velg en PDF-fil.'); return; }
-    if (file.size > 40 * 1024 * 1024) { setError('Filen er for stor (maks 40 MB).'); return; }
+    // Supabase gratisplan tillater maks 50 MB per fil. Er manualen større, del
+    // den i flere PDF-er og last opp hver for seg — søket dekker alle manualene.
+    if (file.size > 50 * 1024 * 1024) {
+      setError('Filen er for stor (maks 50 MB). Del en stor manual i flere PDF-er og last opp hver del — søket dekker alle.');
+      return;
+    }
     setUploading(true);
     setError('');
     try {
